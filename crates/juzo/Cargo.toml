@@ -1,0 +1,16 @@
+[package]
+name = "juzo"
+version = "0.1.0"
+
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+tokio.workspace = true
+telers.workspace = true
+sea-orm.workspace = true
+serde.workspace = true
+
+juzo-core = { path = "../juzo-core" }
+
+# С Любовлю Чис =)
