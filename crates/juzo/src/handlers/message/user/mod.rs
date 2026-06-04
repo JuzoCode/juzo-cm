@@ -3,6 +3,7 @@ use telers::{Router, event::telegram::Handler};
 
 mod anketa;
 mod bag;
+mod description;
 mod start;
 mod test;
 mod user_id;

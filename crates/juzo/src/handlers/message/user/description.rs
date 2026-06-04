@@ -1,7 +1,4 @@
-use juzo_core::{
-    application::{UserIndex, UserModel},
-    common::emojis::smail_tick,
-};
+use juzo_core::{application::UserIndex, common::emojis::smail_tick};
 use sea_orm::DbConn;
 
 use super::super::*;
@@ -12,8 +9,8 @@ pub async fn show(
     message: Message,
     Extension(db): Extension<DbConn>,
     Extension(result): Extension<CommandResult>,
-) {
-    let user_ind = UserIndex::new(&bot, &db);
+) -> HandlerResult<()> {
+    let _user_ind = UserIndex::new(&bot, &db);
 
     // SAFETY: The Command filter will not allow processing of a "None" value.
     let text = unsafe {
@@ -22,9 +19,15 @@ pub async fn show(
             .or_else(|| message.caption())
             .unwrap_unchecked()
     };
-    let args = result.args::<1>(text);
+    let _args = result.args::<1>(text);
 
-    (format!("{0} {{}} пока не заполнил описание о себе.", smail_tick(true)));
+    bot.send(
+        JuzoAnswer::message(&message)
+            .text(format!("{0} {{}} пока не заполнил описание о себе.", smail_tick(true))),
+    )
+    .await?;
+
+    Ok(())
 }
 
 /// TODO
@@ -33,8 +36,8 @@ pub async fn edit(
     message: Message,
     Extension(db): Extension<DbConn>,
     Extension(result): Extension<CommandResult>,
-) {
-    let user_ind = UserIndex::new(&bot, &db);
+) -> HandlerResult<()> {
+    let _user_ind = UserIndex::new(&bot, &db);
 
     // SAFETY: The Command filter will not allow processing of a "None" value.
     let text = unsafe {
@@ -43,8 +46,13 @@ pub async fn edit(
             .or_else(|| message.caption())
             .unwrap_unchecked()
     };
-    let args = result.args::<1>(text);
+    let _args = result.args::<1>(text);
 
+    bot.send(
+        JuzoAnswer::message(&message)
+            .text(format!("{0} Описание пользователя обновлено", smail_tick(true))),
+    )
+    .await?;
 
-    (format!("{0} Описание пользователя обновлено", smail_tick(true)));
+    Ok(())
 }

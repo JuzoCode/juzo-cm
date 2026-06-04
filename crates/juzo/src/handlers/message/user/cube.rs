@@ -17,73 +17,40 @@ use crate::{
 
 /// TODO
 pub async fn cube(
-    juzo: &JuzoChatManager,
-    Extension(result): Extension<CommandResult>,
+    bot: Bot,
+    message: Message,
+    Extension(_db): Extension<DbConn>,
+    Extension(_result): Extension<CommandResult>,
 ) {
-    if juzo.chat_type() == "private" { return } 
-
     let user_ind = UserIndex::new(&bot, &db);
+
+    // SAFETY: The Command filter will not allow processing of a "None" value.
+    let text = unsafe {
+        message
+            .text()
+            .or_else(|| message.caption())
+            .unwrap_unchecked()
+    };
+    let args = result.args::<2>(text);
     
-    let first_line: Vec<&str> = result.first_line.split_whitespace().collect();
-    let is_link = juzo_user.valid_user_link(first_line.last().unwrap_or(&""));
-
-    let message_from = juzo.message.from.as_ref().unwrap();
-    let user_id: UserIds; 
-    let mut gold_count: u32 = 0;
-
-    match (first_line.len(), juzo.message.reply_to_message(), is_link) {
-        (args, _, true) if args <= 2 => {
-            if args != 1 {
-                gold_count = match first_line[0].parse::<u32>() {
-                    Ok(num) => num, Err(_) => return,
-                };
-            }
-            let user_line = first_line.last().unwrap();
-            user_id = match juzo_user.search_user(user_line).await {
-                Ok(ok) => ok, Err(_) => return
-            };
-        },
-        (args, Some(reply), false) if args <= 1 => {
-            match &reply.from {
-                Some(reply_from) => {
-                    if reply_from.is_bot {
-                        let _ = juzo.answer(
-                            format!(
-                                "{SMAIL_PENSIL} Нет смысла предлагать бросить кубики боту. Он не ответит..."
-                            )
-                        ).await;
-                        return 
-                    };
-                },
-                None => return
-            }
-
-            user_id = juzo.reply_user_id().unwrap_or_default();
-            if args == 1 {
-                gold_count = match first_line[0].parse::<u32>() {
-                    Ok(num) => num, Err(_) => return,
-                };
-            }
-        },
-        _ => return
-    }
+    // match args
 
     // let bag_gold_player = dec!(0);
     // let bag_gold_opponent = dec!(0);
 
     if user_id == message_from.id {
-        let _ = juzo.answer(
+        let _ = (
             format!(
-                "{SMAIL_PENSIL} Если вы хотите испытать судьбу, воспользуйтесь командой <code>!русская рулетка</code>. Вперёд!"
+                "{0} Если вы хотите испытать судьбу, воспользуйтесь командой <code>!русская рулетка</code>."
             )
-        ).await;
+        );
         return
     }
 
     let player_full_name = message_from.id;
     let opponent_full_name = user_id;
 
-    let msg_player = juzo.answer(
+    let msg_player = (
         format!("🎲 Первый бросок кубика совершает <b>{player_full_name}</b>")
     ).await.unwrap();
 
@@ -141,5 +108,5 @@ pub async fn cube(
 
     sleep(Duration::from_secs_f32(3.5)).await;
 
-    let _ = juzo.reply(text).reply_to(message_id).await;
+    (text).reply_to(message_id);
 }
