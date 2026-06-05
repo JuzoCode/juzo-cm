@@ -7,6 +7,7 @@ mod chat_description;
 mod chat_name;
 mod creator;
 mod pin;
+mod reason;
 mod tag;
 mod tg_admin;
 mod topic_close;
@@ -65,6 +66,9 @@ pub fn routers() -> Router {
                 Handler::new(topic_close::set)
                     .filter(FilterChatType::one(ChatType::Private).invert())
                     .filter(Command::one("-топик").no_prefix()),
+                Handler::new(reason::scam)
+                    .filter(FilterChatType::one(ChatType::Private).invert())
+                    .filter(Command::one("скам причина").no_prefix()),
             ])
         })
         .on_business_message(|observer| {

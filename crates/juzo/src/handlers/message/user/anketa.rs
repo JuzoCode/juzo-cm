@@ -54,21 +54,17 @@ pub async fn show(
         },
     };
 
-    let anketa =
-        match UserAnketa::find_by_id(user.ids)
-            .one(&db)
-            .await
-        {
-            Ok(Some(anketa_data)) => anketa_data,
-            _ => {
-                bot.send(JuzoAnswer::message(&message).text(format!(
-                    "{0} О данном пользователе ни слуху, ни духу.",
-                    smail_pensil(true)
-                )))
-                .await?;
-                return Ok(());
-            }
-        };
+    let Ok(Some(anketa)) = UserAnketa::find_by_id(user.ids)
+        .one(&db)
+        .await
+    else {
+        bot.send(
+            JuzoAnswer::message(&message)
+                .text(format!("{0} О данном пользователе ни слуху, ни духу.", smail_pensil(true))),
+        )
+        .await?;
+        return Ok(());
+    };
 
     if !anketa.show {
         bot.send(

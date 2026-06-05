@@ -156,3 +156,27 @@ pub async fn show_thread_link(bot: Bot, message: Message) -> HandlerResult<()> {
 
     Ok(())
 }
+
+#[cfg(debug_assertions)]
+pub async fn message_reply(bot: Bot, message: Message) -> HandlerResult<()> {
+    if let Some(contents) = message.forward_origin() {
+        bot.send(
+            JuzoAnswer::message(&message)
+                .text(format!("<blockquote expandable>{contents:?}</blockquote>")),
+        )
+        .await?;
+        return Ok(());
+    }
+
+    let contents = message
+        .reply_to_message()
+        .unwrap_or_else(|| &message);
+
+    bot.send(
+        JuzoAnswer::message(&message)
+            .text(format!("<blockquote expandable>{contents:?}</blockquote>")),
+    )
+    .await?;
+
+    Ok(())
+}

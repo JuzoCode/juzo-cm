@@ -9,7 +9,6 @@ publish.workspace = true
 tokio.workspace = true
 telers.workspace = true
 sea-orm.workspace = true
-serde.workspace = true
 
 juzo-core = { path = "../juzo-core" }
 

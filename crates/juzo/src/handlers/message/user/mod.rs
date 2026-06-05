@@ -18,6 +18,8 @@ pub fn routers() -> Router {
                 Handler::new(test::creator_premium_pack).filter(Command::one("создатель пака")),
                 Handler::new(user_id::show).filter(Command::one("ид")),
                 Handler::new(bag::show).filter(Command::one("мешок").no_prefix()),
+                #[cfg(debug_assertions)]
+                Handler::new(test::message_reply).filter(Command::one("контент сообщения")),
             ])
         })
         .on_business_message(|observer| {

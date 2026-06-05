@@ -2,10 +2,9 @@ use juzo_core::{
     application::{UserIds, UserIndex, UserModel},
     common::emojis::{smail_pensil, smail_tick},
     db::agent::{
-        block_system,
+        BlockFunc, block_system,
         prelude::{Agent, BlockSystem},
     },
-    domain::enums::BlockFunc,
 };
 use sea_orm::{DbConn, EntityTrait, SelectExt, Set, sea_query::OnConflict};
 
