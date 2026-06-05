@@ -24,24 +24,25 @@ pub async fn scam(
     };
     let args = result.args::<1>(text);
 
-    let user: UserModel = match (args, message.reply_to_message()) {
-        (Some(spans), _) => {
+    let user: UserModel = match args {
+        Some([a1]) => {
             let Ok(found_user) = user_ind
-                .search_user(&text[spans[0]])
+                .search_user(&text[a1])
                 .await
             else {
                 return Ok(());
             };
             found_user
         }
-        // SAFETY: Branching does not allow processing the None.
-        (None, Some(reply)) => unsafe {
-            reply
-                .from()
-                .unwrap_unchecked()
-                .into()
+        None => unsafe {
+            if let Some(r) = message.reply_to_message() {
+                r.from()
+                    .unwrap_unchecked()
+                    .into()
+            } else {
+                return Ok(());
+            }
         },
-        _ => return Ok(()),
     };
 
     let Ok(Some(info)) = BlockSystem::find_by_id((user.ids, BlockFunc::Scam))
@@ -86,24 +87,25 @@ pub async fn spam(
     };
     let args = result.args::<1>(text);
 
-    let user: UserModel = match (args, message.reply_to_message()) {
-        (Some(spans), _) => {
+    let user: UserModel = match args {
+        Some([a1]) => {
             let Ok(found_user) = user_ind
-                .search_user(&text[spans[0]])
+                .search_user(&text[a1])
                 .await
             else {
                 return Ok(());
             };
             found_user
         }
-        // SAFETY: Branching does not allow processing the None.
-        (None, Some(reply)) => unsafe {
-            reply
-                .from()
-                .unwrap_unchecked()
-                .into()
+        None => unsafe {
+            if let Some(r) = message.reply_to_message() {
+                r.from()
+                    .unwrap_unchecked()
+                    .into()
+            } else {
+                return Ok(());
+            }
         },
-        _ => return Ok(()),
     };
 
     let Ok(Some(info)) = BlockSystem::find_by_id((user.ids, BlockFunc::AntiSpam))
