@@ -3,9 +3,11 @@ use telers::{
     Filter, Router, enums::ChatType, event::telegram::Handler, filters::ChatType as FilterChatType,
 };
 
+mod chat_bag;
 mod chat_description;
 mod chat_name;
 mod creator;
+mod module_access;
 mod pin;
 mod reason;
 mod tag;

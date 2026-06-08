@@ -1,9 +1,13 @@
+use core::fmt::Write;
+
 use juzo_core::{
     application::{UserIndex, UserModel},
     common::emojis::smail_pensil,
     db::agent::{BlockFunc, block_system, prelude::BlockSystem},
 };
-use sea_orm::{DbConn, EntityTrait, QuerySelect, prelude::DateTimeUtc};
+use sea_orm::{
+    DbConn, EntityTrait, QuerySelect, prelude::DateTimeUtc, sea_query::value::prelude::chrono,
+};
 
 use super::super::*;
 
@@ -45,14 +49,10 @@ pub async fn scam(
         },
     };
 
-    let Ok(Some(info)) = BlockSystem::find_by_id((user.ids, BlockFunc::Scam))
+    let Ok(Some((reason, time_add))) = BlockSystem::find_by_id((user.ids, BlockFunc::Scam))
         .select_only()
-        .columns([
-            block_system::Column::AgentsIds,
-            block_system::Column::Reason,
-            block_system::Column::TimeAdd,
-        ])
-        .into_tuple::<(i64, String, DateTimeUtc)>()
+        .columns([block_system::Column::Reason, block_system::Column::TimeAdd])
+        .into_tuple::<(String, DateTimeUtc)>()
         .one(&db)
         .await
     else {
@@ -64,7 +64,18 @@ pub async fn scam(
         return Ok(());
     };
 
-    bot.send(JuzoAnswer::message(&message).text(format!("{0} => {1:?}", user.ids, info)))
+    let fta = time_add.format("%d.%m.%Y");
+
+    let mut text =
+        format!("{0} находится в «Juzo | Scam System».\n<blockquote expandable>", user.ids);
+
+    if !reason.is_empty() {
+        let _ = write!(text, "<b>Причина:</b> {reason}\n<b>Добавлен:</b> {fta}</blockquote>");
+    } else {
+        let _ = write!(text, "<b>Добавлен:</b> {fta}</blockquote>",);
+    }
+
+    bot.send(JuzoAnswer::message(&message).text(text))
         .await?;
 
     Ok(())
@@ -108,14 +119,10 @@ pub async fn spam(
         },
     };
 
-    let Ok(Some(info)) = BlockSystem::find_by_id((user.ids, BlockFunc::AntiSpam))
+    let Ok(Some(reason)) = BlockSystem::find_by_id((user.ids, BlockFunc::AntiSpam))
         .select_only()
-        .columns([
-            block_system::Column::AgentsIds,
-            block_system::Column::Reason,
-            block_system::Column::TimeAdd,
-        ])
-        .into_tuple::<(i64, String, DateTimeUtc)>()
+        .column(block_system::Column::Reason)
+        .into_tuple::<String>()
         .one(&db)
         .await
     else {
@@ -127,7 +134,13 @@ pub async fn spam(
         return Ok(());
     };
 
-    bot.send(JuzoAnswer::message(&message).text(format!("{0} => {1:?}", user.ids, info)))
+    let mut text = format!("{0} находится в «Juzo | Anti-Spam»", user.ids);
+
+    if !reason.is_empty() {
+        let _ = write!(text, ".\n<blockquote expandable><b>Причина:</b> {reason}</blockquote>");
+    }
+
+    bot.send(JuzoAnswer::message(&message).text(text))
         .await?;
 
     Ok(())

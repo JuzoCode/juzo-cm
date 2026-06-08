@@ -82,23 +82,16 @@ pub async fn show(
 
     let mut text = String::new();
 
-    let _ = writeln!(text, "{0} <b>В мешке {{}}</b>.", smail_bag(true));
-
-    text.push_str("<blockquote expandable>");
+    let _ = writeln!(text, "{0} <b>В мешке {{}}</b>.<blockquote expandable>", smail_bag(true));
 
     let _ = writeln!(
         text,
-        "{0} {1} {2} {3} {4}",
+        "{0} {1} {2} {3} {4}\n{5} {6} {7} {8} {9}",
         smail_sweets(true),
         balance.sweets,
         smail_gold(true),
         balance.gold,
-        GOLD_TEXT
-    );
-
-    let _ = writeln!(
-        text,
-        "{0} {1} {2} {3} {4}",
+        GOLD_TEXT,
         smail_jcoin(true),
         balance.coins,
         JUZO_COIN_TEXT,
@@ -110,11 +103,9 @@ pub async fn show(
         let _ = writeln!(text, "{0} {1}", smail_score(true), balance.score);
     }
 
-    text.push_str("</blockquote>\n");
-
     let _ = write!(
         text,
-        "💬 Запасы {0} можно пополнить, введя команду <code>купить {{число}}</code>",
+        "</blockquote>\n💬 Запасы {0} можно пополнить, введя команду <code>купить {{число}}</code>",
         holiday_choice(&"леденцов", &"мандаринок", &"тыковок")
     );
 

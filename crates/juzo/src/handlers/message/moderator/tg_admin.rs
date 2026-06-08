@@ -116,7 +116,7 @@ pub async fn add(
     };
     let args = &text[result.args];
 
-    let (_tag, _user): (&str, UserModel) = match (args.is_empty(), message.reply_to_message()) {
+    let (_tag, user): (&str, UserModel) = match (args.is_empty(), message.reply_to_message()) {
         (_, Some(reply)) => {
             if args
                 .chars()
@@ -170,11 +170,12 @@ pub async fn add(
     //     Err(_) => return
     // }
 
-    let mut text = format!("{0} {{}} успешно назначен тг-администратором", smail_tick(true));
-    text.push_str(&format!("<a href='tg://user?id={{}}'>\u{2069}</a>"));
-
-    bot.send(JuzoAnswer::message(&message).text(text))
-        .await?;
+    bot.send(JuzoAnswer::message(&message).text(format!(
+        "{0} {1} успешно назначен тг-администратором<a href='tg://user?id={1}'>\u{2069}</a>",
+        smail_tick(true),
+        user.ids
+    )))
+    .await?;
 
     Ok(())
 }
