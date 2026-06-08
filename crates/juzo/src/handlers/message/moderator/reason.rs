@@ -5,9 +5,7 @@ use juzo_core::{
     common::emojis::smail_pensil,
     db::agent::{BlockFunc, block_system, prelude::BlockSystem},
 };
-use sea_orm::{
-    DbConn, EntityTrait, QuerySelect, prelude::DateTimeUtc, sea_query::value::prelude::chrono,
-};
+use sea_orm::{DbConn, EntityTrait, QuerySelect, prelude::DateTimeUtc};
 
 use super::super::*;
 

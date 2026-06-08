@@ -1,4 +1,6 @@
 #![allow(dead_code)]
+#![forbid(unused_unsafe)]
+#![forbid(unused_imports)]
 
 use telers::{Bot, Dispatcher, Router, methods::DeleteWebhook};
 
