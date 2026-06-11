@@ -72,17 +72,17 @@ pub async fn show(
 
     if !balance.show {
         bot.send(JuzoAnswer::message(&message).text(format!(
-            "{0} {{}} скрыл мешок.<blockquote>Заслужите его милость, и тогда <b>просите открыть \
+            "{0} {1} скрыл мешок.<blockquote>Заслужите его милость, и тогда <b>просите открыть \
              его!</b> =)</blockquote>",
-            smail_pensil(true)
+            smail_pensil(true),
+            user.ids
         )))
         .await?;
         return Ok(());
     }
 
-    let mut text = String::new();
-
-    let _ = writeln!(text, "{0} <b>В мешке {{}}</b>.<blockquote expandable>", smail_bag(true));
+    let mut text =
+        format!("{0} <b>В мешке {1}</b>.<blockquote expandable>", smail_bag(true), user.ids);
 
     let _ = writeln!(
         text,

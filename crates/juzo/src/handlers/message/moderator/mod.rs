@@ -68,16 +68,17 @@ pub fn routers() -> Router {
                 Handler::new(topic_close::set)
                     .filter(FilterChatType::one(ChatType::Private).invert())
                     .filter(Command::one("-топик").no_prefix()),
-                Handler::new(reason::scam)
+                Handler::new(reason::scam).filter(Command::one("скам причина").no_prefix()),
+                Handler::new(reason::info)
                     .filter(FilterChatType::one(ChatType::Private).invert())
-                    .filter(Command::one("скам причина").no_prefix()),
+                    .filter(Command::one("причина").no_prefix()),
             ])
         })
         .on_business_message(|observer| {
             observer.registers([
-                Handler::new(pin::add).filter(Command::many(&["пин", "закреп"]).no_prefix()),
-                Handler::new(pin::delete)
-                    .filter(Command::many(&["анпин", "открепить"]).no_prefix()),
+                Handler::new(pin::add).filter(Command::many(&["пин", "закреп"])),
+                Handler::new(pin::delete).filter(Command::many(&["анпин", "открепить"])),
+                Handler::new(reason::scam).filter(Command::one("скам причина")),
             ])
         })
 }

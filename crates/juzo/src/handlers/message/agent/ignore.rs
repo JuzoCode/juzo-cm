@@ -88,10 +88,11 @@ pub async fn add(
         .exec(&db)
         .await;
 
-    bot.send(
-        JuzoAnswer::message(&message)
-            .text(format!("{0} {{}} занесён в «Juzo | Ignore System»", smail_tick(true))),
-    )
+    bot.send(JuzoAnswer::message(&message).text(format!(
+        "{0} {1} занесён в «Juzo | Ignore System»",
+        smail_tick(true),
+        user.ids
+    )))
     .await?;
 
     Ok(())
@@ -167,17 +168,19 @@ async fn delete_core(
     match res {
         Ok(r) if r.rows_affected > 0 => {
             bot.send(JuzoAnswer::message(&message).text(format!(
-                "{0} {{}} вынесен из «Juzo | Ignore System»{1}",
+                "{0} {1} вынесен из «Juzo | Ignore System»{2}",
                 smail_tick(true),
+                user.ids,
                 ["", " без пометки о выносе"][takeaway as usize]
             )))
             .await?;
         }
         _ => {
-            bot.send(
-                JuzoAnswer::message(&message)
-                    .text(format!("{0} {{}} не находится в базе игнора.", smail_pensil(true))),
-            )
+            bot.send(JuzoAnswer::message(&message).text(format!(
+                "{0} {1} не находится в базе игнора.",
+                smail_pensil(true),
+                user.ids
+            )))
             .await?;
         }
     }

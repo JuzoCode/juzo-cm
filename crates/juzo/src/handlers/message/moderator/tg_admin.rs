@@ -221,10 +221,11 @@ pub async fn delete(
     bot.send(PromoteChatMember::new(message.chat().id(), user.ids).can_manage_chat(false))
         .await?;
 
-    bot.send(
-        JuzoAnswer::message(&message)
-            .text(format!("{0} {{}} исключён из тг-администраторов", smail_tick(true))),
-    )
+    bot.send(JuzoAnswer::message(&message).text(format!(
+        "{0} {1} исключён из тг-администраторов",
+        smail_tick(true),
+        user.ids
+    )))
     .await?;
 
     Ok(())

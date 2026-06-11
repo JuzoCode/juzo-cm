@@ -74,10 +74,11 @@ pub async fn add(
     bot.send(SetChatMemberTag::new(message.chat().id(), user.ids).tag(tag))
         .await?;
 
-    bot.send(
-        JuzoAnswer::message(&message)
-            .text(format!("{0} Тег {{}} был успешно изменён", smail_tick(true))),
-    )
+    bot.send(JuzoAnswer::message(&message).text(format!(
+        "{0} Тег {1} был успешно изменён",
+        smail_tick(true),
+        user.ids
+    )))
     .await?;
 
     Ok(())
@@ -124,10 +125,11 @@ pub async fn delete(
     bot.send(SetChatMemberTag::new(message.chat().id(), user.ids))
         .await?;
 
-    bot.send(
-        JuzoAnswer::message(&message)
-            .text(format!("{0} Тег {{}} был успешно удалён", smail_tick(true))),
-    )
+    bot.send(JuzoAnswer::message(&message).text(format!(
+        "{0} Тег {1} был успешно удалён",
+        smail_tick(true),
+        user.ids
+    )))
     .await?;
 
     Ok(())
