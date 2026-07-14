@@ -1,7 +1,7 @@
 # Juzo Project | Rust Chat Manager
 
 Juzo is a chat manager developed in Rust.
-- [Juzo | Chat Manager](https://t.me/juzo_cm_bot)
+- [Juzo | Chat Manager](https://telegram.me/juzo_cm_bot)
 
 
 ## Project Structure and Licensing
