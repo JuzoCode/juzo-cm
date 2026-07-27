@@ -1,12 +1,13 @@
-# Juzo Project | Rust Chat Manager
+
+# Juzo | Chat Manager
 
 Juzo is a chat manager developed in Rust.
-- [Juzo | Chat Manager](https://telegram.me/juzo_cm_bot)
+- [Juzo | Chat Manager](https://t.me/juzo_cm_bot)
 
 
-## Project Structure and Licensing
+## Project Structure & Licensing
 
-The Juzo project consists of the following main crates with different availability and licensing terms:
+Juzo is split into multiple crates with different access levels:
 
 ### `crates/juzo-core`
 - Contains the internal logic
@@ -15,10 +16,8 @@ The Juzo project consists of the following main crates with different availabili
 
 ### `crates/juzo`
 - Provides the **main interaction with Telegram**
-- Source code is available for viewing (source-available)
+- **Source-available, but not open-source**
 - Distributed under a **proprietary license**
 - Full license terms are available in the `LICENSE` file
-
-## Copyright
-
+---
 © 2025–2026 JuzoCode. All rights reserved.
