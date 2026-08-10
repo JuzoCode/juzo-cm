@@ -37,7 +37,7 @@ pub async fn start_buying_sweets(
 
             let _ = juzo.answer(
                 format!(
-                    "{text} в <a href='{0}'>ЛС Джузы</a>",
+                    "{text} в <a href='{0}'>ЛС Джузо</a>",
                     get_me.tme_url(),
                 )
             ).await;
@@ -243,7 +243,7 @@ pub async fn buying_sweets(
 
         let _ = juzo.answer(
             format!(
-                "{0} Информация о пополнении {1} отправлена в <a href='{2}'>ЛС Джузы</a>",
+                "{0} Информация о пополнении {1} отправлена в <a href='{2}'>ЛС Джузо</a>",
                 smail_sweets(true),
                 holiday_choice!(
                     &["леденцов", "мандаринок", "тыковок"]

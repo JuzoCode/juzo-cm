@@ -1,4 +1,17 @@
-/// TODO
+use juzo_core::{
+    application::{JuzoAnswer, UserIndex, UserModel},
+    common::{
+        emojis::{smail_gold, smail_pensil, smail_score, smail_sweets},
+        inflection::{gold_text, score_text, sweets_text},
+        tools::time::holiday_choice,
+    },
+    db::user::{balance, prelude::UserBalance},
+};
+use sea_orm::{ConnectionTrait, DbConn, EntityTrait, QuerySelect, raw_sql, sea_query::Expr};
+use telers::types::ReplyParameters;
+
+use super::super::*;
+
 pub async fn sweets(
     bot: Bot,
     message: Message,
@@ -15,138 +28,159 @@ pub async fn sweets(
             .unwrap_unchecked()
     };
     let args = result.args::<2>(text);
+    let comment = &text[result.first_line];
 
-    // match args
-    
-    // UserBalance
-
-    if sweets == 0 {
-        let _ = juzo.answer(
-            format!(
-                "{SMAIL_PENSIL} Эй! Ты планировал передать {0}.",
-                sweets_text(0).full_text
-            )
-        ).await;
-        return
-    // } else if comment.chars().count() > 125 {
-    //     let _ = juzo.answer(
-    //         format!("{SMAIL_PENSIL} Длина текста превышает 125 символов.")
-    //     ).await;
-    //     return
-    } else if sweets > bag_sweets {
-        let _ = juzo.answer(
-            format!(
-                "{SMAIL_PENSIL} Нет столько {0} в мешке для передачи.",
-                holiday_choice!(
-                    &["леденцов", "мандаринок", "тыковок"]
-                )
-            )
-        ).await;
-        return
-    }
-
-    let convey = ConveySweets::new_sweets(sweets, bag_score, donate_score);
-
-    let score_pluralized = donate_score_text(convey.fee_score);
-    let sweets_pluralized = pluralize_sweets(
-        sweets, &["леденец", "мандаринку", "тыковку"]
-    ).full_text;
-
-    let mut quote_details = String::new();
-    let mut quote_details_send = String::new();
-
-    match convey.require_fee(bag_sweets, peer_id) {
-        Ok(result) => {
-            if !convey.fee_score.is_zero() {
-                    writeln!(
-                        quote_details,
-                        "{0} -{score_pluralized}",
-                        smail_score(true),
-                    ).unwrap();
-                if convey.score > 0 && result.fee.is_zero() {
-                    writeln!(
-                        quote_details_send,
-                        "{0} +{1}",
-                        smail_score(true),
-                        donate_score_text(convey.score),
-                    ).unwrap();
-                }
-            }
-
-            if !result.fee.is_zero() {
-                writeln!(
-                    quote_details,
-                    "<b>{SMAIL_COFFE} Съедено:</b> {0} ({1}×{2})",
-                    sweets_text(result.fee).full_text,
-                    convey.to_percentage(),
-                    result.amount,
-                ).unwrap()
-            }
-        }
-        Err(require) => {
-            let mut message = String::new();
-
-            write!(
-                message,
-                "{SMAIL_PENSIL} Нет столько {0} в мешке для передачи.<blockquote>",
-                sweets_text(0).full_text
-            ).unwrap();
-
-            if !convey.fee_score.is_zero() {
-                writeln!(
-                    message,
-                    "<b>{0} Имеется:</b> {score_pluralized}",
-                    smail_score(true),
-                ).unwrap();
+    let (user, value): (UserModel, u32) = match args {
+        // SAFETY: TBA will never return None in message.from().
+        Some([a1, a2]) if a2.is_empty() => unsafe {
+            let found_user = if let Some(r) = message.reply_to_message() {
+                r.from()
+                    .unwrap_unchecked()
+                    .into()
+            } else {
+                return Ok(());
             };
 
-            write!(
-                message,
-                "<b>{SMAIL_COFFE} Нужно:</b> {0}</blockquote>",
-                pluralize_sweets(require, &["леденец", "мандаринку", "тыковку"]).full_text,
-            ).unwrap();
+            let Ok(value) = text[a1].parse() else {
+                return Ok(());
+            };
 
-            let _ = juzo.answer(message).await;
-            return;
+            (found_user, value)
+        },
+        Some([a1, a2]) => {
+            let Ok(found_user) = user_ind
+                .search_user(&text[a2])
+                .await
+            else {
+                return Ok(());
+            };
+
+            let Ok(value) = text[a1].parse() else {
+                return Ok(());
+            };
+
+            (found_user, value)
         }
+        None => return Ok(()),
+    };
+
+    // SAFETY: TBA will never return None in message.from().
+    let iam: UserModel = unsafe {
+        message
+            .from()
+            .unwrap_unchecked()
+            .into()
+    };
+
+    let bag = UserBalance::find_by_id(iam.ids)
+        .select_only()
+        .column_as(Expr::cust("TRUNC(sweets)::int"), "sweets")
+        .into_tuple::<u32>()
+        .one(&db)
+        .await
+        .ok()
+        .flatten()
+        .unwrap_or_default();
+
+    if value == 0 {
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Даже ваш мешок знает, что ноль — это не перевод.",
+            smail_pensil(true)
+        )))
+        .await?;
+        return Ok(());
+    } else if comment
+        .chars()
+        .nth(128)
+        .is_some()
+    {
+        bot.send(
+            JuzoAnswer::message(&message)
+                .text(format!("{0} Длина текста превышает 128 символов.", smail_pensil(true))),
+        )
+        .await?;
+        return Ok(());
+    } else if value > bag {
+        bot.send(
+            JuzoAnswer::message(&message)
+                .text(format!("{0} Ваш мешок не согласен с таким переводом.", smail_pensil(true))),
+        )
+        .await?;
+        return Ok(());
     }
 
-    let quote_start = "<blockquote expandable>";
-    let quote_end = "</blockquote>";
+    let Ok(_) = db
+        .execute_raw(raw_sql!(
+            Postgres,
+            r#"
+            WITH moved AS (
+                UPDATE u2
+                SET sweets = sweets - {value}
+                WHERE user_ids = {iam.ids}
+                RETURNING user_ids
+            )
+            INSERT INTO u2(user_ids, sweets)
+            SELECT {user.ids}, {value}
+            FROM moved
+            ON CONFLICT (user_ids)
+            DO UPDATE SET sweets = u2.sweets + EXCLUDED.sweets
+            "#
+        ))
+        .await
+    else {
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Перевод получился неудачным. Не бойтесь, ваши {1} в безопасности =)",
+            smail_pensil(true),
+            holiday_choice(&"леденцы", &"мандаринки", &"тыковки")
+        )))
+        .await?;
+        return Ok(());
+    };
 
-    writeln!(quote_details_send, "<b>👤 Отправитель:</b> {{my_full_name}}").unwrap();
-    if !comment.is_empty() {
-        let signature = format!("<b>💬 Подпись к переводу:</b> {comment}");
-        write!(quote_details, "{signature}").unwrap();
-        write!(quote_details_send, "{signature}").unwrap();
-    }
-
-    let mut text = String::new();
-    writeln!(
-        text,
-        "{0} {peer_id} получил {sweets_pluralized}",
-        smail_sweets(true)
-    ).unwrap();
-    text.push_str(quote_start);
-    text.push_str(&quote_details);
-    text.push_str(quote_end);
-
-    let mut text_send = String::new();
-    writeln!(
-        text_send,
-        "{0} Вам перевели {sweets_pluralized}",
+    let mut text = format!(
+        "{0} <a href='{1}'>{2}</a> получил {3}",
         smail_sweets(true),
-    ).unwrap();
-    text_send.push_str(quote_start);
-    text_send.push_str(&quote_details_send);
-    text_send.push_str(quote_end);
+        user.link(),
+        user.full_name(),
+        sweets_text(value)
+    );
 
-    let _ = text_send;
-    let _ = juzo.answer(text).await;
+    if !comment.is_empty() {
+        text.push_str(".<blockquote expandable><b>💬 Подпись к переводу:</b> ");
+        text.push_str(comment);
+        text.push_str("</blockquote>");
+    }
+
+    let mut text_send = format!(
+        "{0} Вам перевели {1}.<blockquote expandable><b>👤 Отправитель:</b> <a href='{2}'>{3}</a>",
+        smail_sweets(true),
+        sweets_text(value),
+        iam.link(),
+        iam.full_name(),
+    );
+
+    if !comment.is_empty() {
+        text_send.push_str("\n<b>💬 Подпись к переводу:</b> ");
+        text_send.push_str(comment);
+    }
+
+    text_send.push_str("</blockquote>");
+
+    bot.send(JuzoAnswer::message(&message).text(text))
+        .await?;
+    let _ = bot
+        .send(
+            JuzoAnswer::message(&message)
+                .text(text_send)
+                .chat_id(user.ids.0)
+                .reply_parameters_option::<ReplyParameters>(None),
+        )
+        .await;
+
+    Ok(())
 }
 
-/// TODO
-pub async fn donate_point(
+pub async fn gold(
     bot: Bot,
     message: Message,
     Extension(db): Extension<DbConn>,
@@ -162,59 +196,320 @@ pub async fn donate_point(
             .unwrap_unchecked()
     };
     let args = result.args::<2>(text);
+    let comment = &text[result.first_line];
 
-    // match args
-    
-    // UserBalance
+    let (user, value): (UserModel, u32) = match args {
+        // SAFETY: TBA will never return None in message.from().
+        Some([a1, a2]) if a2.is_empty() => unsafe {
+            let found_user = if let Some(r) = message.reply_to_message() {
+                r.from()
+                    .unwrap_unchecked()
+                    .into()
+            } else {
+                return Ok(());
+            };
 
-    if donate_score == 0 {
-        let _ = juzo.answer(
-            format!(
-                "{SMAIL_PENSIL} Эй! Ты планировал передать {0}.",
-                donate_score_text(0).full_text
-            )
-        ).await;
-        return
-    // } else if comment.chars().count() > 125 {
-    //     let _ = juzo.answer(
-    //         format!("{SMAIL_PENSIL} Длина текста превышает 125 символов.")
-    //     ).await;
-    //     return
-    } else if donate_score > bag_score {
-        let _ = juzo.answer(
-            format!(
-                "{SMAIL_PENSIL} Нет столько {0} в мешке для передачи.",
-                donate_score_text(0).pluralize
-            )
-        ).await;
-        return
+            let Ok(value) = text[a1].parse() else {
+                return Ok(());
+            };
+
+            (found_user, value)
+        },
+        Some([a1, a2]) => {
+            let Ok(found_user) = user_ind
+                .search_user(&text[a2])
+                .await
+            else {
+                return Ok(());
+            };
+
+            let Ok(value) = text[a1].parse() else {
+                return Ok(());
+            };
+
+            (found_user, value)
+        }
+        None => return Ok(()),
+    };
+
+    // SAFETY: TBA will never return None in message.from().
+    let iam: UserModel = unsafe {
+        message
+            .from()
+            .unwrap_unchecked()
+            .into()
+    };
+
+    let bag = UserBalance::find_by_id(iam.ids)
+        .select_only()
+        .column(balance::Column::Gold)
+        .into_tuple::<u32>()
+        .one(&db)
+        .await
+        .ok()
+        .flatten()
+        .unwrap_or_default();
+
+    if value == 0 {
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Даже ваш мешок знает, что ноль — это не перевод.",
+            smail_pensil(true),
+        )))
+        .await?;
+        return Ok(());
+    } else if comment
+        .chars()
+        .nth(128)
+        .is_some()
+    {
+        bot.send(
+            JuzoAnswer::message(&message)
+                .text(format!("{0} Длина текста превышает 128 символов.", smail_pensil(true))),
+        )
+        .await?;
+        return Ok(());
+    } else if value > bag {
+        bot.send(
+            JuzoAnswer::message(&message)
+                .text(format!("{0} Ваш мешок не согласен с таким переводом.", smail_pensil(true))),
+        )
+        .await?;
+        return Ok(());
     }
 
-    let mut text = String::new();
-    let mut text_send = String::new();
+    let Ok(_) = db
+        .execute_raw(raw_sql!(
+            Postgres,
+            r#"
+            WITH moved AS (
+                UPDATE u2
+                SET gold = gold::bigint - {value}
+                WHERE user_ids = {iam.ids}
+                RETURNING user_ids
+            )
+            INSERT INTO u2(user_ids, gold)
+            SELECT {user.ids}, {value}
+            FROM moved
+            ON CONFLICT (user_ids)
+            DO UPDATE SET gold = u2.gold::bigint + EXCLUDED.gold::bigint
+            "#
+        ))
+        .await
+    else {
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Перевод получился неудачным. Не бойтесь, ваши золотые леденцы в безопасности =)",
+            smail_pensil(true)
+        )))
+        .await?;
+        return Ok(());
+    };
 
-    let score_pluralize = donate_score_text(donate_score);
-
-    writeln!(
-        text,
-        "{0} {peer_id} получил {score_pluralize}",
-        smail_score(true),
-    ).unwrap();
-
-    writeln!(
-        text_send,
-        "{0} Вам перевели {score_pluralize}а\n\
-        <blockquote expandable>\
-        <b>👤 Отправитель:</b> {1}",
-        smail_score(true),
-        "user_full_name",
-    ).unwrap();
+    let mut text = format!(
+        "{0} <a href='{1}'>{2}</a> получил {3}",
+        smail_gold(true),
+        user.link(),
+        user.full_name(),
+        gold_text(value)
+    );
 
     if !comment.is_empty() {
-        let signature = format!("<b>💬 Подпись к переводу:</b> {comment}");
-        write!(text, "<blockquote expandable>{signature}</blockquote>").unwrap();
-        write!(text_send, "{signature}</blockquote>").unwrap();
-    } else { text_send.push_str("</blockquote>") }
+        text.push_str(".<blockquote expandable><b>💬 Подпись к переводу:</b> ");
+        text.push_str(comment);
+        text.push_str("</blockquote>");
+    }
 
-    let _ = juzo.answer(text).await;
+    let mut text_send = format!(
+        "{0} Вам перевели {1}.<blockquote expandable><b>👤 Отправитель:</b> <a href='{2}'>{3}</a>",
+        smail_gold(true),
+        gold_text(value),
+        iam.link(),
+        iam.full_name(),
+    );
+
+    if !comment.is_empty() {
+        text_send.push_str("\n<b>💬 Подпись к переводу:</b> ");
+        text_send.push_str(comment);
+    }
+
+    text_send.push_str("</blockquote>");
+
+    bot.send(JuzoAnswer::message(&message).text(text))
+        .await?;
+    let _ = bot
+        .send(
+            JuzoAnswer::message(&message)
+                .text(text_send)
+                .chat_id(user.ids.0)
+                .reply_parameters_option::<ReplyParameters>(None),
+        )
+        .await;
+
+    Ok(())
+}
+
+pub async fn score(
+    bot: Bot,
+    message: Message,
+    Extension(db): Extension<DbConn>,
+    Extension(result): Extension<CommandResult>,
+) -> HandlerResult<()> {
+    let user_ind = UserIndex::new(&bot, &db);
+
+    // SAFETY: The Command filter will not allow processing of a "None" value.
+    let text = unsafe {
+        message
+            .text()
+            .or_else(|| message.caption())
+            .unwrap_unchecked()
+    };
+    let args = result.args::<2>(text);
+    let comment = &text[result.first_line];
+
+    let (user, value): (UserModel, u32) = match args {
+        // SAFETY: TBA will never return None in message.from().
+        Some([a1, a2]) if a2.is_empty() => unsafe {
+            let found_user = if let Some(r) = message.reply_to_message() {
+                r.from()
+                    .unwrap_unchecked()
+                    .into()
+            } else {
+                return Ok(());
+            };
+
+            let Ok(value) = text[a1].parse() else {
+                return Ok(());
+            };
+
+            (found_user, value)
+        },
+        Some([a1, a2]) => {
+            let Ok(found_user) = user_ind
+                .search_user(&text[a2])
+                .await
+            else {
+                return Ok(());
+            };
+
+            let Ok(value) = text[a1].parse() else {
+                return Ok(());
+            };
+
+            (found_user, value)
+        }
+        None => return Ok(()),
+    };
+
+    // SAFETY: TBA will never return None in message.from().
+    let iam: UserModel = unsafe {
+        message
+            .from()
+            .unwrap_unchecked()
+            .into()
+    };
+
+    let bag = UserBalance::find_by_id(iam.ids)
+        .select_only()
+        .column(balance::Column::Score)
+        .into_tuple::<u32>()
+        .one(&db)
+        .await
+        .ok()
+        .flatten()
+        .unwrap_or_default();
+
+    if value == 0 {
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Даже ваш мешок знает, что ноль — это не перевод.",
+            smail_pensil(true),
+        )))
+        .await?;
+        return Ok(());
+    } else if comment
+        .chars()
+        .nth(128)
+        .is_some()
+    {
+        bot.send(
+            JuzoAnswer::message(&message)
+                .text(format!("{0} Длина текста превышает 128 символов.", smail_pensil(true))),
+        )
+        .await?;
+        return Ok(());
+    } else if value > bag {
+        bot.send(
+            JuzoAnswer::message(&message)
+                .text(format!("{0} Ваш мешок не согласен с таким переводом.", smail_pensil(true))),
+        )
+        .await?;
+        return Ok(());
+    }
+
+    let Ok(_) = db
+        .execute_raw(raw_sql!(
+            Postgres,
+            r#"
+            WITH moved AS (
+                UPDATE u2
+                SET score = score::bigint - {value}
+                WHERE user_ids = {iam.ids}
+                RETURNING user_ids
+            )
+            INSERT INTO u2(user_ids, score)
+            SELECT {user.ids}, {value}
+            FROM moved
+            ON CONFLICT (user_ids)
+            DO UPDATE SET score = u2.score::bigint + EXCLUDED.score::bigint
+            "#
+        ))
+        .await
+    else {
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Перевод получился неудачным. Не бойтесь, ваши очки доната в безопасности =)",
+            smail_pensil(true)
+        )))
+        .await?;
+        return Ok(());
+    };
+
+    let mut text = format!(
+        "{0} <a href='{1}'>{2}</a> получил {3}",
+        smail_score(true),
+        user.link(),
+        user.full_name(),
+        score_text(value)
+    );
+
+    if !comment.is_empty() {
+        text.push_str(".<blockquote expandable><b>💬 Подпись к переводу:</b> ");
+        text.push_str(comment);
+        text.push_str("</blockquote>");
+    }
+
+    let mut text_send = format!(
+        "{0} Вам перевели {1}.<blockquote expandable><b>👤 Отправитель:</b> <a href='{2}'>{3}</a>",
+        smail_score(true),
+        score_text(value),
+        iam.link(),
+        iam.full_name(),
+    );
+
+    if !comment.is_empty() {
+        text_send.push_str("\n<b>💬 Подпись к переводу:</b> ");
+        text_send.push_str(comment);
+    }
+
+    text_send.push_str("</blockquote>");
+
+    bot.send(JuzoAnswer::message(&message).text(text))
+        .await?;
+    let _ = bot
+        .send(
+            JuzoAnswer::message(&message)
+                .text(text_send)
+                .chat_id(user.ids.0)
+                .reply_parameters_option::<ReplyParameters>(None),
+        )
+        .await;
+
+    Ok(())
 }

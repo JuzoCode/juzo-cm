@@ -53,6 +53,7 @@ pub async fn add(
             };
             found_user
         }
+        // SAFETY: TBA will never return None in message.from().
         None => unsafe {
             if let Some(r) = message.reply_to_message() {
                 r.from()
@@ -135,6 +136,7 @@ pub async fn add_spam(
             };
             found_user
         }
+        // SAFETY: TBA will never return None in message.from().
         None => unsafe {
             if let Some(r) = message.reply_to_message() {
                 r.from()
@@ -218,6 +220,7 @@ pub async fn delete(
             };
             found_user
         }
+        // SAFETY: TBA will never return None in message.from().
         None => unsafe {
             if let Some(r) = message.reply_to_message() {
                 r.from()

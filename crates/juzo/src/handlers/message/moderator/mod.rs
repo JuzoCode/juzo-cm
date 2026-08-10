@@ -1,4 +1,4 @@
-use juzo_core::filters::{Command, flood_wait::*};
+use juzo_core::filters::Command;
 use telers::{
     Filter, Router, enums::ChatType, event::telegram::Handler, filters::ChatType as FilterChatType,
 };
@@ -20,18 +20,6 @@ pub fn routers() -> Router {
     Router::new("router MODER connect")
         .on_message(|observer| {
             observer.registers([
-                Handler::new(tg_admin::call)
-                    .filter(FilterChatType::one(ChatType::Private).invert())
-                    .filter(
-                        Command::many(&[
-                            "созвать тг-модеров",
-                            "созвать тг модеров",
-                            "созвать тг-админов",
-                            "созвать тг админов",
-                        ])
-                        .no_prefix(),
-                    )
-                    .filter(FloodWait::new(FloodKind::CallModer, FloodType::User).second(180)),
                 Handler::new(tag::add)
                     .filter(FilterChatType::one(ChatType::Private).invert())
                     .filter(Command::many(&["+тг тег", "+тг тэг"]).no_prefix()),

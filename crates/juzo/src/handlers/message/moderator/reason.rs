@@ -5,7 +5,7 @@ use juzo_core::{
     common::emojis::smail_pensil,
     db::agent::{BlockFunc, block_system, prelude::BlockSystem},
 };
-use sea_orm::{DbConn, EntityTrait, QuerySelect, prelude::DateTimeUtc};
+use sea_orm::{DbConn, EntityTrait, QuerySelect};
 
 use super::super::*;
 
@@ -36,6 +36,7 @@ pub async fn info(
             };
             found_user
         }
+        // SAFETY: TBA will never return None in message.from().
         None => unsafe {
             if let Some(r) = message.reply_to_message() {
                 r.from()
@@ -62,7 +63,7 @@ pub async fn info(
         return Ok(());
     };
 
-    let mut text = format!("🗓 {0} находится в базе «Juzo | Anti-Spam»", user.ids);
+    let mut text = format!("🗓 {0} <b>находится в базе «Juzo | Anti-Spam»</b>", user.ids);
 
     if !reason.is_empty() {
         let _ = write!(text, ".\n<blockquote expandable><b>Причина:</b> {reason}</blockquote>");
@@ -101,6 +102,7 @@ pub async fn scam(
             };
             found_user
         }
+        // SAFETY: TBA will never return None in message.from().
         None => unsafe {
             if let Some(r) = message.reply_to_message() {
                 r.from()
@@ -112,10 +114,10 @@ pub async fn scam(
         },
     };
 
-    let Ok(Some((reason, time_add))) = BlockSystem::find_by_id((user.ids, BlockFunc::Scam))
+    let Ok(Some((reason, added))) = BlockSystem::find_by_id((user.ids, BlockFunc::Scam))
         .select_only()
-        .columns([block_system::Column::Reason, block_system::Column::TimeAdd])
-        .into_tuple::<(String, DateTimeUtc)>()
+        .columns([block_system::Column::Reason, block_system::Column::Added])
+        .into_tuple::<(String, i64)>()
         .one(&db)
         .await
     else {
@@ -127,15 +129,13 @@ pub async fn scam(
         return Ok(());
     };
 
-    let fta = time_add.format("%d.%m.%Y");
-
     let mut text =
         format!("🗓 {0} находится в базе «Juzo | Scam System».\n<blockquote expandable>", user.ids);
 
     if !reason.is_empty() {
-        let _ = write!(text, "<b>Причина:</b> {reason}\n<b>Добавлен:</b> {fta}</blockquote>");
+        let _ = write!(text, "<b>Причина:</b> {reason}\n<b>Добавлен:</b> {added}</blockquote>");
     } else {
-        let _ = write!(text, "<b>Добавлен:</b> {fta}</blockquote>",);
+        let _ = write!(text, "<b>Добавлен:</b> {added}</blockquote>",);
     }
 
     bot.send(JuzoAnswer::message(&message).text(text))

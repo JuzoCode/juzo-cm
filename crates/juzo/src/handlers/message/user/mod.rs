@@ -3,6 +3,7 @@ use telers::{Router, event::telegram::Handler};
 
 mod anketa;
 mod bag;
+mod convey;
 mod description;
 mod start;
 mod test;
@@ -12,6 +13,10 @@ pub fn routers() -> Router {
     Router::new("router USER connect")
         .on_message(|observer| {
             observer.registers([
+                Handler::new(convey::gold)
+                    .filter(Command::many(&["биржа передать", "передать голд"]).no_prefix()),
+                Handler::new(convey::score).filter(Command::one("передать од").no_prefix()),
+                Handler::new(convey::sweets).filter(Command::one("передать").no_prefix()),
                 Handler::new(test::sms_ids).filter(Command::one("смс ид").no_prefix()),
                 Handler::new(test::time_sms).filter(Command::one("смс время").no_prefix()),
                 Handler::new(test::ping).filter(Command::one("пинг").no_prefix()),

@@ -7,12 +7,14 @@ use juzo_core::{
             smail_bag, smail_gold, smail_jcoin, smail_pensil, smail_score, smail_stars,
             smail_sweets,
         },
-        inflection::{GOLD_TEXT, JUZO_COIN_TEXT},
-        tools::time::holiday_choice,
+        inflection::{JUZO_COIN_TEXT, asterisks_text, gold_text, score_text, sweets_text},
+        // tools::time::holiday_choice,
     },
     db::user::{balance, prelude::UserBalance},
 };
-use sea_orm::{DbConn, EntityTrait};
+use sea_orm::{
+    DbConn, EntityTrait, raw_sql, sea_query::prelude::rust_decimal::prelude::ToPrimitive,
+};
 
 use super::super::*;
 
@@ -44,6 +46,7 @@ pub async fn show(
             };
             found_user
         }
+        // SAFETY: TBA will never return None in message.from().
         None => unsafe {
             if let Some(r) = message.reply_to_message() {
                 r.from()
@@ -63,11 +66,36 @@ pub async fn show(
         },
     };
 
-    let balance = UserBalance::find_by_id(user.ids)
+    // SAFETY: TBA will never return None in message.from().
+    let my_ids = unsafe {
+        message
+            .from()
+            .unwrap_unchecked()
+            .id
+    };
+
+    let balance = UserBalance::find()
+        .from_raw_sql(raw_sql!(
+            Postgres,
+            r#"
+            SELECT
+                user_ids,
+                show,
+                asterisks,
+                coins,
+                sweets,
+                CASE
+                    WHEN user_ids = {my_ids} THEN score
+                    ELSE 0
+                END AS score,
+                gold
+            FROM u2
+            WHERE user_ids = {user.ids};
+            "#
+        ))
         .one(&db)
         .await
-        .ok()
-        .flatten()
+        .unwrap()
         .unwrap_or_else(|| balance::Model::new(user.ids));
 
     if !balance.show {
@@ -81,33 +109,55 @@ pub async fn show(
         return Ok(());
     }
 
-    let mut text =
-        format!("{0} <b>В мешке {1}</b>.<blockquote expandable>", smail_bag(true), user.ids);
+    if balance.is_empty() {
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} <b>В мешке {1}</b> пустеет так, что не осталось даже пыли",
+            smail_bag(true),
+            user.ids
+        )))
+        .await?;
+        return Ok(());
+    }
+
+    let mut text = format!(
+        "{0} <b>В мешке <a href='{1}'>{2}</a></b>.<blockquote expandable>",
+        smail_bag(true),
+        user.link(),
+        user.full_name(),
+    );
 
     let _ = writeln!(
         text,
-        "{0} {1} {2} {3} {4}\n{5} {6} {7} {8} {9}",
+        "{0} {1} {2} {3}\n{4} {5} {6} {7} {8}",
         smail_sweets(true),
-        balance.sweets,
+        unsafe {
+            sweets_text(
+                balance
+                    .sweets
+                    .to_u32()
+                    .unwrap_unchecked(),
+            )
+        },
         smail_gold(true),
-        balance.gold,
-        GOLD_TEXT,
+        gold_text(balance.gold),
         smail_jcoin(true),
         balance.coins,
         JUZO_COIN_TEXT,
         smail_stars(true),
-        balance.asterisks,
+        asterisks_text(balance.asterisks)
     );
 
     if balance.score > 0 {
-        let _ = writeln!(text, "{0} {1}", smail_score(true), balance.score);
+        let _ = writeln!(text, "{0} {1}", smail_score(true), score_text(balance.score));
     }
 
-    let _ = write!(
-        text,
-        "</blockquote>\n💬 Запасы {0} можно пополнить, введя команду <code>купить {{число}}</code>",
-        holiday_choice(&"леденцов", &"мандаринок", &"тыковок")
-    );
+    text.push_str("</blockquote>");
+
+    // let _ = write!(
+    //     text,
+    //     "\n💬 Запасы {0} можно пополнить, введя команду <code>купить {{число}}</code>",
+    //     holiday_choice(&"леденцов", &"мандаринок", &"тыковок")
+    // );
 
     bot.send(JuzoAnswer::message(&message).text(text))
         .await?;

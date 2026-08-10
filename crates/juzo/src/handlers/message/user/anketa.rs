@@ -35,6 +35,7 @@ pub async fn show(
             };
             found_user
         }
+        // SAFETY: TBA will never return None in message.from().
         None => unsafe {
             if let Some(r) = message.reply_to_message() {
                 r.from()

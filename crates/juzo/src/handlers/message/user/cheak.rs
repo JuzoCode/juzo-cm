@@ -62,7 +62,7 @@ pub async fn add(
 
     let convey = ConveySweets::new_sweets(sweets, bag_score, donate_score);
 
-    let score_pluralized = donate_score_text(convey.fee_score);
+    let score_pluralized = score_text(convey.fee_score);
 
     let get_me = juzo.bot.get_me().await.unwrap();
     let my_ids = juzo.message.from.as_ref().unwrap().id;
@@ -81,7 +81,7 @@ pub async fn add(
         ).unwrap();
         write!(
             text,
-            "<blockquote>💬 Подробности отправлены в <a href='{0}'>ЛС Джузы</a></blockquote>",
+            "<blockquote>💬 Подробности отправлены в <a href='{0}'>ЛС Джузо</a></blockquote>",
             get_me.tme_url(),
         ).unwrap();
 
@@ -117,7 +117,7 @@ pub async fn add(
                         quote_details_send,
                         "{0} +{1}",
                         smail_score(true),
-                        donate_score_text(convey.score),
+                        score_text(convey.score),
                     ).unwrap();
                 }
             }

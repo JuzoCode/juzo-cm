@@ -1,102 +1,11 @@
 use juzo_core::{
-    application::{FullName, UserIndex, UserModel},
-    common::{
-        emojis::{smail_pensil, smail_tick},
-        tools::filter::filter_admins,
-    },
-    payloads::{
-        base::PackedPayload,
-        callback::{Callback, CallbackKind},
-    },
+    application::{UserIndex, UserModel},
+    common::emojis::smail_tick,
 };
 use sea_orm::DbConn;
-use telers::{
-    methods::{GetChatAdministrators, PromoteChatMember},
-    types::{ChatMember, InlineKeyboardButton, InlineKeyboardMarkup, ReplyParameters},
-};
+use telers::methods::PromoteChatMember;
 
 use super::super::*;
-
-// ДОДЕЛАТЬ
-pub async fn call(
-    bot: Bot,
-    message: Message,
-    Extension(_db): Extension<DbConn>,
-    Extension(result): Extension<CommandResult>,
-) -> HandlerResult<()> {
-    if !result.args.is_empty() {
-        return Ok(());
-    }
-
-    // SAFETY: TBA will never return None in message.from().
-    let user = unsafe {
-        message
-            .from()
-            .unwrap_unchecked()
-    };
-
-    let admins = bot
-        .send(GetChatAdministrators::new(message.chat().id()))
-        .await?;
-
-    let humans = filter_admins(admins, user.id);
-
-    if humans.is_empty() {
-        bot.send(
-            JuzoAnswer::message(&message)
-                .text(format!("{0} Тут это бессмысленно.", smail_pensil(true))),
-        )
-        .await?;
-        return Ok(());
-    }
-
-    let header = FullName::new(&user.first_name, user.last_name.as_deref())
-        .with_name(|full_name| format!("🗣 {full_name} созывает тг-администраторов"));
-
-    let mut last_msg: Option<Message> = None;
-    let chunks: Vec<_> = humans
-        .chunks(5)
-        .collect();
-    let total_chunks = chunks.len();
-
-    let mut message_ids = Vec::with_capacity(total_chunks);
-
-    for (i, chunk) in chunks.iter().enumerate() {
-        let mut mentions = String::with_capacity(chunk.len() * 40);
-
-        for admin in *chunk {
-            let user_id = match admin {
-                ChatMember::Administrator(m) => m.user.id,
-                ChatMember::Creator(m) => m.user.id,
-                _ => continue,
-            };
-
-            use core::fmt::Write;
-            let _ = write!(mentions, "<a href='tg://user?id={user_id}'>\u{2069}</a>");
-        }
-
-        let mut req = JuzoAnswer::message(&message).text(format!("{header}{mentions}"));
-
-        if let Some(prev) = &last_msg {
-            req = req.reply_parameters(ReplyParameters::new(prev.message_id()));
-        }
-
-        if i + 1 == total_chunks {
-            let callback = PackedPayload::new(0, Callback::new(CallbackKind::CallTgAdmin)).encode();
-
-            req = req.reply_markup(InlineKeyboardMarkup::new([[InlineKeyboardButton::new(
-                "➖ Удалить упоминание",
-            )
-            .callback_data(callback.as_str())]]));
-        }
-
-        let sent = bot.send(req).await?;
-        message_ids.push(sent.message_id());
-        last_msg = Some(sent);
-    }
-
-    Ok(())
-}
 
 // ДОДЕЛАТЬ
 pub async fn add(
@@ -207,6 +116,7 @@ pub async fn delete(
             };
             found_user
         }
+        // SAFETY: TBA will never return None in message.from().
         None => unsafe {
             if let Some(r) = message.reply_to_message() {
                 r.from()

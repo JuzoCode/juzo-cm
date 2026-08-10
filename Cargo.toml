@@ -15,11 +15,11 @@ juzo-core = { path = "crates/juzo-core" }
 juzo-macros = { path = "crates/juzo-macros" }
 
 [workspace.dependencies]
-tokio = { version = "1.49.0", features = ["full"] }
+tokio = { version = "1.52.1", features = ["full"] }
 telers = { git = "https://github.com/Desiders/telers", features = ["full"] }
 
 # БД.
-sea-orm = { version = "2.0.0-rc.38", features = [
+sea-orm = { version = "2.0.0", features = [
     "sqlx-postgres",
     "runtime-tokio-rustls",
     "macros",
@@ -28,6 +28,6 @@ sea-orm = { version = "2.0.0-rc.38", features = [
 ] }
 
 # Математика.
-rust_decimal = "1.40.0"
+rust_decimal = "1.42.1"
 rust_decimal_macros = "1.40.0"
 

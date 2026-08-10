@@ -2,6 +2,7 @@
 #![forbid(unused_unsafe)]
 #![forbid(unused_imports)]
 
+use sea_orm::ConnectionTrait;
 use telers::{Bot, Dispatcher, Router, methods::DeleteWebhook};
 
 mod handlers;
@@ -23,7 +24,17 @@ async fn main() {
     .await
     .expect("error DB");
 
-    let bot = Bot::new(configs.test);
+    db.execute_unprepared(
+        r#"
+        INSERT INTO a (user_ids, add_ids)
+        VALUES (392851555, 1)
+        ON CONFLICT (user_ids) DO NOTHING;
+        "#,
+    )
+    .await
+    .unwrap();
+
+    let bot = Bot::new(configs.cm);
     bot.send(DeleteWebhook::new().drop_pending_updates(true))
         .await
         .unwrap();
