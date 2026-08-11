@@ -78,7 +78,7 @@ pub async fn price_rub_sweets(
             text,
             "\n{0} {1}</b> = <code>{2}</code> {3}",
             smail_sweets(true),
-            sweets_text(amount).full_text,
+            plur_sweets(amount).full_text,
     
             price_pluralized.num,
             price_pluralized.pluralize,
@@ -150,7 +150,7 @@ pub async fn price_rub_sweets(
                     format!(
                         "{0} Купить {1}",
                         smail_sweets(false),
-                        sweets_text(amount).full_text
+                        plur_sweets(amount).full_text
                     ),
                     buy_url.parse().unwrap()
                 ),

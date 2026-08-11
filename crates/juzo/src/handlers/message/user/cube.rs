@@ -104,7 +104,7 @@ pub async fn cube(
         ).unwrap()
     };
 
-    text.push_str(&juzo_game.gold_text());
+    text.push_str(&juzo_game.plur_gold());
 
     sleep(Duration::from_secs_f32(3.5)).await;
 

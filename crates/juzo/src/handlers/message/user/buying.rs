@@ -107,7 +107,7 @@ pub async fn buying_tg_stars(
         text,
         "{0} <b>Цена:</b> {1}",
         smail_sweets(true),
-        sweets_text(price),
+        plur_sweets(price),
     ).unwrap();
 
     let _ = juzo.answer(text).await;
@@ -175,7 +175,7 @@ pub async fn buying_sweets(
             format!(
                 "{SMAIL_PENSIL} Мы переживаем за ваше здоровье и что у \
                 вас что-нибудь слипнется. Ограничьте свой запрос хотя бы на {0}.",
-                sweets_text(limit_amount).full_text,
+                plur_sweets(limit_amount).full_text,
             )
         ).await;
         return
@@ -200,7 +200,7 @@ pub async fn buying_sweets(
                         format!(
                             "{0} {1}",
                             smail_sweets(false),
-                            sweets_text(10).full_text
+                            plur_sweets(10).full_text
                         ),
                         url.parse().unwrap()
                     )
@@ -211,7 +211,7 @@ pub async fn buying_sweets(
         let _ = juzo.answer(
             format!(
                 "{SMAIL_PENSIL} Минимальное количество для приобретения: {0}.",
-                sweets_text(10).full_text,
+                plur_sweets(10).full_text,
             )
         )
         .reply_markup(keyboard)
@@ -231,7 +231,7 @@ pub async fn buying_sweets(
         text,
         "{0} <b>{1}</b> = \"руб. -> Pluralize.full_text is None\"",
         smail_sweets(true),
-        sweets_text(amount)
+        plur_sweets(amount)
     ).unwrap();
 
     let mut message_send = juzo.answer("");
@@ -269,7 +269,7 @@ pub async fn buying_sweets(
             format!(
                 "{0} Пополнение мешка на {1}",
                 smail_sweets(false),
-                sweets_text(amount).full_text,
+                plur_sweets(amount).full_text,
             ),
             "buy XTR-sweets",
             "XTR",

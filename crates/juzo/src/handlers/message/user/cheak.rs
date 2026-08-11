@@ -62,7 +62,7 @@ pub async fn add(
 
     let convey = ConveySweets::new_sweets(sweets, bag_score, donate_score);
 
-    let score_pluralized = score_text(convey.fee_score);
+    let score_pluralized = plur_score(convey.fee_score);
 
     let get_me = juzo.bot.get_me().await.unwrap();
     let my_ids = juzo.message.from.as_ref().unwrap().id;
@@ -101,7 +101,7 @@ pub async fn add(
         quote_details,
         "{0} {1}",
         smail_sweets(true),
-        sweets_text(sweets).pluralize
+        plur_sweets(sweets).pluralize
     ).unwrap();
 
     match convey.require_fee(bag_sweets, UserIds(0)) {
@@ -117,7 +117,7 @@ pub async fn add(
                         quote_details_send,
                         "{0} +{1}",
                         smail_score(true),
-                        score_text(convey.score),
+                        plur_score(convey.score),
                     ).unwrap();
                 }
             }
@@ -126,7 +126,7 @@ pub async fn add(
                 writeln!(
                     quote_details,
                     "<b>{SMAIL_COFFE} Съедено:</b> {0} ({1}×{2})",
-                    sweets_text(result.fee).full_text,
+                    plur_sweets(result.fee).full_text,
                     convey.to_percentage(),
                     result.amount,
                 ).unwrap()
@@ -138,7 +138,7 @@ pub async fn add(
             write!(
                 message,
                 "{SMAIL_PENSIL} Нет столько {0} в мешке для передачи.<blockquote>",
-                sweets_text(0).full_text
+                plur_sweets(0).full_text
             ).unwrap();
 
             if !convey.fee_score.is_zero() {
