@@ -90,9 +90,10 @@ pub async fn add(
         .await;
 
     bot.send(JuzoAnswer::message(&message).text(format!(
-        "{0} {1} занесён в «Juzo | Scam System»",
+        "{0} <a href='{1}'>{2}</a> занесён в «Juzo | Scam System»",
         smail_tick(true),
-        user.ids
+        user.link(),
+        user.full_name(),
     )))
     .await?;
 
@@ -169,17 +170,19 @@ pub async fn delete(
     match res {
         Ok(r) if r.rows_affected > 0 => {
             bot.send(JuzoAnswer::message(&message).text(format!(
-                "{0} {1} вынесен из «Juzo | Scam System»",
+                "{0} <a href='{1}'>{2}</a> вынесен из «Juzo | Scam System»",
                 smail_tick(true),
-                user.ids
+                user.link(),
+                user.full_name(),
             )))
             .await?;
         }
         _ => {
             bot.send(JuzoAnswer::message(&message).text(format!(
-                "{0} {1} не находится в базе скама.",
+                "{0} <a href='{1}'>{2}</a> не находится в базе скама.",
                 smail_pensil(true),
-                user.ids
+                user.link(),
+                user.full_name(),
             )))
             .await?;
         }

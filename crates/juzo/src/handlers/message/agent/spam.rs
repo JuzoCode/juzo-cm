@@ -90,9 +90,10 @@ pub async fn add(
         .await;
 
     bot.send(JuzoAnswer::message(&message).text(format!(
-        "{0} {1} занесён в «Juzo | Anti-Spam»",
+        "{0} <a href='{1}'>{2}</a> занесён в «Juzo | Anti-Spam»",
         smail_tick(true),
-        user.ids
+        user.link(),
+        user.full_name(),
     )))
     .await?;
 
@@ -170,18 +171,20 @@ async fn delete_core(
     match res {
         Ok(r) if r.rows_affected > 0 => {
             bot.send(JuzoAnswer::message(&message).text(format!(
-                "{0} {1} вынесен из «Juzo | Anti-Spam»{2}",
+                "{0} <a href='{1}'>{2}</a> вынесен из «Juzo | Anti-Spam»{3}",
                 smail_tick(true),
-                user.ids,
+                user.link(),
+                user.full_name(),
                 ["", " без пометки о выносе"][takeaway as usize]
             )))
             .await?;
         }
         _ => {
             bot.send(JuzoAnswer::message(&message).text(format!(
-                "{0} {1} не находится в базе спама.",
+                "{0} <a href='{1}'>{2}</a> не находится в базе спама.",
                 smail_pensil(true),
-                user.ids
+                user.link(),
+                user.full_name(),
             )))
             .await?;
         }

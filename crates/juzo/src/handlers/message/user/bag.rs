@@ -4,10 +4,10 @@ use juzo_core::{
     application::{JuzoAnswer, UserIndex, UserModel},
     common::{
         emojis::{
-            smail_bag, smail_gold, smail_jcoin, smail_pensil, smail_score, smail_stars,
+            smail_asterisks, smail_bag, smail_gold, smail_jcoin, smail_pensil, smail_score,
             smail_sweets,
         },
-        inflection::{JUZO_COIN_TEXT, asterisks_text, gold_text, score_text, sweets_text},
+        inflection::{plur_asterisks, plur_gold, plur_jcoin, plur_score, plur_sweets},
         // tools::time::holiday_choice,
     },
     db::user::{balance, prelude::UserBalance},
@@ -128,10 +128,10 @@ pub async fn show(
 
     let _ = writeln!(
         text,
-        "{0} {1} {2} {3}\n{4} {5} {6} {7} {8}",
+        "{0} {1} {2} {3}\n{4} {5} {6} {7}",
         smail_sweets(true),
         unsafe {
-            sweets_text(
+            plur_sweets(
                 balance
                     .sweets
                     .to_u32()
@@ -139,16 +139,15 @@ pub async fn show(
             )
         },
         smail_gold(true),
-        gold_text(balance.gold),
+        plur_gold(balance.gold),
         smail_jcoin(true),
-        balance.coins,
-        JUZO_COIN_TEXT,
-        smail_stars(true),
-        asterisks_text(balance.asterisks)
+        plur_jcoin(balance.coins),
+        smail_asterisks(true),
+        plur_asterisks(balance.asterisks)
     );
 
     if balance.score > 0 {
-        let _ = writeln!(text, "{0} {1}", smail_score(true), score_text(balance.score));
+        let _ = writeln!(text, "{0} {1}", smail_score(true), plur_score(balance.score));
     }
 
     text.push_str("</blockquote>");

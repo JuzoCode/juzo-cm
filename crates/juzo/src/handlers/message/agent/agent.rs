@@ -81,9 +81,10 @@ pub async fn add(
         .await;
 
     bot.send(JuzoAnswer::message(&message).text(format!(
-        "{0} Агент {1} назначен",
+        "{0} Агент <a href='{1}'>{2}</a> назначен",
         smail_tick(true),
-        user.ids
+        user.link(),
+        user.full_name(),
     )))
     .await?;
 
@@ -165,9 +166,10 @@ pub async fn add_spam(
         .await;
 
     bot.send(JuzoAnswer::message(&message).text(format!(
-        "{0} Агент антиспама {1} назначен",
+        "{0} Агент антиспама <a href='{1}'>{2}</a> назначен",
         smail_tick(true),
-        user.ids
+        user.link(),
+        user.full_name(),
     )))
     .await?;
 
@@ -239,17 +241,19 @@ pub async fn delete(
     match res {
         Ok(r) if r.rows_affected > 0 => {
             bot.send(JuzoAnswer::message(&message).text(format!(
-                "{0} Агент {1} разжалован",
+                "{0} Агент <a href='{1}'>{2}</a> разжалован",
                 smail_tick(true),
-                user.ids
+                user.link(),
+                user.full_name(),
             )))
             .await?;
         }
         _ => {
             bot.send(JuzoAnswer::message(&message).text(format!(
-                "{0} {1} не является агентом.",
+                "{0} <a href='{1}'>{2}</a> не является агентом.",
                 smail_pensil(true),
-                user.ids
+                user.link(),
+                user.full_name(),
             )))
             .await?;
         }

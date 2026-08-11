@@ -1,8 +1,8 @@
 use juzo_core::{
     application::{JuzoAnswer, UserIndex, UserModel},
     common::{
-        emojis::{smail_gold, smail_pensil, smail_score, smail_sweets},
-        inflection::{gold_text, score_text, sweets_text},
+        emojis::{smail_gold, smail_pensil, smail_score, smail_sweets, smail_warning},
+        inflection::{plur_gold, plur_score, plur_sweets},
         tools::time::holiday_choice,
     },
     db::user::{balance, prelude::UserBalance},
@@ -64,6 +64,34 @@ pub async fn sweets(
         None => return Ok(()),
     };
 
+    if !user.is_user {
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} {1} передаются только избранным.",
+            smail_pensil(true),
+            holiday_choice(&"Леденцы", &"Мандаринки", &"Тыковки")
+        )))
+        .await?;
+        return Ok(());
+    } else if value == 0 {
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Даже ваш мешок знает, что ноль — это не перевод.",
+            smail_pensil(true)
+        )))
+        .await?;
+        return Ok(());
+    } else if comment
+        .chars()
+        .nth(128)
+        .is_some()
+    {
+        bot.send(
+            JuzoAnswer::message(&message)
+                .text(format!("{0} Длина текста превышает 128 символов.", smail_pensil(true))),
+        )
+        .await?;
+        return Ok(());
+    }
+
     // SAFETY: TBA will never return None in message.from().
     let iam: UserModel = unsafe {
         message
@@ -82,25 +110,7 @@ pub async fn sweets(
         .flatten()
         .unwrap_or_default();
 
-    if value == 0 {
-        bot.send(JuzoAnswer::message(&message).text(format!(
-            "{0} Даже ваш мешок знает, что ноль — это не перевод.",
-            smail_pensil(true)
-        )))
-        .await?;
-        return Ok(());
-    } else if comment
-        .chars()
-        .nth(128)
-        .is_some()
-    {
-        bot.send(
-            JuzoAnswer::message(&message)
-                .text(format!("{0} Длина текста превышает 128 символов.", smail_pensil(true))),
-        )
-        .await?;
-        return Ok(());
-    } else if value > bag {
+    if value > bag {
         bot.send(
             JuzoAnswer::message(&message)
                 .text(format!("{0} Ваш мешок не согласен с таким переводом.", smail_pensil(true))),
@@ -129,8 +139,8 @@ pub async fn sweets(
         .await
     else {
         bot.send(JuzoAnswer::message(&message).text(format!(
-            "{0} Перевод получился неудачным. Не бойтесь, ваши {1} в безопасности =)",
-            smail_pensil(true),
+            "{0} <b>Перевод получился неудачным.</b> Не бойтесь, ваши {1} в безопасности =)",
+            smail_warning(true),
             holiday_choice(&"леденцы", &"мандаринки", &"тыковки")
         )))
         .await?;
@@ -142,7 +152,7 @@ pub async fn sweets(
         smail_sweets(true),
         user.link(),
         user.full_name(),
-        sweets_text(value)
+        plur_sweets(value)
     );
 
     if !comment.is_empty() {
@@ -154,7 +164,7 @@ pub async fn sweets(
     let mut text_send = format!(
         "{0} Вам перевели {1}.<blockquote expandable><b>👤 Отправитель:</b> <a href='{2}'>{3}</a>",
         smail_sweets(true),
-        sweets_text(value),
+        plur_sweets(value),
         iam.link(),
         iam.full_name(),
     );
@@ -232,6 +242,35 @@ pub async fn gold(
         None => return Ok(()),
     };
 
+    if !user.is_user {
+        bot.send(
+            JuzoAnswer::message(&message).text(format!(
+                "{0} Золотые леденцы передаются только избранным.",
+                smail_pensil(true),
+            )),
+        )
+        .await?;
+        return Ok(());
+    } else if value == 0 {
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Даже ваш мешок знает, что ноль — это не перевод.",
+            smail_pensil(true),
+        )))
+        .await?;
+        return Ok(());
+    } else if comment
+        .chars()
+        .nth(128)
+        .is_some()
+    {
+        bot.send(
+            JuzoAnswer::message(&message)
+                .text(format!("{0} Длина текста превышает 128 символов.", smail_pensil(true))),
+        )
+        .await?;
+        return Ok(());
+    }
+
     // SAFETY: TBA will never return None in message.from().
     let iam: UserModel = unsafe {
         message
@@ -250,25 +289,7 @@ pub async fn gold(
         .flatten()
         .unwrap_or_default();
 
-    if value == 0 {
-        bot.send(JuzoAnswer::message(&message).text(format!(
-            "{0} Даже ваш мешок знает, что ноль — это не перевод.",
-            smail_pensil(true),
-        )))
-        .await?;
-        return Ok(());
-    } else if comment
-        .chars()
-        .nth(128)
-        .is_some()
-    {
-        bot.send(
-            JuzoAnswer::message(&message)
-                .text(format!("{0} Длина текста превышает 128 символов.", smail_pensil(true))),
-        )
-        .await?;
-        return Ok(());
-    } else if value > bag {
+    if value > bag {
         bot.send(
             JuzoAnswer::message(&message)
                 .text(format!("{0} Ваш мешок не согласен с таким переводом.", smail_pensil(true))),
@@ -297,8 +318,9 @@ pub async fn gold(
         .await
     else {
         bot.send(JuzoAnswer::message(&message).text(format!(
-            "{0} Перевод получился неудачным. Не бойтесь, ваши золотые леденцы в безопасности =)",
-            smail_pensil(true)
+            "{0} <b>Перевод получился неудачным.</b> Не бойтесь, ваши золотые леденцы в \
+             безопасности =)",
+            smail_warning(true)
         )))
         .await?;
         return Ok(());
@@ -309,7 +331,7 @@ pub async fn gold(
         smail_gold(true),
         user.link(),
         user.full_name(),
-        gold_text(value)
+        plur_gold(value)
     );
 
     if !comment.is_empty() {
@@ -321,7 +343,7 @@ pub async fn gold(
     let mut text_send = format!(
         "{0} Вам перевели {1}.<blockquote expandable><b>👤 Отправитель:</b> <a href='{2}'>{3}</a>",
         smail_gold(true),
-        gold_text(value),
+        plur_gold(value),
         iam.link(),
         iam.full_name(),
     );
@@ -399,25 +421,14 @@ pub async fn score(
         None => return Ok(()),
     };
 
-    // SAFETY: TBA will never return None in message.from().
-    let iam: UserModel = unsafe {
-        message
-            .from()
-            .unwrap_unchecked()
-            .into()
-    };
-
-    let bag = UserBalance::find_by_id(iam.ids)
-        .select_only()
-        .column(balance::Column::Score)
-        .into_tuple::<u32>()
-        .one(&db)
-        .await
-        .ok()
-        .flatten()
-        .unwrap_or_default();
-
-    if value == 0 {
+    if !user.is_user {
+        bot.send(
+            JuzoAnswer::message(&message)
+                .text(format!("{0} Очки доната передаются только избранным.", smail_pensil(true),)),
+        )
+        .await?;
+        return Ok(());
+    } else if value == 0 {
         bot.send(JuzoAnswer::message(&message).text(format!(
             "{0} Даже ваш мешок знает, что ноль — это не перевод.",
             smail_pensil(true),
@@ -435,7 +446,27 @@ pub async fn score(
         )
         .await?;
         return Ok(());
-    } else if value > bag {
+    }
+
+    // SAFETY: TBA will never return None in message.from().
+    let iam: UserModel = unsafe {
+        message
+            .from()
+            .unwrap_unchecked()
+            .into()
+    };
+
+    let bag = UserBalance::find_by_id(iam.ids)
+        .select_only()
+        .column(balance::Column::Gold)
+        .into_tuple::<u32>()
+        .one(&db)
+        .await
+        .ok()
+        .flatten()
+        .unwrap_or_default();
+
+    if value > bag {
         bot.send(
             JuzoAnswer::message(&message)
                 .text(format!("{0} Ваш мешок не согласен с таким переводом.", smail_pensil(true))),
@@ -464,8 +495,9 @@ pub async fn score(
         .await
     else {
         bot.send(JuzoAnswer::message(&message).text(format!(
-            "{0} Перевод получился неудачным. Не бойтесь, ваши очки доната в безопасности =)",
-            smail_pensil(true)
+            "{0} <b>Перевод получился неудачным.</b> Не бойтесь, ваши очки доната в безопасности \
+             =)",
+            smail_warning(true)
         )))
         .await?;
         return Ok(());
@@ -476,7 +508,7 @@ pub async fn score(
         smail_score(true),
         user.link(),
         user.full_name(),
-        score_text(value)
+        plur_score(value)
     );
 
     if !comment.is_empty() {
@@ -488,7 +520,7 @@ pub async fn score(
     let mut text_send = format!(
         "{0} Вам перевели {1}.<blockquote expandable><b>👤 Отправитель:</b> <a href='{2}'>{3}</a>",
         smail_score(true),
-        score_text(value),
+        plur_score(value),
         iam.link(),
         iam.full_name(),
     );

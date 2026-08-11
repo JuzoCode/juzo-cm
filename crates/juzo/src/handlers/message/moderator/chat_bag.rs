@@ -1,9 +1,7 @@
 use juzo_core::{
-    application::JuzoAnswer,
-    common::emojis::smail_sweets,
-    db::user::{balance, prelude::UserBalance},
+    application::JuzoAnswer, common::emojis::smail_sweets, db::user::prelude::UserBalance,
 };
-use sea_orm::{DbConn, EntityTrait, QuerySelect, prelude::Decimal};
+use sea_orm::{DbConn, EntityTrait, QuerySelect, sea_query::Expr};
 
 use super::super::*;
 
@@ -20,13 +18,13 @@ pub async fn show(
     // ради кубышки делать отдельную таблицу в БД? Мне что, делать нечего?
     let sweets = UserBalance::find_by_id(message.chat().id())
         .select_only()
-        .column(balance::Column::Sweets)
-        .into_tuple::<Decimal>()
+        .column_as(Expr::cust("TRUNC(sweets)::int"), "sweets")
+        .into_tuple::<u32>()
         .one(&db)
         .await
         .ok()
         .flatten()
-        .unwrap_or_else(|| Decimal::from(0));
+        .unwrap_or_default();
 
     bot.send(
         JuzoAnswer::message(&message)

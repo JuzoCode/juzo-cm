@@ -63,7 +63,11 @@ pub async fn info(
         return Ok(());
     };
 
-    let mut text = format!("🗓 {0} <b>находится в базе «Juzo | Anti-Spam»</b>", user.ids);
+    let mut text = format!(
+        "🗓 <a href='{0}'>{1}</a> находится в базе «Juzo | Anti-Spam»",
+        user.link(),
+        user.full_name()
+    );
 
     if !reason.is_empty() {
         let _ = write!(text, ".\n<blockquote expandable><b>Причина:</b> {reason}</blockquote>");
@@ -129,8 +133,11 @@ pub async fn scam(
         return Ok(());
     };
 
-    let mut text =
-        format!("🗓 {0} находится в базе «Juzo | Scam System».\n<blockquote expandable>", user.ids);
+    let mut text = format!(
+        "🗓 <a href='{0}'>{1}</a> находится в базе «Juzo | Scam System».\n<blockquote expandable>",
+        user.link(),
+        user.full_name()
+    );
 
     if !reason.is_empty() {
         let _ = write!(text, "<b>Причина:</b> {reason}\n<b>Добавлен:</b> {added}</blockquote>");

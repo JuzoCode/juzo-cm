@@ -7,6 +7,7 @@ mod convey;
 mod description;
 mod start;
 mod test;
+mod trade;
 mod user_id;
 
 pub fn routers() -> Router {
@@ -15,6 +16,9 @@ pub fn routers() -> Router {
             observer.registers([
                 Handler::new(convey::gold)
                     .filter(Command::many(&["биржа передать", "передать голд"]).no_prefix()),
+                Handler::new(trade::sell).filter(Command::one("биржа продать").no_prefix()),
+                Handler::new(trade::buy).filter(Command::one("биржа купить").no_prefix()),
+                Handler::new(trade::book).filter(Command::one("биржа").no_prefix()),
                 Handler::new(convey::score).filter(Command::one("передать од").no_prefix()),
                 Handler::new(convey::sweets).filter(Command::one("передать").no_prefix()),
                 Handler::new(test::sms_ids).filter(Command::one("смс ид").no_prefix()),

@@ -97,7 +97,7 @@ pub async fn info(
     if data.is_none() {
         bot.send(
             JuzoAnswer::message(&message)
-                .text(format!("{0} Данный бот не поддерживается Джузом.", smail_pensil(true))),
+                .text(format!("{0} Данный бот не поддерживается Джузо.", smail_pensil(true))),
         )
         .await?;
         return Ok(());
@@ -105,8 +105,11 @@ pub async fn info(
     let data = data.unwrap();
 
     let mut text = format!(
-        "<tg-emoji emoji-id='5339267587337370029'>🤖</tg-emoji> {0} создан и поддерживается {1}",
-        user.ids, data.0,
+        "<tg-emoji emoji-id='5339267587337370029'>🤖</tg-emoji> <a href='{0}'>{1}</a> создан и \
+         поддерживается {2}",
+        user.link(),
+        user.full_name(),
+        data.0,
     );
     if !data.2 {
         let _ = write!(text, ".\n&lt;/&gt; <b>Создатель:</b> {0}", data.1);
@@ -271,17 +274,20 @@ pub async fn delete(
     match res {
         Ok(r) if r.rows_affected > 0 => {
             bot.send(JuzoAnswer::message(&message).text(format!(
-                "{0} Клон {1} удалён",
+                "{0} Клон <a href='{1}'>{2}</a> удалён",
                 smail_tick(true),
-                user.ids
+                user.link(),
+                user.full_name(),
             )))
             .await?;
         }
         _ => {
             bot.send(JuzoAnswer::message(&message).text(format!(
-                "{0} {1} является санкционированным клоном или вовсе не является клоном.",
+                "{0} <a href='{1}'>{2}</a> является санкционированным клоном или вовсе не \
+                 является клоном.",
                 smail_pensil(true),
-                user.ids
+                user.link(),
+                user.full_name(),
             )))
             .await?;
         }
