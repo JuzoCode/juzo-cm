@@ -53,14 +53,9 @@ pub async fn show(
         },
     };
 
-    let smail = if user.ids.is_creator_bot() {
-        "<tg-emoji emoji-id='5251236460169828505'>🎭</tg-emoji>"
-    } else {
-        smail_tick(true)
-    };
-
     bot.send(JuzoAnswer::message(&message).text(format!(
-        "{smail} <a href='{0}'>{1}</a>: <code>@{2}</code>",
+        "{0} <a href='{1}'>{2}</a>: <code>@{3}</code>",
+        smail_tick(true),
         user.link(),
         user.full_name(),
         user.ids,

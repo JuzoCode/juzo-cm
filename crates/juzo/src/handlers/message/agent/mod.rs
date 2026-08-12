@@ -30,9 +30,10 @@ pub fn routers() -> Router {
                 Handler::new(ignore::delete).filter(Command::one("-игнор").no_prefix()),
                 Handler::new(scam::add).filter(Command::one("+скам").no_prefix()),
                 Handler::new(scam::delete).filter(Command::one("-скам").no_prefix()),
-                Handler::new(spam::add).filter(Command::one("+ас").no_prefix()),
-                Handler::new(spam::delete_takeaway).filter(Command::one("-ас ошибка").no_prefix()),
-                Handler::new(spam::delete).filter(Command::one("-ас").no_prefix()),
+                Handler::new(spam::add).filter(Command::many(&["+ас", "+спам"]).no_prefix()),
+                Handler::new(spam::delete_takeaway)
+                    .filter(Command::many(&["-ас ошибка", "-спам ошибка"]).no_prefix()),
+                Handler::new(spam::delete).filter(Command::many(&["-ас", "-спам"]).no_prefix()),
             ])
         })
         .on_business_message(|observer| {
