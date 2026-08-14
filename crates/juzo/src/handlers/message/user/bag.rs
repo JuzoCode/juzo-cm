@@ -1,7 +1,7 @@
 use core::fmt::Write;
 
 use juzo_core::{
-    application::{JuzoAnswer, UserIndex, UserModel},
+    application::{UserIndex, UserModel},
     common::{
         emojis::{
             smail_asterisks, smail_bag, smail_gold, smail_jcoin, smail_pensil, smail_score,
@@ -80,7 +80,10 @@ pub async fn show(
             r#"
             SELECT
                 user_ids,
-                show,
+                CASE
+                    WHEN user_ids = {my_ids} THEN true
+                    ELSE show
+                END AS show,
                 asterisks,
                 coins,
                 sweets,
@@ -100,10 +103,11 @@ pub async fn show(
 
     if !balance.show {
         bot.send(JuzoAnswer::message(&message).text(format!(
-            "{0} {1} скрыл мешок.<blockquote>Заслужите его милость, и тогда <b>просите открыть \
-             его!</b> =)</blockquote>",
+            "{0} <b><a href='{1}'>{2}</a></b> скрыл мешок.<blockquote>Заслужите его милость, и \
+             тогда <b>просите открыть его!</b> =)</blockquote>",
             smail_pensil(true),
-            user.ids
+            user.link(),
+            user.full_name(),
         )))
         .await?;
         return Ok(());
@@ -111,9 +115,10 @@ pub async fn show(
 
     if balance.is_empty() {
         bot.send(JuzoAnswer::message(&message).text(format!(
-            "{0} <b>В мешке {1}</b> пустеет так, что не осталось даже пыли",
+            "{0} <b>В мешке <a href='{1}'>{2}</a></b></b> пустеет так, что не осталось даже пыли",
             smail_bag(true),
-            user.ids
+            user.link(),
+            user.full_name(),
         )))
         .await?;
         return Ok(());

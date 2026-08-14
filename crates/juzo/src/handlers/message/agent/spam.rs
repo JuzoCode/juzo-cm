@@ -45,6 +45,7 @@ pub async fn add(
             .unwrap_unchecked()
     };
     let args = result.args::<1>(text);
+    let comment = &text[result.first_line];
 
     let user: UserModel = match args {
         Some([a1]) => {
@@ -73,10 +74,24 @@ pub async fn add(
         },
     };
 
+    if comment
+        .chars()
+        .nth(128)
+        .is_some()
+    {
+        bot.send(
+            JuzoAnswer::message(&message)
+                .text(format!("{0} Длина текста превышает 128 символов.", smail_pensil(true))),
+        )
+        .await?;
+        return Ok(());
+    }
+
     let model = block_system::ActiveModel {
         user_ids: Set(user.ids),
         function: Set(BlockFunc::AntiSpam),
         agents_ids: Set(my_ids),
+        reason: Set(comment.into()),
         ..Default::default()
     };
 

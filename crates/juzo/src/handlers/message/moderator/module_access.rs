@@ -24,7 +24,7 @@ pub async fn add(
         return Ok(());
     };
 
-    let Ok(mut rank) = text[a2].parse::<u8>() else {
+    let Ok(rank) = text[a2].parse::<u8>() else {
         return Ok(());
     };
 
@@ -32,17 +32,13 @@ pub async fn add(
         return Ok(());
     };
 
-    if rank > 6 {
-        rank = 7
-    }
-
     let model = chat_module::ActiveModel {
         chat_ids: Set(message
             .chat()
             .id()
             .into()),
         module_ids: Set(ids),
-        rank: Set(rank as i8),
+        rank: Set(rank as i16),
         ..Default::default()
     };
 

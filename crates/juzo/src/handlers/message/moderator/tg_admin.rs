@@ -80,8 +80,11 @@ pub async fn add(
     // }
 
     bot.send(JuzoAnswer::message(&message).text(format!(
-        "{0} {1} успешно назначен тг-администратором<a href='tg://user?id={1}'>\u{2069}</a>",
+        "{0} <a href='{1}'>{2}</a> успешно назначен тг-администратором<a \
+         href='tg://user?id={3}'>\u{2069}</a>",
         smail_tick(true),
+        user.link(),
+        user.full_name(),
         user.ids
     )))
     .await?;
@@ -132,9 +135,10 @@ pub async fn delete(
         .await?;
 
     bot.send(JuzoAnswer::message(&message).text(format!(
-        "{0} {1} исключён из тг-администраторов",
+        "{0} <a href='{1}'>{2}</a> исключён из тг-администраторов",
         smail_tick(true),
-        user.ids
+        user.link(),
+        user.full_name(),
     )))
     .await?;
 

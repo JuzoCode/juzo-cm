@@ -75,9 +75,10 @@ pub async fn add(
         .await?;
 
     bot.send(JuzoAnswer::message(&message).text(format!(
-        "{0} Тег {1} был успешно изменён",
+        "{0} Тег <a href='{1}'>{2}</a> изменён",
         smail_tick(true),
-        user.ids
+        user.link(),
+        user.full_name(),
     )))
     .await?;
 
@@ -127,9 +128,10 @@ pub async fn delete(
         .await?;
 
     bot.send(JuzoAnswer::message(&message).text(format!(
-        "{0} Тег {1} был успешно удалён",
+        "{0} Тег <a href='{1}'>{2}</a> удалён",
         smail_tick(true),
-        user.ids
+        user.link(),
+        user.full_name(),
     )))
     .await?;
 

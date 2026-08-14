@@ -1,5 +1,6 @@
 use juzo_core::{
-    application::JuzoAnswer, common::emojis::smail_sweets, db::user::prelude::UserBalance,
+    common::{emojis::smail_sweets, inflection::plur_sweets},
+    db::user::prelude::UserBalance,
 };
 use sea_orm::{DbConn, EntityTrait, QuerySelect, sea_query::Expr};
 
@@ -26,10 +27,11 @@ pub async fn show(
         .flatten()
         .unwrap_or_default();
 
-    bot.send(
-        JuzoAnswer::message(&message)
-            .text(format!("{0} В кубышке чата сейчас лежит {sweets}", smail_sweets(true),)),
-    )
+    bot.send(JuzoAnswer::message(&message).text(format!(
+        "{0} В кубышке чата сейчас лежит {1}",
+        smail_sweets(true),
+        plur_sweets(sweets)
+    )))
     .await?;
 
     Ok(())

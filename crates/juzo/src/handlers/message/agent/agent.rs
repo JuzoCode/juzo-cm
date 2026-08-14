@@ -4,6 +4,7 @@ use juzo_core::{
     db::agent::{agent, prelude::Agent},
 };
 use sea_orm::{DbConn, EntityTrait, SelectExt, Set, sea_query::OnConflict};
+use telers::types::ReplyParameters;
 
 use super::super::*;
 
@@ -22,14 +23,16 @@ pub async fn add(
             .into()
     };
 
-    let Ok(exists) = Agent::find_by_id(my_ids)
-        .exists(&db)
-        .await
-    else {
-        return Ok(());
-    };
-    if !exists {
-        return Ok(());
+    if !my_ids.is_creator_bot() {
+        let Ok(exists) = Agent::find_by_id(my_ids)
+            .exists(&db)
+            .await
+        else {
+            return Ok(());
+        };
+        if !exists {
+            return Ok(());
+        }
     }
 
     let user_ind = UserIndex::new(&bot, &db);
@@ -87,6 +90,14 @@ pub async fn add(
         user.full_name(),
     )))
     .await?;
+    let _ = bot
+        .send(
+            JuzoAnswer::message(&message)
+                .text(format!("👨‍💻 Вы были назначены агентом поддержи «Juzo | Чат-Менеджер»"))
+                .chat_id(user.ids.0)
+                .reply_parameters_option::<ReplyParameters>(None),
+        )
+        .await;
 
     Ok(())
 }
@@ -172,6 +183,14 @@ pub async fn add_spam(
         user.full_name(),
     )))
     .await?;
+    let _ = bot
+        .send(
+            JuzoAnswer::message(&message)
+                .text(format!("👨‍💻 Вы были назначены агентом антиспама «Juzo | Чат-Менеджер»"))
+                .chat_id(user.ids.0)
+                .reply_parameters_option::<ReplyParameters>(None),
+        )
+        .await;
 
     Ok(())
 }

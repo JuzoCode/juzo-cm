@@ -1,5 +1,5 @@
 use juzo_core::{
-    application::{JuzoAnswer, UserIndex, UserModel},
+    application::{UserIndex, UserModel},
     common::{
         emojis::{smail_gold, smail_pensil, smail_score, smail_sweets, smail_warning},
         inflection::{plur_gold, plur_score, plur_sweets},
@@ -147,12 +147,13 @@ pub async fn sweets(
         return Ok(());
     };
 
+    let smail_sweets = smail_sweets(true);
+    let sweets_name = plur_sweets(value);
+
     let mut text = format!(
-        "{0} <a href='{1}'>{2}</a> получил {3}",
-        smail_sweets(true),
+        "{smail_sweets} <a href='{0}'>{1}</a> получил {sweets_name}",
         user.link(),
         user.full_name(),
-        plur_sweets(value)
     );
 
     if !comment.is_empty() {
@@ -162,9 +163,8 @@ pub async fn sweets(
     }
 
     let mut text_send = format!(
-        "{0} Вам перевели {1}.<blockquote expandable><b>👤 Отправитель:</b> <a href='{2}'>{3}</a>",
-        smail_sweets(true),
-        plur_sweets(value),
+        "{sweets_name} Вам перевели {sweets_name}.<blockquote expandable><b>👤 Отправитель:</b> \
+         <a href='{0}'>{1}</a>",
         iam.link(),
         iam.full_name(),
     );

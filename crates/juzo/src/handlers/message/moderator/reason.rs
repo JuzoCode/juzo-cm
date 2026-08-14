@@ -64,7 +64,7 @@ pub async fn info(
     };
 
     let mut text = format!(
-        "🗓 <a href='{0}'>{1}</a> находится в базе «Juzo | Anti-Spam»",
+        "📛 <a href='{0}'>{1}</a> находится в базе «Juzo | Anti-Spam»",
         user.link(),
         user.full_name()
     );
