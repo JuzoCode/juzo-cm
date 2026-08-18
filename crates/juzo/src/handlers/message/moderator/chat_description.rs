@@ -23,11 +23,11 @@ pub async fn set(
         return Ok(());
     }
 
-    let text = unsafe {
-        &message
+    let text = &unsafe {
+        message
             .text()
-            .unwrap_unchecked()[first_line]
-    };
+            .unwrap_unchecked()
+    }[first_line];
 
     if text
         .chars()

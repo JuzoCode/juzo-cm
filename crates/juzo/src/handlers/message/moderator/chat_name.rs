@@ -13,13 +13,12 @@ pub async fn set(
     }
 
     // SAFETY: The Command filter will not allow processing of a "None" value.
-    let text = unsafe {
+    let title = &unsafe {
         message
             .text()
             .or_else(|| message.caption())
             .unwrap_unchecked()
-    };
-    let title = &text[result.args];
+    }[result.args];
 
     if title
         .chars()
