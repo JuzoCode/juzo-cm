@@ -37,7 +37,7 @@ pub async fn show(
     let args = result.args::<1>(text);
 
     let user: UserModel = match args {
-        Some([a1]) => {
+        ArgsResult::Some([a1], _) => {
             let Ok(found_user) = user_ind
                 .search_user(&text[a1])
                 .await
@@ -47,7 +47,7 @@ pub async fn show(
             found_user
         }
         // SAFETY: TBA will never return None in message.from().
-        None => unsafe {
+        ArgsResult::None => unsafe {
             if let Some(r) = message.reply_to_message() {
                 r.from()
                     .unwrap_unchecked()
@@ -64,6 +64,7 @@ pub async fn show(
                     .into()
             }
         },
+        ArgsResult::Unk => return Ok(()),
     };
 
     // SAFETY: TBA will never return None in message.from().
@@ -71,8 +72,8 @@ pub async fn show(
         message
             .from()
             .unwrap_unchecked()
-            .id
-    };
+    }
+    .id;
 
     let balance = UserBalance::find()
         .from_raw_sql(raw_sql!(

@@ -1,4 +1,4 @@
-use juzo_core::{application::UserIds, common::emojis::smail_tick, db::agent::prelude::Agent};
+use juzo_core::{common::emojis::smail_tick, db::agent::prelude::Agent};
 use sea_orm::{DbConn, EntityTrait, SelectExt};
 
 use super::super::*;
@@ -14,13 +14,12 @@ pub async fn edit(
     };
 
     // SAFETY: TBA will never return None in message.from().
-    let my_ids: UserIds = unsafe {
+    let my_ids = unsafe {
         message
             .from()
             .unwrap_unchecked()
-            .id
-            .into()
-    };
+    }
+    .id;
 
     let Ok(exists) = Agent::find_by_id(my_ids)
         .exists(&db)
@@ -39,12 +38,9 @@ pub async fn edit(
             .or_else(|| message.caption())
             .unwrap_unchecked()
     };
-    let Some([a1, a2]) = result.args::<2>(text) else {
+    let ArgsResult::Some([a1, a2], 2) = result.args::<2>(text) else {
         return Ok(());
     };
-    if a2.is_empty() {
-        return Ok(());
-    }
 
     let ru = &text[a1];
     let eng = &text[a2];

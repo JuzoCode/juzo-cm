@@ -18,19 +18,20 @@ pub async fn add(
     let args = result.args::<1>(text);
 
     let message_id: i64 = match args {
-        Some([a1]) => {
+        ArgsResult::Some([a1], _) => {
             let Ok(id) = text[a1].parse::<i64>() else {
                 return Ok(());
             };
             id
         }
-        None => {
+        ArgsResult::None => {
             if let Some(r) = message.reply_to_message() {
                 r.message_id()
             } else {
                 return Ok(());
             }
         }
+        ArgsResult::Unk => return Ok(()),
     };
 
     bot.send(
@@ -57,19 +58,20 @@ pub async fn delete(
     let args = result.args::<1>(text);
 
     let message_id: i64 = match args {
-        Some([a1]) => {
+        ArgsResult::Some([a1], _) => {
             let Ok(id) = text[a1].parse::<i64>() else {
                 return Ok(());
             };
             id
         }
-        None => {
+        ArgsResult::None => {
             if let Some(r) = message.reply_to_message() {
                 r.message_id()
             } else {
                 return Ok(());
             }
         }
+        ArgsResult::Unk => return Ok(()),
     };
 
     bot.send(

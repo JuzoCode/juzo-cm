@@ -21,9 +21,9 @@ pub async fn add(
         message
             .from()
             .unwrap_unchecked()
-            .id
-            .into()
-    };
+    }
+    .id
+    .into();
 
     let Ok(exists) = Agent::find_by_id(my_ids)
         .exists(&db)
@@ -48,7 +48,7 @@ pub async fn add(
     let comment = &text[result.first_line];
 
     let user: UserModel = match args {
-        Some([a1]) => {
+        ArgsResult::Some([a1], _) => {
             let Ok(found_user) = user_ind
                 .search_user(&text[a1])
                 .await
@@ -58,7 +58,7 @@ pub async fn add(
             found_user
         }
         // SAFETY: TBA will never return None in message.from().
-        None => unsafe {
+        ArgsResult::None => unsafe {
             if let Some(r) = message.reply_to_message() {
                 r.from()
                     .unwrap_unchecked()
@@ -72,6 +72,7 @@ pub async fn add(
                 return Ok(());
             }
         },
+        ArgsResult::Unk => return Ok(()),
     };
 
     if comment
@@ -122,13 +123,12 @@ pub async fn delete(
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
     // SAFETY: TBA will never return None in message.from().
-    let my_ids: UserIds = unsafe {
+    let my_ids = unsafe {
         message
             .from()
             .unwrap_unchecked()
-            .id
-            .into()
-    };
+    }
+    .id;
 
     let Ok(exists) = Agent::find_by_id(my_ids)
         .exists(&db)
@@ -152,7 +152,7 @@ pub async fn delete(
     let args = result.args::<1>(text);
 
     let user: UserModel = match args {
-        Some([a1]) => {
+        ArgsResult::Some([a1], _) => {
             let Ok(found_user) = user_ind
                 .search_user(&text[a1])
                 .await
@@ -162,7 +162,7 @@ pub async fn delete(
             found_user
         }
         // SAFETY: TBA will never return None in message.from().
-        None => unsafe {
+        ArgsResult::None => unsafe {
             if let Some(r) = message.reply_to_message() {
                 r.from()
                     .unwrap_unchecked()
@@ -176,6 +176,7 @@ pub async fn delete(
                 return Ok(());
             }
         },
+        ArgsResult::Unk => return Ok(()),
     };
 
     let res = BlockSystem::delete_by_id((user.ids, BlockFunc::Scam))
@@ -203,5 +204,15 @@ pub async fn delete(
         }
     }
 
+    Ok(())
+}
+
+pub async fn take_delete(
+    _bot: Bot,
+    _message: Message,
+    Extension(_db): Extension<DbConn>,
+    Extension(_result): Extension<CommandResult>,
+) -> HandlerResult<()> {
+    // удаление пометки выноса
     Ok(())
 }

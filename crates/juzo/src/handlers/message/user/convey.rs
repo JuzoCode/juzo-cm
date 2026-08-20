@@ -32,7 +32,7 @@ pub async fn sweets(
 
     let (user, value): (UserModel, u32) = match args {
         // SAFETY: TBA will never return None in message.from().
-        Some([a1, a2]) if a2.is_empty() => unsafe {
+        ArgsResult::Some([a1, _], 1) => unsafe {
             let found_user = if let Some(r) = message.reply_to_message() {
                 r.from()
                     .unwrap_unchecked()
@@ -47,7 +47,7 @@ pub async fn sweets(
 
             (found_user, value)
         },
-        Some([a1, a2]) => {
+        ArgsResult::Some([a1, a2], _) => {
             let Ok(found_user) = user_ind
                 .search_user(&text[a2])
                 .await
@@ -61,7 +61,7 @@ pub async fn sweets(
 
             (found_user, value)
         }
-        None => return Ok(()),
+        _ => return Ok(()),
     };
 
     if !user.is_user {
@@ -97,8 +97,8 @@ pub async fn sweets(
         message
             .from()
             .unwrap_unchecked()
-            .into()
-    };
+    }
+    .into();
 
     let bag = UserBalance::find_by_id(iam.ids)
         .select_only()
@@ -163,7 +163,7 @@ pub async fn sweets(
     }
 
     let mut text_send = format!(
-        "{sweets_name} Вам перевели {sweets_name}.<blockquote expandable><b>👤 Отправитель:</b> \
+        "{smail_sweets} Вам перевели {sweets_name}.<blockquote expandable><b>👤 Отправитель:</b> \
          <a href='{0}'>{1}</a>",
         iam.link(),
         iam.full_name(),
@@ -210,7 +210,7 @@ pub async fn gold(
 
     let (user, value): (UserModel, u32) = match args {
         // SAFETY: TBA will never return None in message.from().
-        Some([a1, a2]) if a2.is_empty() => unsafe {
+        ArgsResult::Some([a1, _], 1) => unsafe {
             let found_user = if let Some(r) = message.reply_to_message() {
                 r.from()
                     .unwrap_unchecked()
@@ -225,7 +225,7 @@ pub async fn gold(
 
             (found_user, value)
         },
-        Some([a1, a2]) => {
+        ArgsResult::Some([a1, a2], _) => {
             let Ok(found_user) = user_ind
                 .search_user(&text[a2])
                 .await
@@ -239,7 +239,7 @@ pub async fn gold(
 
             (found_user, value)
         }
-        None => return Ok(()),
+        _ => return Ok(()),
     };
 
     if !user.is_user {
@@ -276,8 +276,8 @@ pub async fn gold(
         message
             .from()
             .unwrap_unchecked()
-            .into()
-    };
+    }
+    .into();
 
     let bag = UserBalance::find_by_id(iam.ids)
         .select_only()
@@ -389,7 +389,7 @@ pub async fn score(
 
     let (user, value): (UserModel, u32) = match args {
         // SAFETY: TBA will never return None in message.from().
-        Some([a1, a2]) if a2.is_empty() => unsafe {
+        ArgsResult::Some([a1, _], 1) => unsafe {
             let found_user = if let Some(r) = message.reply_to_message() {
                 r.from()
                     .unwrap_unchecked()
@@ -404,7 +404,7 @@ pub async fn score(
 
             (found_user, value)
         },
-        Some([a1, a2]) => {
+        ArgsResult::Some([a1, a2], _) => {
             let Ok(found_user) = user_ind
                 .search_user(&text[a2])
                 .await
@@ -418,7 +418,7 @@ pub async fn score(
 
             (found_user, value)
         }
-        None => return Ok(()),
+        _ => return Ok(()),
     };
 
     if !user.is_user {
@@ -453,8 +453,8 @@ pub async fn score(
         message
             .from()
             .unwrap_unchecked()
-            .into()
-    };
+    }
+    .into();
 
     let bag = UserBalance::find_by_id(iam.ids)
         .select_only()

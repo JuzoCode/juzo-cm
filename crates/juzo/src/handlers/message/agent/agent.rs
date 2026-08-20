@@ -19,9 +19,9 @@ pub async fn add(
         message
             .from()
             .unwrap_unchecked()
-            .id
-            .into()
-    };
+    }
+    .id
+    .into();
 
     if !my_ids.is_creator_bot() {
         let Ok(exists) = Agent::find_by_id(my_ids)
@@ -47,7 +47,7 @@ pub async fn add(
     let args = result.args::<1>(text);
 
     let user: UserModel = match args {
-        Some([a1]) => {
+        ArgsResult::Some([a1], _) => {
             let Ok(found_user) = user_ind
                 .search_user(&text[a1])
                 .await
@@ -57,15 +57,21 @@ pub async fn add(
             found_user
         }
         // SAFETY: TBA will never return None in message.from().
-        None => unsafe {
+        ArgsResult::None => unsafe {
             if let Some(r) = message.reply_to_message() {
                 r.from()
                     .unwrap_unchecked()
                     .into()
+            } else if message
+                .business_connection_id()
+                .is_some()
+            {
+                message.chat().into()
             } else {
                 return Ok(());
             }
         },
+        ArgsResult::Unk => return Ok(()),
     };
 
     let model = agent::ActiveModel {
@@ -113,9 +119,9 @@ pub async fn add_spam(
         message
             .from()
             .unwrap_unchecked()
-            .id
-            .into()
-    };
+    }
+    .id
+    .into();
 
     let Ok(exists) = Agent::find_by_id(my_ids)
         .exists(&db)
@@ -139,7 +145,7 @@ pub async fn add_spam(
     let args = result.args::<1>(text);
 
     let user: UserModel = match args {
-        Some([a1]) => {
+        ArgsResult::Some([a1], _) => {
             let Ok(found_user) = user_ind
                 .search_user(&text[a1])
                 .await
@@ -149,15 +155,21 @@ pub async fn add_spam(
             found_user
         }
         // SAFETY: TBA will never return None in message.from().
-        None => unsafe {
+        ArgsResult::None => unsafe {
             if let Some(r) = message.reply_to_message() {
                 r.from()
                     .unwrap_unchecked()
                     .into()
+            } else if message
+                .business_connection_id()
+                .is_some()
+            {
+                message.chat().into()
             } else {
                 return Ok(());
             }
         },
+        ArgsResult::Unk => return Ok(()),
     };
 
     let model = agent::ActiveModel {
@@ -202,13 +214,12 @@ pub async fn delete(
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
     // SAFETY: TBA will never return None in message.from().
-    let my_ids: UserIds = unsafe {
+    let my_ids = unsafe {
         message
             .from()
             .unwrap_unchecked()
-            .id
-            .into()
-    };
+    }
+    .id;
 
     let Ok(exists) = Agent::find_by_id(my_ids)
         .exists(&db)
@@ -232,7 +243,7 @@ pub async fn delete(
     let args = result.args::<1>(text);
 
     let user: UserModel = match args {
-        Some([a1]) => {
+        ArgsResult::Some([a1], _) => {
             let Ok(found_user) = user_ind
                 .search_user(&text[a1])
                 .await
@@ -242,15 +253,21 @@ pub async fn delete(
             found_user
         }
         // SAFETY: TBA will never return None in message.from().
-        None => unsafe {
+        ArgsResult::None => unsafe {
             if let Some(r) = message.reply_to_message() {
                 r.from()
                     .unwrap_unchecked()
                     .into()
+            } else if message
+                .business_connection_id()
+                .is_some()
+            {
+                message.chat().into()
             } else {
                 return Ok(());
             }
         },
+        ArgsResult::Unk => return Ok(()),
     };
 
     let res = Agent::delete_by_id(user.ids)

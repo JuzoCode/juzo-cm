@@ -6,7 +6,9 @@ use juzo_core::{
         prelude::{Agent, BlockSystem},
     },
 };
-use sea_orm::{DbConn, EntityTrait, SelectExt, Set, sea_query::OnConflict};
+use sea_orm::{
+    ConnectionTrait, DbConn, EntityTrait, SelectExt, Set, raw_sql, sea_query::OnConflict,
+};
 
 use super::super::*;
 
@@ -21,9 +23,9 @@ pub async fn add(
         message
             .from()
             .unwrap_unchecked()
-            .id
-            .into()
-    };
+    }
+    .id
+    .into();
 
     let Ok(exists) = Agent::find_by_id(my_ids)
         .exists(&db)
@@ -48,7 +50,7 @@ pub async fn add(
     let comment = &text[result.first_line];
 
     let user: UserModel = match args {
-        Some([a1]) => {
+        ArgsResult::Some([a1], _) => {
             let Ok(found_user) = user_ind
                 .search_user(&text[a1])
                 .await
@@ -58,7 +60,7 @@ pub async fn add(
             found_user
         }
         // SAFETY: TBA will never return None in message.from().
-        None => unsafe {
+        ArgsResult::None => unsafe {
             if let Some(r) = message.reply_to_message() {
                 r.from()
                     .unwrap_unchecked()
@@ -72,6 +74,7 @@ pub async fn add(
                 return Ok(());
             }
         },
+        ArgsResult::Unk => return Ok(()),
     };
 
     if comment
@@ -123,13 +126,12 @@ async fn delete_core(
     takeaway: bool,
 ) -> HandlerResult<()> {
     // SAFETY: TBA will never return None in message.from().
-    let my_ids: UserIds = unsafe {
+    let my_ids = unsafe {
         message
             .from()
             .unwrap_unchecked()
-            .id
-            .into()
-    };
+    }
+    .id;
 
     let Ok(exists) = Agent::find_by_id(my_ids)
         .exists(&db)
@@ -153,7 +155,7 @@ async fn delete_core(
     let args = result.args::<1>(text);
 
     let user: UserModel = match args {
-        Some([a1]) => {
+        ArgsResult::Some([a1], _) => {
             let Ok(found_user) = user_ind
                 .search_user(&text[a1])
                 .await
@@ -163,7 +165,7 @@ async fn delete_core(
             found_user
         }
         // SAFETY: TBA will never return None in message.from().
-        None => unsafe {
+        ArgsResult::None => unsafe {
             if let Some(r) = message.reply_to_message() {
                 r.from()
                     .unwrap_unchecked()
@@ -177,20 +179,58 @@ async fn delete_core(
                 return Ok(());
             }
         },
+        ArgsResult::Unk => return Ok(()),
     };
 
-    let res = BlockSystem::delete_by_id((user.ids, BlockFunc::AntiSpam))
-        .exec(&db)
-        .await;
+    let res = db
+        .query_one_raw(raw_sql!(
+            Postgres,
+            r#"
+            DELETE FROM a3
+            WHERE user_ids = {user.ids}
+                AND function = 2
+            RETURNING reason
+            "#
+        ))
+        .await
+        .and_then(|row| match row {
+            Some(row) => row
+                .try_get::<String>("", "reason")
+                .map(Some),
+            None => Ok(None),
+        });
 
     match res {
-        Ok(r) if r.rows_affected > 0 => {
+        Ok(Some(r)) if !takeaway => {
+            let _ = db
+                .execute_raw(raw_sql!(
+                    Postgres,
+                    r#"
+                    INSERT INTO a2 (
+                        user_ids,
+                        agents_ids,
+                        reason,
+                        function
+                    )
+                    VALUES ({user.ids}, {my_ids}, {r}, 1)
+                    "#
+                ))
+                .await;
+
             bot.send(JuzoAnswer::message(&message).text(format!(
-                "{0} <a href='{1}'>{2}</a> вынесен из «Juzo | Anti-Spam»{3}",
+                "{0} <a href='{1}'>{2}</a> вынесен из «Juzo | Ignore System»",
+                smail_tick(true),
+                user.link(),
+                user.full_name()
+            )))
+            .await?;
+        }
+        Ok(Some(_)) => {
+            bot.send(JuzoAnswer::message(&message).text(format!(
+                "{0} <a href='{1}'>{2}</a> вынесен из «Juzo | Anti-Spam» без пометки о выносе",
                 smail_tick(true),
                 user.link(),
                 user.full_name(),
-                ["", " без пометки о выносе"][takeaway as usize]
             )))
             .await?;
         }

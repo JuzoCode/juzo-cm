@@ -1,5 +1,5 @@
 use juzo_core::{
-    application::{UserIds, UserIndex, UserModel},
+    application::{UserIndex, UserModel},
     db::agent::prelude::Agent,
 };
 use sea_orm::{DbConn, EntityTrait, SelectExt};
@@ -14,13 +14,12 @@ pub async fn info(
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
     // SAFETY: TBA will never return None in message.from().
-    let my_ids: UserIds = unsafe {
+    let my_ids = unsafe {
         message
             .from()
             .unwrap_unchecked()
-            .id
-            .into()
-    };
+    }
+    .id;
 
     let Ok(exists) = Agent::find_by_id(my_ids)
         .exists(&db)
@@ -44,7 +43,7 @@ pub async fn info(
     let args = result.args::<1>(text);
 
     let user: UserModel = match args {
-        Some([a1]) => {
+        ArgsResult::Some([a1], _) => {
             let Ok(found_user) = user_ind
                 .search_user(&text[a1])
                 .await
@@ -54,7 +53,7 @@ pub async fn info(
             found_user
         }
         // SAFETY: TBA will never return None in message.from().
-        None => unsafe {
+        ArgsResult::None => unsafe {
             if let Some(r) = message.reply_to_message() {
                 r.from()
                     .unwrap_unchecked()
@@ -63,6 +62,7 @@ pub async fn info(
                 return Ok(());
             }
         },
+        ArgsResult::Unk => return Ok(()),
     };
 
     let _ = user;

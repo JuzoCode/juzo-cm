@@ -95,33 +95,6 @@ pub async fn sms_ids(
     Ok(())
 }
 
-pub async fn creator_premium_pack(
-    bot: Bot,
-    message: Message,
-    Extension(result): Extension<CommandResult>,
-) -> HandlerResult<()> {
-    // SAFETY: The Command filter will not allow processing of a "None" value.
-    let text = unsafe {
-        message
-            .text()
-            .or_else(|| message.caption())
-            .unwrap_unchecked()
-    };
-    let Some([a1]) = result.args::<1>(text) else {
-        return Ok(());
-    };
-
-    let text = match text[a1].parse::<u64>() {
-        Ok(num) => format!("🆔 ID создателя пака: <code>@{0}</code>", num >> 32),
-        Err(err) => format!("{0} Ошибка при разборе ID: {err}", smail_pensil(true)),
-    };
-
-    bot.send(JuzoAnswer::message(&message).text(text))
-        .await?;
-
-    Ok(())
-}
-
 pub async fn show_thread_link(bot: Bot, message: Message) -> HandlerResult<()> {
     let Some(reply) = message.reply_to_message() else {
         bot.send(
@@ -153,30 +126,6 @@ pub async fn show_thread_link(bot: Bot, message: Message) -> HandlerResult<()> {
     //     format!(
     //         "<tg-emoji emoji-id='5229057940543005628'>🧵</tg-emoji> Отдельная ветка <a href='{url_string}'>этого</a> сообщения."
     //     ),
-
-    Ok(())
-}
-
-#[cfg(debug_assertions)]
-pub async fn message_reply(bot: Bot, message: Message) -> HandlerResult<()> {
-    if let Some(contents) = message.forward_origin() {
-        bot.send(
-            JuzoAnswer::message(&message)
-                .text(format!("<blockquote expandable>{contents:?}</blockquote>")),
-        )
-        .await?;
-        return Ok(());
-    }
-
-    let contents = message
-        .reply_to_message()
-        .unwrap_or_else(|| &message);
-
-    bot.send(
-        JuzoAnswer::message(&message)
-            .text(format!("<blockquote expandable>{contents:?}</blockquote>")),
-    )
-    .await?;
 
     Ok(())
 }

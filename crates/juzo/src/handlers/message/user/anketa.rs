@@ -28,7 +28,7 @@ pub async fn show(
     let args = result.args::<1>(text);
 
     let user: UserModel = match args {
-        Some([a1]) => {
+        ArgsResult::Some([a1], _) => {
             let Ok(found_user) = user_ind
                 .search_user(&text[a1])
                 .await
@@ -38,7 +38,7 @@ pub async fn show(
             found_user
         }
         // SAFETY: TBA will never return None in message.from().
-        None => unsafe {
+        ArgsResult::None => unsafe {
             if let Some(r) = message.reply_to_message() {
                 r.from()
                     .unwrap_unchecked()
@@ -55,8 +55,10 @@ pub async fn show(
                     .into()
             }
         },
+        ArgsResult::Unk => return Ok(()),
     };
 
+    // проблема с show
     let Ok(Some(anketa)) = UserAnketa::find_by_id(user.ids)
         .one(&db)
         .await
@@ -102,7 +104,7 @@ pub async fn first_appearance(
     let args = result.args::<1>(text);
 
     let user: UserModel = match args {
-        Some([a1]) => {
+        ArgsResult::Some([a1], _) => {
             let Ok(found_user) = user_ind
                 .search_user(&text[a1])
                 .await
@@ -112,7 +114,7 @@ pub async fn first_appearance(
             found_user
         }
         // SAFETY: TBA will never return None in message.from().
-        None => unsafe {
+        ArgsResult::None => unsafe {
             if let Some(r) = message.reply_to_message() {
                 r.from()
                     .unwrap_unchecked()
@@ -129,8 +131,10 @@ pub async fn first_appearance(
                     .into()
             }
         },
+        ArgsResult::Unk => return Ok(()),
     };
 
+    // Слышали про английский? -- Нет
     let added = UserAnketa::find_by_id(user.ids)
         .select_only()
         .column(anketa::Column::Added)
@@ -149,7 +153,7 @@ pub async fn first_appearance(
         )
     } else {
         let now = Utc::now();
-        let time = TimeFormatted::new(added, now);
+        let time = TimeFormatted::from(added, now);
 
         format!(
             "🗓 Дата первого появления <a href='{0}'>{1}</a> во вселенной Джузо: {2} ({time})",

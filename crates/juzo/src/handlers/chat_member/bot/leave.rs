@@ -8,7 +8,7 @@ pub async fn yes(
     bot: Bot,
     member: ChatMemberUpdated,
     Extension(db): Extension<DbConn>,
-) -> HandlerResult<()> {
+) -> HandlerResult {
     let chat_ids = member.chat.id();
 
     let limit = match db
@@ -19,6 +19,7 @@ pub async fn yes(
                 SELECT 1
                 FROM c
                 WHERE skip = false
+                    and bot_admin = true
                 OFFSET 19
                 LIMIT 1
             ) AS allowed
@@ -35,7 +36,7 @@ pub async fn yes(
     };
 
     if !limit {
-        return Ok(());
+        return Ok(telers::event::EventReturn::Skip);
     }
 
     let _ = Chat::delete_by_id(chat_ids)
@@ -45,5 +46,5 @@ pub async fn yes(
     bot.send(LeaveChat::new(chat_ids))
         .await?;
 
-    Ok(())
+    Ok(telers::event::EventReturn::Finish)
 }

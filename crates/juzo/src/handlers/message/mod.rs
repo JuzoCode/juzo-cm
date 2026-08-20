@@ -1,4 +1,7 @@
-pub use juzo_core::{application::JuzoAnswer, filters::CommandResult};
+pub use juzo_core::{
+    application::JuzoAnswer,
+    filters::{ArgsResult, CommandResult},
+};
 use telers::Router;
 pub use telers::types::Message;
 

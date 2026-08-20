@@ -1,5 +1,5 @@
 use juzo_core::{
-    application::{UserIndex, UserModel},
+    application::{ParseTgLink, UserIndex, UserModel},
     common::emojis::smail_tick,
 };
 use sea_orm::DbConn;
@@ -22,51 +22,56 @@ pub async fn add(
             .or_else(|| message.caption())
             .unwrap_unchecked()
     };
-    let args = &text[result.args];
+    let args = result.args::<17>(text);
 
-    let (tag, user): (&str, UserModel) = match (args.is_empty(), message.reply_to_message()) {
-        (_, Some(reply)) => {
-            if args.is_empty()
-                || args
-                    .chars()
-                    .nth(16)
-                    .is_some()
-            {
-                return Ok(());
-            }
+    let (tag, user): (&str, UserModel) = match args {
+        ArgsResult::Some(args, len) => {
+            let last = args[len - 1];
 
-            // SAFETY: Branching does not allow processing the None.
-            unsafe {
-                (
-                    args,
+            if let Some(link) = ParseTgLink::new(&text[last]) {
+                let tag = &text[args[0].start..last.start];
+                if tag.is_empty()
+                    || tag
+                        .chars()
+                        .nth(16)
+                        .is_some()
+                {
+                    return Ok(());
+                }
+
+                let Ok(user) = user_ind
+                    .fetch_user(link)
+                    .await
+                else {
+                    return Ok(());
+                };
+
+                (tag, user)
+            } else {
+                let tag = &text[args[0].start..];
+                if tag.is_empty()
+                    || tag
+                        .chars()
+                        .nth(16)
+                        .is_some()
+                {
+                    return Ok(());
+                }
+
+                let Some(reply) = message.reply_to_message() else {
+                    return Ok(());
+                };
+
+                // SAFETY: TBA will never return None in message.from().
+                let user = unsafe {
                     reply
                         .from()
                         .unwrap_unchecked()
-                        .into(),
-                )
-            }
-        }
-        (false, _) => {
-            let (tag, user_line) = args
-                .rsplit_once(char::is_whitespace)
-                .unwrap_or(("", args));
-            if tag.is_empty()
-                || tag
-                    .chars()
-                    .nth(16)
-                    .is_some()
-            {
-                return Ok(());
-            }
+                }
+                .into();
 
-            let Ok(found_user) = user_ind
-                .search_user(user_line)
-                .await
-            else {
-                return Ok(());
-            };
-
-            (tag, found_user)
+                (tag, user)
+            }
         }
         _ => return Ok(()),
     };
@@ -103,7 +108,7 @@ pub async fn delete(
     let args = result.args::<1>(text);
 
     let user: UserModel = match args {
-        Some([a1]) => {
+        ArgsResult::Some([a1], _) => {
             let Ok(found_user) = user_ind
                 .search_user(&text[a1])
                 .await
@@ -113,7 +118,7 @@ pub async fn delete(
             found_user
         }
         // SAFETY: TBA will never return None in message.from().
-        None => unsafe {
+        ArgsResult::None => unsafe {
             if let Some(r) = message.reply_to_message() {
                 r.from()
                     .unwrap_unchecked()
@@ -122,6 +127,7 @@ pub async fn delete(
                 return Ok(());
             }
         },
+        ArgsResult::Unk => return Ok(()),
     };
 
     bot.send(SetChatMemberTag::new(message.chat().id(), user.ids))

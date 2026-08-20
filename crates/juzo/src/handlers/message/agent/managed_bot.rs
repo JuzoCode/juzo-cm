@@ -24,13 +24,12 @@ pub async fn info(
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
     // SAFETY: TBA will never return None in message.from().
-    let my_ids: UserIds = unsafe {
+    let my_ids = unsafe {
         message
             .from()
             .unwrap_unchecked()
-            .id
-            .into()
-    };
+    }
+    .id;
 
     let Ok(exists) = Agent::find_by_id(my_ids)
         .exists(&db)
@@ -54,7 +53,7 @@ pub async fn info(
     let args = result.args::<1>(text);
 
     let user: UserModel = match args {
-        Some([a1]) => {
+        ArgsResult::Some([a1], _) => {
             let Ok(found_user) = user_ind
                 .search_user(&text[a1])
                 .await
@@ -64,7 +63,7 @@ pub async fn info(
             found_user
         }
         // SAFETY: TBA will never return None in message.from().
-        None => unsafe {
+        ArgsResult::None => unsafe {
             if let Some(r) = message.reply_to_message() {
                 r.from()
                     .unwrap_unchecked()
@@ -78,6 +77,7 @@ pub async fn info(
                 return Ok(());
             }
         },
+        ArgsResult::Unk => return Ok(()),
     };
 
     let Ok(data) = ManagedBot::find_by_id(user.ids)
@@ -136,9 +136,10 @@ pub async fn set_official(
         message
             .from()
             .unwrap_unchecked()
-            .id
-            .into()
-    };
+    }
+    .id
+    .into();
+
     if !my_ids.is_creator_bot() {
         return Ok(());
     }
@@ -150,7 +151,7 @@ pub async fn set_official(
             .or_else(|| message.caption())
             .unwrap_unchecked()
     };
-    let Some([a1]) = result.args::<1>(text) else {
+    let ArgsResult::Some([a1], _) = result.args::<1>(text) else {
         return Ok(());
     };
 
@@ -211,9 +212,9 @@ pub async fn delete(
         message
             .from()
             .unwrap_unchecked()
-            .id
-            .into()
-    };
+    }
+    .id
+    .into();
 
     let Ok(exists) = Agent::find_by_id(my_ids)
         .exists(&db)
@@ -237,7 +238,7 @@ pub async fn delete(
     let args = result.args::<1>(text);
 
     let user: UserModel = match args {
-        Some([a1]) => {
+        ArgsResult::Some([a1], _) => {
             let Ok(found_user) = user_ind
                 .search_user(&text[a1])
                 .await
@@ -247,7 +248,7 @@ pub async fn delete(
             found_user
         }
         // SAFETY: TBA will never return None in message.from().
-        None => unsafe {
+        ArgsResult::None => unsafe {
             if let Some(r) = message.reply_to_message() {
                 r.from()
                     .unwrap_unchecked()
@@ -261,6 +262,7 @@ pub async fn delete(
                 return Ok(());
             }
         },
+        ArgsResult::Unk => return Ok(()),
     };
 
     let delete_condition = Condition::all()
@@ -304,13 +306,12 @@ pub async fn changing_creator(
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
     // SAFETY: TBA will never return None in message.from().
-    let my_ids: UserIds = unsafe {
+    let my_ids = unsafe {
         message
             .from()
             .unwrap_unchecked()
-            .id
-            .into()
-    };
+    }
+    .id;
 
     let Ok(exists) = Agent::find_by_id(my_ids)
         .exists(&db)
@@ -336,7 +337,7 @@ pub async fn changing_creator(
     // тут два аргумента [a1: пользователь, a2: бот] или [a1: пользователь] и реплай бот
 
     let user: UserModel = match args {
-        Some([a1]) => {
+        ArgsResult::Some([a1], _) => {
             let Ok(found_user) = user_ind
                 .search_user(&text[a1])
                 .await
@@ -346,7 +347,7 @@ pub async fn changing_creator(
             found_user
         }
         // SAFETY: TBA will never return None in message.from().
-        None => unsafe {
+        ArgsResult::None => unsafe {
             if let Some(r) = message.reply_to_message() {
                 r.from()
                     .unwrap_unchecked()
@@ -360,6 +361,7 @@ pub async fn changing_creator(
                 return Ok(());
             }
         },
+        ArgsResult::Unk => return Ok(()),
     };
 
     let res = ManagedBot::update(managed::ActiveModel {

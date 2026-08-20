@@ -20,7 +20,7 @@ pub async fn add(
             .or_else(|| message.caption())
             .unwrap_unchecked()
     };
-    let Some([a1, a2]) = result.args::<2>(text) else {
+    let ArgsResult::Some([a1, a2], _) = result.args::<2>(text) else {
         return Ok(());
     };
 
@@ -75,7 +75,7 @@ pub async fn delete(
             .or_else(|| message.caption())
             .unwrap_unchecked()
     };
-    let Some([a1]) = result.args::<1>(text) else {
+    let ArgsResult::Some([a1], _) = result.args::<1>(text) else {
         return Ok(());
     };
 

@@ -3,6 +3,7 @@ use telers::{
     Filter, Router, enums::ChatType, event::telegram::Handler, filters::ChatType as FilterChatType,
 };
 
+mod ban;
 mod chat_bag;
 mod chat_description;
 mod chat_name;
@@ -20,6 +21,12 @@ pub fn routers() -> Router {
     Router::new("router MODER connect")
         .on_message(|observer| {
             observer.registers([
+                Handler::new(ban::no)
+                    .filter(FilterChatType::one(ChatType::Private).invert())
+                    .filter(Command::many(&["разбан"]).no_prefix()),
+                Handler::new(ban::yes)
+                    .filter(FilterChatType::one(ChatType::Private).invert())
+                    .filter(Command::many(&["бан"]).no_prefix()),
                 Handler::new(tag::add)
                     .filter(FilterChatType::one(ChatType::Private).invert())
                     .filter(Command::many(&["+тг тег", "+тг тэг"]).no_prefix()),
