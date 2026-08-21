@@ -1,22 +1,5 @@
-use tokio::time::{sleep, Duration};
-use std::fmt::Write;
-
-use teloxide::sugar::request::RequestReplyExt;
-
-use crate::{
-    juzo_cm::{
-        bot::regexp::RegexpResult,
-        user::{
-            game::JuzoGame,
-            users::{UserIndex, UserIds},
-        },
-        juzo::JuzoChatManager,
-    },
-    common::emojis::SMAIL_PENSIL,
-};
-
 /// TODO
-pub async fn cube(
+pub async fn start(
     bot: Bot,
     message: Message,
     Extension(_db): Extension<DbConn>,

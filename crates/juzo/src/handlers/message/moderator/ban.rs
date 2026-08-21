@@ -104,6 +104,7 @@ pub async fn yes(
     }
     .into();
     let chat_ids = message.chat().id();
+    let sms_ids = message.message_id();
 
     let now = Utc::now();
 
@@ -140,6 +141,7 @@ pub async fn yes(
                 chat_ids,
                 is_ban,
                 moder_ids,
+                sms_ids,
                 reason,
                 added,
                 removed
@@ -149,6 +151,7 @@ pub async fn yes(
                 {chat_ids},
                 true,
                 {iam.ids},
+                {sms_ids},
                 {reason},
                 {now_ts},
                 {until}
@@ -156,6 +159,7 @@ pub async fn yes(
             ON CONFLICT (user_ids, chat_ids, is_ban)
             DO UPDATE SET
                 moder_ids = EXCLUDED.moder_ids,
+                sms_ids = EXCLUDED.sms_ids,
                 reason = EXCLUDED.reason,
                 added = EXCLUDED.added,
                 removed = EXCLUDED.removed
@@ -169,28 +173,27 @@ pub async fn yes(
 
     let mut text = String::with_capacity(2048);
 
-    write!(text, "🔴 <a href='{0}'>{1}</a> получает бан ", user.link(), user.full_name()).unwrap();
+    let _ = write!(text, "🔴 <a href='{0}'>{1}</a> получает бан ", user.link(), user.full_name());
 
     if until == 0 {
-        text.push_str("навсегда")
+        text.push_str("навсегда");
     } else {
-        write!(text, "на {0}", TimeFormatted::until(until, now)).unwrap()
+        let _ = write!(text, "на {0}", TimeFormatted::until(until, now));
     }
 
-    if tg_ban {
-        text.push_str(", <b>без тг-бана</b>")
+    if !tg_ban {
+        text.push_str(", <b>без тг-бана</b>");
     }
 
-    writeln!(
+    let _ = writeln!(
         text,
-        ".<blockquote expandable><b>Модератор:</b> <a href='{0}'>{1}</a>",
+        ".<blockquote expandable><b>Модератор: </b><a href='{0}'>{1}</a>",
         iam.link(),
         iam.full_name()
-    )
-    .unwrap();
+    );
 
     if !reason.is_empty() {
-        text.push_str("<b>причина:<b>");
+        text.push_str("<b>Причина: <b>");
         text.push_str(reason);
     }
 

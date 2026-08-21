@@ -1,5 +1,6 @@
 use core::fmt::Write;
 
+use chrono::{DateTime, Utc};
 use juzo_core::{
     application::{UserIndex, UserModel},
     common::emojis::smail_pensil,
@@ -7,6 +8,7 @@ use juzo_core::{
         agent::{BlockFunc, block_system, prelude::BlockSystem},
         chat::block::BlockInfo,
     },
+    domain::TimeFormatted,
 };
 use sea_orm::{DbConn, EntityTrait, FromQueryResult, QuerySelect, raw_sql};
 
@@ -56,24 +58,25 @@ pub async fn info(
     let Ok(Some(info)) = BlockInfo::find_by_statement(raw_sql!(
         Postgres,
         r#"
-            SELECT
-                c8.rank,
-                c8.added,
-                c8.removed,
-                c8.reason AS ban_reason,
-                c8.moder_ids,
-                a3.reason AS spam_reason
-            FROM c8
-            FULL JOIN a3
-                ON a3.user_ids = c8.user_ids
-                AND a3.function = 2
-            WHERE
-                (c8.user_ids = {user.ids}
-                AND c8.chat_ids = {chat_ids}
-                AND c8.is_ban = true)
-                OR
-                (a3.user_ids = {user.ids}
-                AND a3.function = 2)
+        SELECT
+            c8.rank,
+            c8.added,
+            c8.removed,
+            c8.sms_ids,
+            c8.reason AS ban_reason,
+            c8.moder_ids,
+            a3.reason AS spam_reason
+        FROM c8
+        FULL JOIN a3
+            ON a3.user_ids = c8.user_ids
+            AND a3.function = 2
+        WHERE
+            (c8.user_ids = {user.ids}
+            AND c8.chat_ids = {chat_ids}
+            AND c8.is_ban = true)
+            OR
+            (a3.user_ids = {user.ids}
+            AND a3.function = 2)
             "#
     ))
     .one(&db)
@@ -93,20 +96,50 @@ pub async fn info(
     let mut text =
         format!("🗓 <b>Список наказаний <a href='{0}'>{1}</a>.</b>", user.link(), user.full_name());
     if let Some(reason) = info.spam_reason {
-        write!(text, "\n* Находится в базе <b>«Джузо-антиспам»</b>").unwrap();
+        text.push_str("\n* Находится в базе <b>«Джузо-антиспам»</b>");
 
         if !reason.is_empty() {
-            write!(text, ".<blockquote expandable><b>Причина: <b>{reason}</blockquote>").unwrap();
+            let _ = write!(text, ".<blockquote expandable><b>Причина: </b>{reason}</blockquote>");
         }
     }
 
     if let Some(reason) = info.ban_reason {
-        write!(
-            text,
-            "\n\n{:?}, {:?}, {:?}, \"{}\", {:?}",
-            info.rank, info.added, info.removed, reason, info.moder_ids
+        let removed = unsafe {
+            info.removed
+                .unwrap_unchecked()
+        };
+        let added = DateTime::<Utc>::from_timestamp(
+            unsafe {
+                info.added
+                    .unwrap_unchecked()
+            },
+            0,
         )
-        .unwrap();
+        .unwrap_or_default();
+
+        if removed == 0 {
+            text.push_str("\n\n<b>❗️ Забанен навсегда");
+        } else {
+            let _ = write!(text, "\n\n<b>❗️ Забанен на {0}", TimeFormatted::until(removed, added));
+        }
+
+        unsafe {
+            let _ = write!(
+                text,
+                " ({0})</b><blockquote expandable><b>Модератор: </b>{1}\n<b>Когда: </b>{2}",
+                info.rank
+                    .unwrap_unchecked(),
+                info.moder_ids
+                    .unwrap_unchecked(),
+                added.format("%d.%m.%Y")
+            );
+        }
+
+        if !reason.is_empty() {
+            let _ = write!(text, "\n<b>Причина: </b>{reason}");
+        }
+
+        text.push_str("</blockquote>")
     }
 
     bot.send(JuzoAnswer::message(&message).text(text))
@@ -179,7 +212,7 @@ pub async fn scam(
     if !reason.is_empty() {
         let _ = write!(text, "<b>Причина:</b> {reason}\n<b>Добавлен:</b> {added}</blockquote>");
     } else {
-        let _ = write!(text, "<b>Добавлен:</b> {added}</blockquote>",);
+        let _ = write!(text, "<b>Добавлен:</b> {added}</blockquote>");
     }
 
     bot.send(JuzoAnswer::message(&message).text(text))
