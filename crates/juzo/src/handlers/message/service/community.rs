@@ -1,8 +1,8 @@
 use juzo_core::db::chat::{chat, prelude::Chat};
-use sea_orm::{ColumnTrait, DbConn, EntityTrait, QueryFilter, sea_query::Expr};
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, sea_query::Expr};
 use telers::types::{MessageCommunityChatAdded, MessageCommunityChatRemoved};
 
-use super::super::{Extension, HandlerResult};
+use super::super::{DbConn, Extension, HandlerResult};
 
 pub async fn added(
     message: MessageCommunityChatAdded,
