@@ -3,7 +3,7 @@ use juzo_core::{
     common::emojis::{smail_pensil, smail_tick},
     db::agent::{agent, prelude::Agent},
 };
-use sea_orm::{DbConn, EntityTrait, SelectExt, Set, sea_query::OnConflict};
+use sea_orm::{EntityTrait, SelectExt, Set, sea_query::OnConflict};
 use telers::types::ReplyParameters;
 
 use super::super::*;

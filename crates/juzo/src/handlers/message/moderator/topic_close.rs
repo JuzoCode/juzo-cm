@@ -6,9 +6,18 @@ use super::super::*;
 pub async fn set(
     bot: Bot,
     message: Message,
+    Extension(db): Extension<DbConn>,
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
     if !result.args.is_empty() {
+        return Ok(());
+    }
+
+    let module = ModuleChecker::new(&bot, &db);
+    let access = module
+        .check::<22>(ModuleAccess::M(&message))
+        .await;
+    if !access {
         return Ok(());
     }
 

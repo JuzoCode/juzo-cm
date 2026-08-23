@@ -5,7 +5,7 @@ use telers::{
     filters::ChatMemberUpdated as MemberFilter,
 };
 
-pub use super::{Bot, Extension, HandlerResult};
+pub use super::{Bot, DbConn, Extension, HandlerResult};
 
 mod bot;
 mod user;

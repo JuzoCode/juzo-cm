@@ -1,5 +1,5 @@
 use juzo_core::db::chat::prelude::Chat;
-use sea_orm::{ConnectionTrait, DatabaseBackend, DbConn, EntityTrait, Statement};
+use sea_orm::{ConnectionTrait, DatabaseBackend, EntityTrait, Statement};
 use telers::methods::LeaveChat;
 
 use super::super::*;

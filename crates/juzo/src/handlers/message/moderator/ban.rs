@@ -9,9 +9,13 @@ use juzo_core::{
     },
     db::chat::prelude::ChatBlock,
     domain::TimeFormatted,
+    middlewares::inner::MemberTraffic,
 };
-use sea_orm::{ConnectionTrait, DbConn, EntityTrait, raw_sql};
-use telers::methods::{BanChatMember, GetChatMember, UnbanChatMember};
+use sea_orm::{ConnectionTrait, EntityTrait, raw_sql};
+use telers::{
+    methods::{BanChatMember, GetChatMember, UnbanChatMember},
+    types::{ChatMemberLeft, User},
+};
 
 use super::super::*;
 
@@ -22,6 +26,7 @@ pub async fn yes(
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
     let user_ind = UserIndex::new(&bot, &db);
+    let module = ModuleChecker::new(&bot, &db);
 
     // SAFETY: The Command filter will not allow processing of a "None" value.
     let text = unsafe {
@@ -83,6 +88,13 @@ pub async fn yes(
         ArgsResult::Unk => return Ok(()),
     };
 
+    let access = module
+        .check::<9>(ModuleAccess::M(&message))
+        .await;
+    if !access {
+        return Ok(());
+    }
+
     if reason
         .chars()
         .nth(128)
@@ -127,6 +139,14 @@ pub async fn yes(
         return Ok(());
     }
 
+    let member = bot
+        .send(GetChatMember::new(chat_ids, user.ids))
+        .await
+        .unwrap_or_else(|_| {
+            ChatMemberLeft::new(User::new(392851555, false, "Hello, Juzo Code")).into()
+        });
+
+    let to_return = MemberTraffic::state(&member) == 1;
     let tg_ban = bot
         .send(BanChatMember::new(chat_ids, user.ids))
         .await
@@ -144,7 +164,8 @@ pub async fn yes(
                 sms_ids,
                 reason,
                 added,
-                removed
+                removed,
+                to_return
             )
             VALUES (
                 {user.ids},
@@ -154,7 +175,8 @@ pub async fn yes(
                 {sms_ids},
                 {reason},
                 {now_ts},
-                {until}
+                {until},
+                {to_return}
             )
             ON CONFLICT (user_ids, chat_ids, is_ban)
             DO UPDATE SET
@@ -212,6 +234,7 @@ pub async fn no(
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
     let user_ind = UserIndex::new(&bot, &db);
+    let module = ModuleChecker::new(&bot, &db);
 
     // SAFETY: The Command filter will not allow processing of a "None" value.
     let text = unsafe {
@@ -244,6 +267,13 @@ pub async fn no(
         },
         ArgsResult::Unk => return Ok(()),
     };
+
+    let access = module
+        .check::<10>(ModuleAccess::M(&message))
+        .await;
+    if !access {
+        return Ok(());
+    }
 
     let chat_ids = message.chat().id();
 

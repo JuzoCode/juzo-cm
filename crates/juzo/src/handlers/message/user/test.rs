@@ -12,9 +12,18 @@ use super::super::*;
 pub async fn ping(
     bot: Bot,
     message: Message,
+    Extension(db): Extension<DbConn>,
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
     if !result.args.is_empty() {
+        return Ok(());
+    }
+
+    let module = ModuleChecker::new(&bot, &db);
+    let access = module
+        .check::<0>(ModuleAccess::M(&message))
+        .await;
+    if !access {
         return Ok(());
     }
 
@@ -77,9 +86,18 @@ pub async fn time_sms(
 pub async fn sms_ids(
     bot: Bot,
     message: Message,
+    Extension(db): Extension<DbConn>,
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
     if !result.args.is_empty() {
+        return Ok(());
+    }
+
+    let module = ModuleChecker::new(&bot, &db);
+    let access = module
+        .check::<0>(ModuleAccess::M(&message))
+        .await;
+    if !access {
         return Ok(());
     }
 
@@ -95,7 +113,24 @@ pub async fn sms_ids(
     Ok(())
 }
 
-pub async fn show_thread_link(bot: Bot, message: Message) -> HandlerResult<()> {
+pub async fn show_thread_link(
+    bot: Bot,
+    message: Message,
+    Extension(db): Extension<DbConn>,
+    Extension(result): Extension<CommandResult>,
+) -> HandlerResult<()> {
+    if !result.args.is_empty() {
+        return Ok(());
+    }
+
+    let module = ModuleChecker::new(&bot, &db);
+    let access = module
+        .check::<0>(ModuleAccess::M(&message))
+        .await;
+    if !access {
+        return Ok(());
+    }
+
     let Some(reply) = message.reply_to_message() else {
         bot.send(
             JuzoAnswer::message(&message).text(format!(

@@ -2,7 +2,6 @@ use juzo_core::{
     application::{UserIndex, UserModel},
     common::emojis::smail_tick,
 };
-use sea_orm::DbConn;
 
 use super::super::*;
 
@@ -13,6 +12,7 @@ pub async fn show(
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
     let user_ind = UserIndex::new(&bot, &db);
+    let module = ModuleChecker::new(&bot, &db);
 
     // SAFETY: The Command filter will not allow processing of a "None" value.
     let text = unsafe {
@@ -53,6 +53,13 @@ pub async fn show(
         },
         ArgsResult::Unk => return Ok(()),
     };
+
+    let access = module
+        .check::<34>(ModuleAccess::M(&message))
+        .await;
+    if !access {
+        return Ok(());
+    }
 
     bot.send(JuzoAnswer::message(&message).text(format!(
         "{0} <a href='{1}'>{2}</a>: <code>@{3}</code>",

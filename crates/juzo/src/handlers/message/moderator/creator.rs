@@ -2,7 +2,6 @@ use juzo_core::{
     // db::user::{profile, prelude::UserProfile},
     common::emojis::smail_tick,
 };
-use sea_orm::DbConn;
 
 use super::super::*;
 
@@ -18,7 +17,7 @@ pub async fn repair(
     }
 
     // SAFETY: TBA will never return None in message.from().
-    let _user = unsafe {
+    let _iam = unsafe {
         message
             .from()
             .unwrap_unchecked()

@@ -6,9 +6,7 @@ use juzo_core::{
         prelude::{Agent, BlockSystem},
     },
 };
-use sea_orm::{
-    ConnectionTrait, DbConn, EntityTrait, SelectExt, Set, raw_sql, sea_query::OnConflict,
-};
+use sea_orm::{ConnectionTrait, EntityTrait, SelectExt, Set, raw_sql, sea_query::OnConflict};
 
 use super::super::*;
 

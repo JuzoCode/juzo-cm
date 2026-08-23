@@ -7,7 +7,7 @@ use juzo_core::{
     },
     db::user::{balance, prelude::UserBalance},
 };
-use sea_orm::{ConnectionTrait, DbConn, EntityTrait, QuerySelect, raw_sql, sea_query::Expr};
+use sea_orm::{ConnectionTrait, EntityTrait, QuerySelect, raw_sql, sea_query::Expr};
 use telers::types::ReplyParameters;
 
 use super::super::*;
@@ -19,6 +19,7 @@ pub async fn sweets(
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
     let user_ind = UserIndex::new(&bot, &db);
+    let module = ModuleChecker::new(&bot, &db);
 
     // SAFETY: The Command filter will not allow processing of a "None" value.
     let text = unsafe {
@@ -63,6 +64,13 @@ pub async fn sweets(
         }
         _ => return Ok(()),
     };
+
+    let access = module
+        .check::<30>(ModuleAccess::M(&message))
+        .await;
+    if !access {
+        return Ok(());
+    }
 
     if !user.is_user {
         bot.send(JuzoAnswer::message(&message).text(format!(
@@ -376,6 +384,7 @@ pub async fn score(
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
     let user_ind = UserIndex::new(&bot, &db);
+    let module = ModuleChecker::new(&bot, &db);
 
     // SAFETY: The Command filter will not allow processing of a "None" value.
     let text = unsafe {
@@ -420,6 +429,13 @@ pub async fn score(
         }
         _ => return Ok(()),
     };
+
+    let access = module
+        .check::<30>(ModuleAccess::M(&message))
+        .await;
+    if !access {
+        return Ok(());
+    }
 
     if !user.is_user {
         bot.send(

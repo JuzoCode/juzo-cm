@@ -6,8 +6,11 @@ use super::super::*;
 pub async fn add(
     bot: Bot,
     message: Message,
+    Extension(db): Extension<DbConn>,
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
+    let module = ModuleChecker::new(&bot, &db);
+
     // SAFETY: The Command filter will not allow processing of a "None" value.
     let text = unsafe {
         message
@@ -33,6 +36,13 @@ pub async fn add(
         }
         ArgsResult::Unk => return Ok(()),
     };
+
+    let access = module
+        .check::<24>(ModuleAccess::M(&message))
+        .await;
+    if !access {
+        return Ok(());
+    }
 
     bot.send(
         PinChatMessage::new(message.chat().id(), message_id)
@@ -46,8 +56,11 @@ pub async fn add(
 pub async fn delete(
     bot: Bot,
     message: Message,
+    Extension(db): Extension<DbConn>,
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
+    let module = ModuleChecker::new(&bot, &db);
+
     // SAFETY: The Command filter will not allow processing of a "None" value.
     let text = unsafe {
         message
@@ -73,6 +86,13 @@ pub async fn delete(
         }
         ArgsResult::Unk => return Ok(()),
     };
+
+    let access = module
+        .check::<24>(ModuleAccess::M(&message))
+        .await;
+    if !access {
+        return Ok(());
+    }
 
     bot.send(
         UnpinChatMessage::new(message.chat().id())

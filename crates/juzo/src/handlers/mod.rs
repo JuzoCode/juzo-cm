@@ -1,3 +1,4 @@
+pub use juzo_core::application::{ModuleAccess, ModuleChecker};
 use juzo_core::{
     filters::Business,
     middlewares::{
@@ -5,6 +6,7 @@ use juzo_core::{
         outer::{ChatSync, UserSync},
     },
 };
+pub use sea_orm::DbConn;
 use telers::Router;
 pub use telers::{Bot, Extension, event::telegram::HandlerResult};
 

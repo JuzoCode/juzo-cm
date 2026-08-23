@@ -1,5 +1,5 @@
 use juzo_core::{common::emojis::smail_tick, db::agent::prelude::Agent};
-use sea_orm::{DbConn, EntityTrait, SelectExt};
+use sea_orm::{EntityTrait, SelectExt};
 
 use super::super::*;
 

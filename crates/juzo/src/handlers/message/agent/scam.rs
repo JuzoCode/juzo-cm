@@ -6,7 +6,7 @@ use juzo_core::{
         prelude::{Agent, BlockSystem},
     },
 };
-use sea_orm::{DbConn, EntityTrait, SelectExt, Set, sea_query::OnConflict};
+use sea_orm::{EntityTrait, SelectExt, Set, sea_query::OnConflict};
 
 use super::super::*;
 

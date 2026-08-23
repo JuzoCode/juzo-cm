@@ -10,7 +10,7 @@ use juzo_core::{
     payloads::base::encode_token,
 };
 use sea_orm::{
-    ColumnTrait, Condition, DbConn, EntityTrait, QueryFilter, QuerySelect, SelectExt, Set,
+    ColumnTrait, Condition, EntityTrait, QueryFilter, QuerySelect, SelectExt, Set,
     sea_query::OnConflict,
 };
 use telers::utils::token::extract_bot_id;

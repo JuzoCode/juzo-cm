@@ -1,4 +1,3 @@
-use sea_orm::DbConn;
 use telers::types::{InlineKeyboardButton, InlineKeyboardMarkup};
 
 use super::super::*;

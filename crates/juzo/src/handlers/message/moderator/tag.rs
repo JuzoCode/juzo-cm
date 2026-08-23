@@ -2,7 +2,6 @@ use juzo_core::{
     application::{ParseTgLink, UserIndex, UserModel},
     common::emojis::smail_tick,
 };
-use sea_orm::DbConn;
 use telers::methods::SetChatMemberTag;
 
 use super::super::*;
@@ -14,6 +13,7 @@ pub async fn add(
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
     let user_ind = UserIndex::new(&bot, &db);
+    let module = ModuleChecker::new(&bot, &db);
 
     // SAFETY: The Command filter will not allow processing of a "None" value.
     let text = unsafe {
@@ -76,6 +76,13 @@ pub async fn add(
         _ => return Ok(()),
     };
 
+    let access = module
+        .check::<22>(ModuleAccess::M(&message))
+        .await;
+    if !access {
+        return Ok(());
+    }
+
     bot.send(SetChatMemberTag::new(message.chat().id(), user.ids).tag(tag))
         .await?;
 
@@ -97,6 +104,7 @@ pub async fn delete(
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
     let user_ind = UserIndex::new(&bot, &db);
+    let module = ModuleChecker::new(&bot, &db);
 
     // SAFETY: The Command filter will not allow processing of a "None" value.
     let text = unsafe {
@@ -129,6 +137,13 @@ pub async fn delete(
         },
         ArgsResult::Unk => return Ok(()),
     };
+
+    let access = module
+        .check::<22>(ModuleAccess::M(&message))
+        .await;
+    if !access {
+        return Ok(());
+    }
 
     bot.send(SetChatMemberTag::new(message.chat().id(), user.ids))
         .await?;

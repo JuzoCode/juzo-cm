@@ -1,5 +1,4 @@
 use juzo_core::{application::UserIndex, common::emojis::smail_tick};
-use sea_orm::DbConn;
 
 use super::super::*;
 

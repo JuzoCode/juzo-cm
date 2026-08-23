@@ -12,9 +12,7 @@ use juzo_core::{
     },
     db::user::{balance, prelude::UserBalance},
 };
-use sea_orm::{
-    DbConn, EntityTrait, raw_sql, sea_query::prelude::rust_decimal::prelude::ToPrimitive,
-};
+use sea_orm::{EntityTrait, raw_sql, sea_query::prelude::rust_decimal::prelude::ToPrimitive};
 
 use super::super::*;
 
@@ -26,6 +24,7 @@ pub async fn show(
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
     let user_ind = UserIndex::new(&bot, &db);
+    let module = ModuleChecker::new(&bot, &db);
 
     // SAFETY: The Command filter will not allow processing of a "None" value.
     let text = unsafe {
@@ -66,6 +65,13 @@ pub async fn show(
         },
         ArgsResult::Unk => return Ok(()),
     };
+
+    let access = module
+        .check::<31>(ModuleAccess::M(&message))
+        .await;
+    if !access {
+        return Ok(());
+    }
 
     // SAFETY: TBA will never return None in message.from().
     let my_ids = unsafe {

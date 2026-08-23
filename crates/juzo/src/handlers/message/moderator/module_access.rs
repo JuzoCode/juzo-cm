@@ -1,10 +1,10 @@
 use juzo_core::db::chat::{chat_module, prelude::ChatModule};
-use sea_orm::{DbConn, EntityTrait, Set, sea_query::OnConflict};
+use sea_orm::{EntityTrait, Set, sea_query::OnConflict};
 
 use super::super::*;
 
 pub async fn add(
-    _bot: Bot,
+    bot: Bot,
     message: Message,
     Extension(db): Extension<DbConn>,
     Extension(result): Extension<CommandResult>,
@@ -31,6 +31,14 @@ pub async fn add(
     let Ok(ids) = text[a1].parse::<i16>() else {
         return Ok(());
     };
+
+    let module = ModuleChecker::new(&bot, &db);
+    let access = module
+        .check::<25>(ModuleAccess::M(&message))
+        .await;
+    if !access {
+        return Ok(());
+    }
 
     let model = chat_module::ActiveModel {
         chat_ids: Set(message
@@ -59,9 +67,9 @@ pub async fn add(
 }
 
 pub async fn delete(
-    _bot: Bot,
+    bot: Bot,
     message: Message,
-    Extension(_db): Extension<DbConn>,
+    Extension(db): Extension<DbConn>,
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
     if result.args.is_empty() {
@@ -82,6 +90,14 @@ pub async fn delete(
     let Ok(_ids) = text[a1].parse::<i16>() else {
         return Ok(());
     };
+
+    let module = ModuleChecker::new(&bot, &db);
+    let access = module
+        .check::<25>(ModuleAccess::M(&message))
+        .await;
+    if !access {
+        return Ok(());
+    }
 
     Ok(())
 }

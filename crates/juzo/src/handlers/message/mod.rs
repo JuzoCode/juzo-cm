@@ -5,7 +5,7 @@ pub use juzo_core::{
 use telers::Router;
 pub use telers::types::Message;
 
-pub use super::{Bot, Extension, HandlerResult};
+pub use super::{Bot, DbConn, Extension, HandlerResult, ModuleAccess, ModuleChecker};
 
 mod agent;
 mod moderator;

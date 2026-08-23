@@ -1,7 +1,7 @@
 pub use telers::types::ManagedBotUpdated;
 use telers::{Router, event::telegram::Handler};
 
-pub use super::{Bot, HandlerResult};
+pub use super::{Bot, DbConn, HandlerResult};
 
 mod managed;
 

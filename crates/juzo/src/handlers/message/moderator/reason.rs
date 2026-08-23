@@ -10,7 +10,7 @@ use juzo_core::{
     },
     domain::TimeFormatted,
 };
-use sea_orm::{DbConn, EntityTrait, FromQueryResult, QuerySelect, raw_sql};
+use sea_orm::{EntityTrait, FromQueryResult, QuerySelect, raw_sql};
 
 use super::super::*;
 
@@ -21,6 +21,7 @@ pub async fn info(
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
     let user_ind = UserIndex::new(&bot, &db);
+    let module = ModuleChecker::new(&bot, &db);
 
     // SAFETY: The Command filter will not allow processing of a "None" value.
     let text = unsafe {
@@ -53,6 +54,14 @@ pub async fn info(
         },
         ArgsResult::Unk => return Ok(()),
     };
+
+    let access = module
+        .check::<12>(ModuleAccess::M(&message))
+        .await;
+    if !access {
+        return Ok(());
+    }
+
     let chat_ids = message.chat().id();
 
     let Ok(Some(info)) = BlockInfo::find_by_statement(raw_sql!(
@@ -155,6 +164,7 @@ pub async fn scam(
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
     let user_ind = UserIndex::new(&bot, &db);
+    let module = ModuleChecker::new(&bot, &db);
 
     // SAFETY: The Command filter will not allow processing of a "None" value.
     let text = unsafe {
@@ -187,6 +197,13 @@ pub async fn scam(
         },
         ArgsResult::Unk => return Ok(()),
     };
+
+    let access = module
+        .check::<12>(ModuleAccess::M(&message))
+        .await;
+    if !access {
+        return Ok(());
+    }
 
     let Ok(Some((reason, added))) = BlockSystem::find_by_id((user.ids, BlockFunc::Scam))
         .select_only()

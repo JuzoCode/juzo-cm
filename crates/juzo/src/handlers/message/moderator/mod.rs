@@ -1,7 +1,5 @@
 use juzo_core::filters::Command;
-use telers::{
-    Filter, Router, enums::ChatType, event::telegram::Handler, filters::ChatType as FilterChatType,
-};
+use telers::{Router, event::telegram::Handler};
 
 mod ban;
 mod chat_bag;
@@ -10,6 +8,7 @@ mod chat_name;
 mod creator;
 mod module_access;
 mod pin;
+mod rank;
 mod reason;
 mod tag;
 mod tg_admin;
@@ -21,52 +20,24 @@ pub fn routers() -> Router {
     Router::new("router MODER connect")
         .on_message(|observer| {
             observer.registers([
-                Handler::new(ban::no)
-                    .filter(FilterChatType::one(ChatType::Private).invert())
-                    .filter(Command::many(&["разбан"]).no_prefix()),
-                Handler::new(ban::yes)
-                    .filter(FilterChatType::one(ChatType::Private).invert())
-                    .filter(Command::many(&["бан"]).no_prefix()),
-                Handler::new(tag::add)
-                    .filter(FilterChatType::one(ChatType::Private).invert())
-                    .filter(Command::many(&["+тг тег", "+тг тэг"]).no_prefix()),
+                Handler::new(ban::no).filter(Command::many(&["разбан"]).no_prefix()),
+                Handler::new(ban::yes).filter(Command::many(&["бан"]).no_prefix()),
+                Handler::new(tag::add).filter(Command::many(&["+тг тег", "+тг тэг"]).no_prefix()),
                 Handler::new(tag::delete)
-                    .filter(FilterChatType::one(ChatType::Private).invert())
                     .filter(Command::many(&["-тг тег", "-тг тэг"]).no_prefix()),
                 Handler::new(chat_description::set)
-                    .filter(FilterChatType::one(ChatType::Private).invert())
                     .filter(Command::one("+описание чата").no_prefix()),
-                Handler::new(tg_admin::add)
-                    .filter(FilterChatType::one(ChatType::Private).invert())
-                    .filter(Command::one("+тг админ").no_prefix()),
-                Handler::new(tg_admin::delete)
-                    .filter(FilterChatType::one(ChatType::Private).invert())
-                    .filter(Command::one("-тг админ").no_prefix()),
-                Handler::new(pin::add)
-                    .filter(FilterChatType::one(ChatType::Private).invert())
-                    .filter(Command::many(&["пин", "закреп"])),
-                Handler::new(pin::delete)
-                    .filter(FilterChatType::one(ChatType::Private).invert())
-                    .filter(Command::many(&["анпин", "открепить"])),
-                Handler::new(creator::repair)
-                    .filter(FilterChatType::one(ChatType::Private).invert())
-                    .filter(Command::one("хв")),
-                Handler::new(topic_name::set)
-                    .filter(FilterChatType::one(ChatType::Private).invert())
-                    .filter(Command::one("топик название")),
-                Handler::new(topic_name::set)
-                    .filter(FilterChatType::one(ChatType::Private).invert())
-                    .filter(Command::one("название")),
-                Handler::new(topic_reopen::set)
-                    .filter(FilterChatType::one(ChatType::Private).invert())
-                    .filter(Command::one("+топик").no_prefix()),
-                Handler::new(topic_close::set)
-                    .filter(FilterChatType::one(ChatType::Private).invert())
-                    .filter(Command::one("-топик").no_prefix()),
+                Handler::new(tg_admin::add).filter(Command::one("+тг админ").no_prefix()),
+                Handler::new(tg_admin::delete).filter(Command::one("-тг админ").no_prefix()),
+                Handler::new(pin::add).filter(Command::many(&["пин", "закреп"])),
+                Handler::new(pin::delete).filter(Command::many(&["анпин", "открепить"])),
+                Handler::new(creator::repair).filter(Command::one("хв")),
+                Handler::new(topic_name::set).filter(Command::one("топик название")),
+                Handler::new(topic_name::set).filter(Command::one("название")),
+                Handler::new(topic_reopen::set).filter(Command::one("+топик").no_prefix()),
+                Handler::new(topic_close::set).filter(Command::one("-топик").no_prefix()),
                 Handler::new(reason::scam).filter(Command::one("скам причина").no_prefix()),
-                Handler::new(reason::info)
-                    .filter(FilterChatType::one(ChatType::Private).invert())
-                    .filter(Command::one("причина").no_prefix()),
+                Handler::new(reason::info).filter(Command::one("причина").no_prefix()),
             ])
         })
         .on_business_message(|observer| {

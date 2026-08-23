@@ -2,7 +2,7 @@ use juzo_core::{
     common::{emojis::smail_sweets, inflection::plur_sweets},
     db::user::prelude::UserBalance,
 };
-use sea_orm::{DbConn, EntityTrait, QuerySelect, sea_query::Expr};
+use sea_orm::{EntityTrait, QuerySelect, sea_query::Expr};
 
 use super::super::*;
 
@@ -13,6 +13,14 @@ pub async fn show(
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
     if !result.args.is_empty() {
+        return Ok(());
+    }
+
+    let module = ModuleChecker::new(&bot, &db);
+    let access = module
+        .check::<32>(ModuleAccess::M(&message))
+        .await;
+    if !access {
         return Ok(());
     }
 

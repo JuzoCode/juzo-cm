@@ -1,5 +1,5 @@
 use juzo_core::db::chat::{chat, prelude::Chat};
-use sea_orm::{ColumnTrait, DbConn, EntityTrait, QueryFilter, prelude::Expr};
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, prelude::Expr};
 use telers::methods::SendMessage;
 
 use super::super::*;

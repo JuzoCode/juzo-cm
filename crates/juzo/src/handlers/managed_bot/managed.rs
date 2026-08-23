@@ -3,7 +3,7 @@ use juzo_core::{
     // config::ALLOWEDS_UPDATES,
     payloads::base::encode_token,
 };
-use sea_orm::{DbConn, EntityTrait, Set, sea_query::OnConflict};
+use sea_orm::{EntityTrait, Set, sea_query::OnConflict};
 use telers::{
     Extension,
     // enums::UpdateType,
