@@ -92,6 +92,18 @@ pub async fn yes(
         return Ok(());
     }
 
+    // SAFETY: TBA will never return None in message.from().
+    let iam: UserModel = unsafe {
+        message
+            .from()
+            .unwrap_unchecked()
+    }
+    .into();
+
+    if iam.ids == user.ids {
+        return Ok(())
+    }
+
     if reason
         .chars()
         .nth(128)
@@ -105,13 +117,6 @@ pub async fn yes(
         return Ok(());
     }
 
-    // SAFETY: TBA will never return None in message.from().
-    let iam: UserModel = unsafe {
-        message
-            .from()
-            .unwrap_unchecked()
-    }
-    .into();
     let chat_ids = message.chat().id();
     let sms_ids = message.message_id();
 
@@ -193,7 +198,7 @@ pub async fn yes(
     );
 
     if !reason.is_empty() {
-        text.push_str("<b>Причина: <b>");
+        text.push_str("<b>Причина: </b>");
         text.push_str(reason);
     }
 

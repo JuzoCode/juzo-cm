@@ -5,7 +5,7 @@ use juzo_core::{
         callback::{Callback, CallbackKind},
     },
 };
-use telers::types::{InlineKeyboardButton, InlineKeyboardMarkup};
+use telers::types::{InlineKeyboardButton, InlineKeyboardMarkup, ReplyParameters};
 
 use super::super::*;
 
@@ -74,10 +74,14 @@ pub async fn time_sms(
         .forward_origin()
         .map_or(("сообщения", reply.date()), |f| ("пересланного сообщения", f.date()));
 
-    bot.send(JuzoAnswer::message(&message).text(format!(
-        "<tg-emoji emoji-id='5255971360965930740'>🕓</tg-emoji> Время отправления {label}: \
-         <tg-time unix='{time}' format='T'>juzo</tg-time>"
-    )))
+    bot.send(
+        JuzoAnswer::message(&message)
+            .text(format!(
+                "<tg-emoji emoji-id='5255971360965930740'>🕓</tg-emoji> Время отправления \
+                 {label}: <tg-time unix='{time}' format='T'>juzo</tg-time>"
+            ))
+            .reply_parameters(ReplyParameters::new().message_id(reply.message_id())),
+    )
     .await?;
 
     Ok(())

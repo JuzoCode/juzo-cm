@@ -122,7 +122,7 @@ pub async fn show(
 
     if balance.is_empty() {
         bot.send(JuzoAnswer::message(&message).text(format!(
-            "{0} <b>В мешке <a href='{1}'>{2}</a></b></b> пустеет так, что не осталось даже пыли",
+            "{0} <b>В мешке <a href='{1}'>{2}</a></b> пустеет так, что не осталось даже пыли",
             smail_bag(true),
             user.link(),
             user.full_name(),

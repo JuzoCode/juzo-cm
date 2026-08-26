@@ -34,7 +34,7 @@ async fn main() {
     .await
     .unwrap();
 
-    let bot = Bot::new(configs.cm);
+    let bot = Bot::new(configs.production_or_test());
     bot.send(DeleteWebhook::new().drop_pending_updates(true))
         .await
         .unwrap();
