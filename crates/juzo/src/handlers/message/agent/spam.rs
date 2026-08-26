@@ -90,7 +90,7 @@ pub async fn add(
 
     let model = block_system::ActiveModel {
         user_ids: Set(user.ids),
-        function: Set(BlockFunc::AntiSpam),
+        function: Set(BlockFunc::Spam),
         agents_ids: Set(my_ids),
         reason: Set(comment.into()),
         ..Default::default()
@@ -210,13 +210,13 @@ async fn delete_core(
                         reason,
                         function
                     )
-                    VALUES ({user.ids}, {my_ids}, {r}, 1)
+                    VALUES ({user.ids}, {my_ids}, {r}, 2)
                     "#
                 ))
                 .await;
 
             bot.send(JuzoAnswer::message(&message).text(format!(
-                "{0} <a href='{1}'>{2}</a> вынесен из «Juzo | Ignore System»",
+                "{0} <a href='{1}'>{2}</a> вынесен из «Juzo | Anti-Spam»",
                 smail_tick(true),
                 user.link(),
                 user.full_name()

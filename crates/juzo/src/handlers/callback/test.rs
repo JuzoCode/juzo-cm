@@ -2,7 +2,19 @@ use telers::methods::AnswerCallbackQuery;
 
 use super::*;
 
-pub async fn ping(bot: Bot, callback: CallbackQuery) -> HandlerResult<()> {
+pub async fn ping(
+    bot: Bot,
+    callback: CallbackQuery,
+    Extension(db): Extension<DbConn>,
+) -> HandlerResult<()> {
+    let module = ModuleChecker::new(&bot, &db);
+    let access = module
+        .check::<35>(ModuleAccess::C(&callback))
+        .await;
+    if !access {
+        return Ok(());
+    }
+
     let from = callback.from;
     let username = from
         .username

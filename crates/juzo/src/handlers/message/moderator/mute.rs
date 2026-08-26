@@ -43,28 +43,28 @@ pub async fn yes(
             let last = args[len - 1];
 
             if let Some(link) = ParseTgLink::new(&text[last]) {
-                let Ok(user) = user_ind
+                let Ok(found_user) = user_ind
                     .fetch_user(link)
                     .await
                 else {
                     return Ok(());
                 };
 
-                (&text[args[0].start..last.start], user)
+                (&text[args[0].start..last.start], found_user)
             } else {
                 let Some(reply) = message.reply_to_message() else {
                     return Ok(());
                 };
 
                 // SAFETY: TBA will never return None in message.from().
-                let user = unsafe {
+                let found_user = unsafe {
                     reply
                         .from()
                         .unwrap_unchecked()
                 }
                 .into();
 
-                (&text[args[0].start..], user)
+                (&text[args[0].start..], found_user)
             }
         }
         ArgsResult::None => {
@@ -73,20 +73,20 @@ pub async fn yes(
             };
 
             // SAFETY: TBA will never return None in message.from().
-            let user = unsafe {
+            let found_user = unsafe {
                 reply
                     .from()
                     .unwrap_unchecked()
             }
             .into();
 
-            ("навсегда", user)
+            ("навсегда", found_user)
         }
         ArgsResult::Unk => return Ok(()),
     };
 
     let access = module
-        .check::<0>(ModuleAccess::M(&message))
+        .check::<19>(ModuleAccess::M(&message))
         .await;
     if !access {
         return Ok(());
@@ -247,7 +247,7 @@ pub async fn no(
     };
 
     let access = module
-        .check::<0>(ModuleAccess::M(&message))
+        .check::<20>(ModuleAccess::M(&message))
         .await;
     if !access {
         return Ok(());

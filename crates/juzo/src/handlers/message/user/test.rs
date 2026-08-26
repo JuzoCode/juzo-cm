@@ -21,7 +21,7 @@ pub async fn ping(
 
     let module = ModuleChecker::new(&bot, &db);
     let access = module
-        .check::<0>(ModuleAccess::M(&message))
+        .check::<35>(ModuleAccess::M(&message))
         .await;
     if !access {
         return Ok(());
@@ -95,7 +95,7 @@ pub async fn sms_ids(
 
     let module = ModuleChecker::new(&bot, &db);
     let access = module
-        .check::<0>(ModuleAccess::M(&message))
+        .check::<36>(ModuleAccess::M(&message))
         .await;
     if !access {
         return Ok(());
@@ -107,6 +107,33 @@ pub async fn sms_ids(
 
     bot.send(
         JuzoAnswer::message(&message).text(format!("🗓 ID данного сообщения: <code>{id}</code>")),
+    )
+    .await?;
+
+    Ok(())
+}
+
+pub async fn chat_ids(
+    bot: Bot,
+    message: Message,
+    Extension(db): Extension<DbConn>,
+    Extension(result): Extension<CommandResult>,
+) -> HandlerResult<()> {
+    if !result.args.is_empty() {
+        return Ok(());
+    }
+
+    let module = ModuleChecker::new(&bot, &db);
+    let access = module
+        .check::<37>(ModuleAccess::M(&message))
+        .await;
+    if !access {
+        return Ok(());
+    }
+
+    bot.send(
+        JuzoAnswer::message(&message)
+            .text(format!("🗓 ID чата: <code>{0}</code>", message.chat().id())),
     )
     .await?;
 
@@ -125,7 +152,7 @@ pub async fn show_thread_link(
 
     let module = ModuleChecker::new(&bot, &db);
     let access = module
-        .check::<0>(ModuleAccess::M(&message))
+        .check::<22>(ModuleAccess::M(&message))
         .await;
     if !access {
         return Ok(());

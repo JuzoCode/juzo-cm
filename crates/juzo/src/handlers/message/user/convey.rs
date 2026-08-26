@@ -205,6 +205,7 @@ pub async fn gold(
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
     let user_ind = UserIndex::new(&bot, &db);
+    let module = ModuleChecker::new(&bot, &db);
 
     // SAFETY: The Command filter will not allow processing of a "None" value.
     let text = unsafe {
@@ -249,6 +250,13 @@ pub async fn gold(
         }
         _ => return Ok(()),
     };
+
+    let access = module
+        .check::<40>(ModuleAccess::M(&message))
+        .await;
+    if !access {
+        return Ok(());
+    }
 
     if !user.is_user {
         bot.send(

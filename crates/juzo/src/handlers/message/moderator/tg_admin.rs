@@ -40,14 +40,14 @@ pub async fn add(
                     return Ok(());
                 }
 
-                let Ok(user) = user_ind
+                let Ok(found_user) = user_ind
                     .fetch_user(link)
                     .await
                 else {
                     return Ok(());
                 };
 
-                (tag, user)
+                (tag, found_user)
             } else {
                 let tag = &text[args[0].start..];
                 if tag.is_empty()
@@ -64,14 +64,14 @@ pub async fn add(
                 };
 
                 // SAFETY: TBA will never return None in message.from().
-                let user = unsafe {
+                let found_user = unsafe {
                     reply
                         .from()
                         .unwrap_unchecked()
                 }
                 .into();
 
-                (tag, user)
+                (tag, found_user)
             }
         }
         ArgsResult::None => {
@@ -80,14 +80,14 @@ pub async fn add(
             };
 
             // SAFETY: TBA will never return None in message.from().
-            let user = unsafe {
+            let found_user = unsafe {
                 reply
                     .from()
                     .unwrap_unchecked()
             }
             .into();
 
-            ("", user)
+            ("", found_user)
         }
         ArgsResult::Unk => return Ok(()),
     };

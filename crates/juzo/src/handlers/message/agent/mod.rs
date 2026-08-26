@@ -12,6 +12,7 @@ mod ignore;
 mod managed_bot;
 mod scam;
 mod spam;
+mod takeaway;
 
 pub fn routers() -> Router {
     Router::new("router AGENT connect")
@@ -34,6 +35,11 @@ pub fn routers() -> Router {
                 Handler::new(spam::delete_takeaway)
                     .filter(Command::many(&["-ас ошибка", "-спам ошибка"]).no_prefix()),
                 Handler::new(spam::delete).filter(Command::many(&["-ас", "-спам"]).no_prefix()),
+                Handler::new(takeaway::delete_spam).filter(
+                    Command::many(&["-вынос ас", "-вынос спам", "-вынос антиспам"]).no_prefix(),
+                ),
+                Handler::new(takeaway::delete_ignore)
+                    .filter(Command::one("-вынос игнор").no_prefix()),
             ])
         })
         .on_business_message(|observer| {
@@ -50,6 +56,12 @@ pub fn routers() -> Router {
                 Handler::new(spam::add).filter(Command::one("+ас")),
                 Handler::new(spam::delete_takeaway).filter(Command::one("-ас ошибка")),
                 Handler::new(spam::delete).filter(Command::one("-ас")),
+                Handler::new(takeaway::delete_spam).filter(Command::many(&[
+                    "-вынос ас",
+                    "-вынос спам",
+                    "-вынос антиспам",
+                ])),
+                Handler::new(takeaway::delete_ignore).filter(Command::one("-вынос игнор")),
             ])
         })
 }

@@ -2,7 +2,7 @@ use juzo_core::filters::callback::{Callback, CallbackKind};
 pub use telers::types::CallbackQuery;
 use telers::{Router, event::telegram::Handler};
 
-pub use super::{Bot, DbConn, Extension, HandlerResult};
+pub use super::{Bot, DbConn, Extension, HandlerResult, ModuleAccess, ModuleChecker};
 
 mod test;
 mod trade;

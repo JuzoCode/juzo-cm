@@ -99,7 +99,7 @@ pub async fn add(
     let _ = bot
         .send(
             JuzoAnswer::message(&message)
-                .text(format!("👨‍💻 Вы были назначены агентом поддержи «Juzo | Чат-Менеджер»"))
+                .text(format!("👨‍💻 Вы были назначены агентом поддержки «Juzo | Чат-Менеджер»"))
                 .chat_id(user.ids.0)
                 .reply_parameters_option::<ReplyParameters>(None),
         )
@@ -174,7 +174,7 @@ pub async fn add_spam(
 
     let model = agent::ActiveModel {
         user_ids: Set(user.ids),
-        antispam: Set(true),
+        spam: Set(true),
         add_ids: Set(my_ids),
         ..Default::default()
     };
