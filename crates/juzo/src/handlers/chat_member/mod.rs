@@ -15,9 +15,8 @@ pub fn routers() -> Router {
         .on_my_chat_member(|observer| {
             observer.registers([
                 Handler::new(bot::leave::yes),
-                Handler::new(bot::admin::set).filter(
-                    MemberFilter::new(MemberStatus::Administrator).old(MemberStatus::Member),
-                ),
+                Handler::new(bot::admin::set)
+                    .filter(MemberFilter::new(MemberStatus::Administrator)),
             ])
         })
         .on_chat_member(|observer| observer.register_inner_middleware(MemberTraffic))

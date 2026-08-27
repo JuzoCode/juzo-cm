@@ -104,7 +104,7 @@ pub async fn yes(
     .into();
 
     if iam.ids == user.ids {
-        return Ok(())
+        return Ok(());
     }
 
     if reason
