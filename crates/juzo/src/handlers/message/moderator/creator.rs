@@ -9,10 +9,18 @@ use super::super::*;
 pub async fn repair(
     bot: Bot,
     message: Message,
-    Extension(_db): Extension<DbConn>,
+    Extension(db): Extension<DbConn>,
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
     if !result.args.is_empty() {
+        return Ok(());
+    }
+
+    let module = ModuleChecker::new(&bot, &db);
+    let access = module
+        .check::<42>(ModuleAccess::M(&message))
+        .await;
+    if !access {
         return Ok(());
     }
 

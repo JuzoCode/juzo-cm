@@ -88,13 +88,6 @@ pub async fn yes(
         ArgsResult::Unk => return Ok(()),
     };
 
-    let access = module
-        .check::<9>(ModuleAccess::M(&message))
-        .await;
-    if !access {
-        return Ok(());
-    }
-
     // SAFETY: TBA will never return None in message.from().
     let iam: UserModel = unsafe {
         message
@@ -104,6 +97,13 @@ pub async fn yes(
     .into();
 
     if iam.ids == user.ids {
+        return Ok(());
+    }
+
+    let access = module
+        .check::<9>(ModuleAccess::M(&message))
+        .await;
+    if !access {
         return Ok(());
     }
 

@@ -33,6 +33,7 @@ pub fn routers() -> Router {
                 Handler::new(test::time_sms).filter(Command::one("смс время").no_prefix()),
                 Handler::new(test::ping).filter(Command::one("пинг").no_prefix()),
                 Handler::new(user_id::show).filter(Command::one("ид")),
+                Handler::new(test::chat_ids).filter(Command::one("чат ид")),
                 Handler::new(bag::show).filter(Command::one("мешок").no_prefix()),
             ])
         })

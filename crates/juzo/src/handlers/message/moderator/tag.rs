@@ -22,7 +22,7 @@ pub async fn add(
             .or_else(|| message.caption())
             .unwrap_unchecked()
     };
-    let args = result.args::<17>(text);
+    let args = result.args::<9>(text);
 
     let (tag, user): (&str, UserModel) = match args {
         ArgsResult::Some(args, len) => {

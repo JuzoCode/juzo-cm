@@ -4,17 +4,14 @@ use super::super::*;
 
 /// дописать старт
 pub async fn out(
-    bot: Bot,
-    message: Message,
+    _bot: Bot,
+    _message: Message,
     Extension(_): Extension<DbConn>,
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
     if !result.args.is_empty() {
         return Ok(());
     }
-
-    bot.send(JuzoAnswer::message(&message).text("meow"))
-        .await?;
 
     Ok(())
 }
@@ -42,7 +39,7 @@ pub async fn help(
     ]);
 
     let text = format!(
-        "<tg-emoji emoji-id='5471999544415783597'>📖</tg-emoji> Помощь по боту <b>{{}}</b>\n\n\
+        "<tg-emoji emoji-id='5471999544415783597'>📖</tg-emoji> Помощь по боту <b><a href='https://juzo_cm_bot.t.me'>Juzo | Чат-менеджер</a></b>\n\n\
          <tg-emoji emoji-id='5431736674147114227'>🗂</tg-emoji> Список всех команд <a href='https://teletype.in/@juzo_cm/commands'>с их описанием</a>.\n\
          <tg-emoji emoji-id='5258513401784573443'>👥</tg-emoji> Официальный <a href='https://juzo_cm_chat.t.me'>чат поддержки бота</a>.\n\
          <tg-emoji emoji-id='5260268501515377807'>📢</tg-emoji> <a href='https://juzo_cm.t.me'>Канал</a> с важными новостями.\n\
