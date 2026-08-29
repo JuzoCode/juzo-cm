@@ -10,6 +10,7 @@ mod bans_user;
 mod chat_domen;
 mod ignore;
 mod managed_bot;
+mod module;
 mod scam;
 mod spam;
 mod takeaway;
@@ -40,6 +41,11 @@ pub fn routers() -> Router {
                 ),
                 Handler::new(takeaway::delete_ignore)
                     .filter(Command::one("-вынос игнор").no_prefix()),
+                Handler::new(module::show_add_parent)
+                    .filter(Command::one("+!модуль раздел").no_prefix()),
+                Handler::new(module::add_parent).filter(Command::one("+модуль раздел")),
+                Handler::new(module::show_add).filter(Command::one("+!модуль").no_prefix()),
+                Handler::new(module::add).filter(Command::one("+модуль")),
             ])
         })
         .on_business_message(|observer| {
@@ -62,6 +68,11 @@ pub fn routers() -> Router {
                     "-вынос антиспам",
                 ])),
                 Handler::new(takeaway::delete_ignore).filter(Command::one("-вынос игнор")),
+                Handler::new(module::show_add_parent)
+                    .filter(Command::one("+!модуль раздел").no_prefix()),
+                Handler::new(module::add_parent).filter(Command::one("+модуль раздел")),
+                Handler::new(module::show_add).filter(Command::one("+!модуль").no_prefix()),
+                Handler::new(module::add).filter(Command::one("+модуль")),
             ])
         })
 }

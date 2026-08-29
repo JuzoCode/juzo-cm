@@ -16,8 +16,12 @@ pub fn routers() -> Router {
             observer.registers([
                 Handler::new(anketa::first_appearance)
                     .filter(Command::many(&["рег", "регистрация"]).no_prefix()),
-                Handler::new(convey::gold)
-                    .filter(Command::many(&["биржа передать", "передать голд"]).no_prefix()),
+                Handler::new(start::yes).filter(Command::many(&["start", "начать"]).no_prefix()),
+                Handler::new(start::help).filter(Command::many(&["помощь", "help"]).no_prefix()),
+                Handler::new(convey::gold).filter(
+                    Command::many(&["биржа передать", "передать голд", "перевести голд"])
+                        .no_prefix(),
+                ),
                 Handler::new(trade::sell).filter(Command::one("биржа продать").no_prefix()),
                 Handler::new(trade::buy).filter(Command::one("биржа купить").no_prefix()),
                 Handler::new(trade::book)
@@ -27,8 +31,10 @@ pub fn routers() -> Router {
                             .limit(1)
                             .second(60),
                     ),
-                Handler::new(convey::score).filter(Command::one("передать од").no_prefix()),
-                Handler::new(convey::sweets).filter(Command::one("передать").no_prefix()),
+                Handler::new(convey::score)
+                    .filter(Command::many(&["передать од", "перевести од"]).no_prefix()),
+                Handler::new(convey::sweets)
+                    .filter(Command::many(&["передать", "перевести"]).no_prefix()),
                 Handler::new(test::sms_ids).filter(Command::one("смс ид").no_prefix()),
                 Handler::new(test::time_sms).filter(Command::one("смс время").no_prefix()),
                 Handler::new(test::ping).filter(Command::one("пинг").no_prefix()),

@@ -36,7 +36,7 @@ pub async fn yes(
             .unwrap_unchecked()
     };
     let args = result.args::<11>(text);
-    let reason = &text[result.first_line];
+    let comment = &text[result.first_line];
 
     // Из-за него пришлось делать новый формат и перепридумывать велосипед парсинга аргии
     // Из-за него появилась идея парсить комбинированные аргию,
@@ -107,7 +107,7 @@ pub async fn yes(
         return Ok(());
     }
 
-    if reason
+    if comment
         .chars()
         .nth(128)
         .is_some()
@@ -178,7 +178,7 @@ pub async fn yes(
                 true,
                 {iam.ids},
                 {sms_ids},
-                {reason},
+                {comment},
                 {now_ts},
                 {until},
                 {to_return}
@@ -219,9 +219,9 @@ pub async fn yes(
         iam.full_name()
     );
 
-    if !reason.is_empty() {
+    if !comment.is_empty() {
         text.push_str("<b>Причина: </b>");
-        text.push_str(reason);
+        text.push_str(comment);
     }
 
     text.push_str("</blockquote>");

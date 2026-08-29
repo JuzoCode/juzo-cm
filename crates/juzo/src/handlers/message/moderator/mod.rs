@@ -27,11 +27,14 @@ pub fn routers() -> Router {
                     .filter(Command::many(&["-тг тег", "-тг тэг"]).no_prefix()),
                 Handler::new(chat_description::set)
                     .filter(Command::one("+описание чата").no_prefix()),
+                Handler::new(chat_description::delete)
+                    .filter(Command::one("-описание чата").no_prefix()),
                 Handler::new(tg_admin::add).filter(Command::one("+тг админ").no_prefix()),
                 Handler::new(tg_admin::delete).filter(Command::one("-тг админ").no_prefix()),
                 Handler::new(pin::add).filter(Command::many(&["пин", "закреп"])),
                 Handler::new(pin::delete).filter(Command::many(&["анпин", "открепить"])),
-                Handler::new(creator::repair).filter(Command::one("хв")),
+                Handler::new(creator::repair)
+                    .filter(Command::many(&["восстановить создателя", "хв"])),
                 Handler::new(topic_name::set).filter(Command::one("топик название")),
                 Handler::new(topic_name::set).filter(Command::one("название")),
                 Handler::new(topic_reopen::set).filter(Command::one("+топик").no_prefix()),

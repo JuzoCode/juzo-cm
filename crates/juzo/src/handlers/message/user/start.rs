@@ -1,9 +1,9 @@
-use telers::types::{InlineKeyboardButton, InlineKeyboardMarkup};
+use telers::types::{Chat, InlineKeyboardButton, InlineKeyboardMarkup};
 
 use super::super::*;
 
 /// дописать старт
-pub async fn out(
+pub async fn yes(
     _bot: Bot,
     _message: Message,
     Extension(_): Extension<DbConn>,
@@ -20,10 +20,22 @@ pub async fn out(
 pub async fn help(
     bot: Bot,
     message: Message,
-    Extension(_): Extension<DbConn>,
+    Extension(db): Extension<DbConn>,
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
     if !result.args.is_empty() {
+        return Ok(());
+    }
+
+    if let Chat::Private(_) = message.chat() {
+        return yes(bot, message, Extension(db), Extension(result)).await;
+    }
+
+    let module = ModuleChecker::new(&bot, &db);
+    let access = module
+        .check::<35>(ModuleAccess::M(&message))
+        .await;
+    if !access {
         return Ok(());
     }
 
