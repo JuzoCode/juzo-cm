@@ -188,8 +188,9 @@ pub async fn show_thread_link(
     bot.send(
         JuzoAnswer::rich(&message)
             .rich_message(InputRichMessage::new().html(format!(
-                "<tg-emoji emoji-id='5229057940543005628'>🧵</tg-emoji> Отдельная ветка <a \
-                 href='{url}'>этого</a> сообщения.<tg-button-row><tg-button type='url' \
+                "<tg-emoji emoji-id='5229057940543005628'>🧵</tg-emoji> Отдельная ветка \
+                 <tg-button type='url' url='{url}'>этого</tg-button> \
+                 сообщения.<tg-button-row><tg-button type='url' \
                  url='{url}'>Перейти</tg-button></tg-button-row>",
             )))
             .reply_parameters(ReplyParameters::new().message_id(reply_ids)),
