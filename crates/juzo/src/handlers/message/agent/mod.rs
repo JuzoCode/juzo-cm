@@ -23,6 +23,10 @@ pub fn routers() -> Router {
                 Handler::new(managed_bot::delete).filter(Command::one("-клон").no_prefix()),
                 Handler::new(managed_bot::set_official)
                     .filter(Command::one("+офф джузо клон").no_prefix()),
+                Handler::new(agent::add_main).filter(Command::one("+гл агент").no_prefix()),
+                Handler::new(agent::delete_main).filter(Command::one("-гл агент").no_prefix()),
+                Handler::new(agent::add_spam).filter(Command::one("+ас агент").no_prefix()),
+                Handler::new(agent::delete_spam).filter(Command::one("-ас агент").no_prefix()),
                 Handler::new(agent::add).filter(Command::one("+агент").no_prefix()),
                 Handler::new(agent::delete).filter(Command::one("-агент").no_prefix()),
                 Handler::new(chat_domen::edit).filter(Command::one("домен")),
@@ -52,6 +56,10 @@ pub fn routers() -> Router {
             observer.registers([
                 Handler::new(managed_bot::info).filter(Command::one("клон инфо")),
                 Handler::new(managed_bot::delete).filter(Command::one("-клон")),
+                Handler::new(agent::add_main).filter(Command::one("+гл агент")),
+                Handler::new(agent::delete_main).filter(Command::one("-гл агент")),
+                Handler::new(agent::add_spam).filter(Command::one("+ас агент")),
+                Handler::new(agent::delete_spam).filter(Command::one("-ас агент")),
                 Handler::new(agent::add).filter(Command::one("+агент")),
                 Handler::new(agent::delete).filter(Command::one("-агент")),
                 Handler::new(ignore::add).filter(Command::one("+игнор")),

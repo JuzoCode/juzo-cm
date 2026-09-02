@@ -92,12 +92,12 @@ pub async fn add(
         ArgsResult::Unk => return Ok(()),
     };
 
-    let access = module
+    let true = module
         .check::<23>(ModuleAccess::M(&message))
-        .await;
-    if !access {
+        .await
+    else {
         return Ok(());
-    }
+    };
 
     // match juzo.add_tg_admin(user_id).await {
     //     Ok(_) => {
@@ -162,12 +162,12 @@ pub async fn delete(
         ArgsResult::Unk => return Ok(()),
     };
 
-    let access = module
+    let true = module
         .check::<23>(ModuleAccess::M(&message))
-        .await;
-    if !access {
+        .await
+    else {
         return Ok(());
-    }
+    };
 
     bot.send(PromoteChatMember::new(message.chat().id(), user.ids).can_manage_chat(false))
         .await?;

@@ -1,12 +1,13 @@
 use juzo_core::{
-    application::{UserIndex, UserModel},
+    application::{UserIds, UserIndex, UserModel},
     common::emojis::{smail_pensil, smail_tick},
     db::agent::{
-        BlockFunc, block_system,
+        BlockFunc, agent, block_system,
         prelude::{Agent, BlockSystem},
     },
 };
-use sea_orm::{ConnectionTrait, EntityTrait, SelectExt, Set, raw_sql, sea_query::OnConflict};
+use sea_orm::{ConnectionTrait, EntityTrait, QuerySelect, Set, raw_sql, sea_query::OnConflict};
+use telers::types::ReplyParameters;
 
 use super::super::*;
 
@@ -17,7 +18,7 @@ pub async fn add(
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
     // SAFETY: TBA will never return None in message.from().
-    let my_ids = unsafe {
+    let my_ids: UserIds = unsafe {
         message
             .from()
             .unwrap_unchecked()
@@ -25,15 +26,15 @@ pub async fn add(
     .id
     .into();
 
-    let Ok(exists) = Agent::find_by_id(my_ids)
-        .exists(&db)
+    let Ok(Some(true)) = Agent::find_by_id(my_ids)
+        .select_only()
+        .column(agent::Column::Spam)
+        .into_tuple::<bool>()
+        .one(&db)
         .await
     else {
         return Ok(());
     };
-    if !exists {
-        return Ok(());
-    }
 
     let user_ind = UserIndex::new(&bot, &db);
 
@@ -131,15 +132,15 @@ async fn delete_core(
     }
     .id;
 
-    let Ok(exists) = Agent::find_by_id(my_ids)
-        .exists(&db)
+    let Ok(Some(true)) = Agent::find_by_id(my_ids)
+        .select_only()
+        .column(agent::Column::Spam)
+        .into_tuple::<bool>()
+        .one(&db)
         .await
     else {
         return Ok(());
     };
-    if !exists {
-        return Ok(());
-    }
 
     let user_ind = UserIndex::new(&bot, &db);
 
@@ -222,6 +223,15 @@ async fn delete_core(
                 user.full_name()
             )))
             .await?;
+
+            let _ = bot
+                .send(
+                    JuzoAnswer::message(&message)
+                        .text("🗓 Вас вынесли из «Juzo | Ignore System».\n<b>Впредь больше не нарушайте</b>, лучше почитайте моё <a href='https://teletype.in/@juzo_cm/EULA'>пользовательское соглашение</a> =)")
+                        .chat_id(user.ids.0)
+                        .reply_parameters_option::<ReplyParameters>(None),
+                )
+                .await;
         }
         Ok(Some(_)) => {
             bot.send(JuzoAnswer::message(&message).text(format!(
@@ -231,6 +241,14 @@ async fn delete_core(
                 user.full_name()
             )))
             .await?;
+            let _ = bot
+                .send(
+                    JuzoAnswer::message(&message)
+                        .text("🗓 Вас вынесли из «Juzo | Ignore System» без пометки о выносе")
+                        .chat_id(user.ids.0)
+                        .reply_parameters_option::<ReplyParameters>(None),
+                )
+                .await;
         }
         _ => {
             bot.send(JuzoAnswer::message(&message).text(format!(

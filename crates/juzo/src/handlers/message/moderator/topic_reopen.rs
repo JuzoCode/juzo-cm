@@ -14,12 +14,12 @@ pub async fn set(
     }
 
     let module = ModuleChecker::new(&bot, &db);
-    let access = module
+    let true = module
         .check::<22>(ModuleAccess::M(&message))
-        .await;
-    if !access {
+        .await
+    else {
         return Ok(());
-    }
+    };
 
     let Some(true) = message.chat().is_forum() else {
         bot.send(JuzoAnswer::message(&message).text(format!(

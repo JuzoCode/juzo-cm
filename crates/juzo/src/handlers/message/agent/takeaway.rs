@@ -1,5 +1,5 @@
 use juzo_core::{
-    application::{JuzoAnswer, ParseTgLink, UserIds, UserIndex, UserModel},
+    application::{JuzoAnswer, ParseTgLink, UserIndex, UserModel},
     common::{
         emojis::{smail_pensil, smail_tick},
         inflection::{plur_deleted_a, plur_mark},
@@ -18,13 +18,12 @@ async fn delete_core(
     function: BlockFunc,
 ) -> HandlerResult<()> {
     // SAFETY: TBA will never return None in message.from().
-    let my_ids: UserIds = unsafe {
+    let my_ids = unsafe {
         message
             .from()
             .unwrap_unchecked()
     }
-    .id
-    .into();
+    .id;
 
     let Ok(exists) = Agent::find_by_id(my_ids)
         .exists(&db)
@@ -47,15 +46,20 @@ async fn delete_core(
     };
     let args = result.args::<2>(text);
 
-    let (count, user): (u8, UserModel) = match args {
-        ArgsResult::Some([_a1, a2], 2) => {
+    let (count, user): (u16, UserModel) = match args {
+        ArgsResult::Some([a1, a2], 2) => {
+            let Ok(count) = text[a1].parse::<u16>() else {
+                return Ok(());
+            };
+
             let Ok(found_user) = user_ind
                 .search_user(&text[a2])
                 .await
             else {
                 return Ok(());
             };
-            (0, found_user)
+
+            (count, found_user)
         }
         ArgsResult::Some([a1, _], 1) => unsafe {
             if let Some(link) = ParseTgLink::new(&text[a1]) {
@@ -105,7 +109,7 @@ async fn delete_core(
         _ => return Ok(()),
     };
 
-    let Ok(result) = db
+    let Ok(row) = db
         .execute_raw(raw_sql!(
             Postgres,
             r#"
@@ -126,7 +130,7 @@ async fn delete_core(
         return Ok(());
     };
 
-    let affected = result.rows_affected();
+    let affected = row.rows_affected();
 
     if affected == 0 {
         bot.send(

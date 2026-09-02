@@ -17,12 +17,12 @@ pub async fn show(
     }
 
     let module = ModuleChecker::new(&bot, &db);
-    let access = module
+    let true = module
         .check::<32>(ModuleAccess::M(&message))
-        .await;
-    if !access {
+        .await
+    else {
         return Ok(());
-    }
+    };
 
     // ради кубышки делать отдельную таблицу в БД? Мне что, делать нечего?
     let sweets = UserBalance::find_by_id(message.chat().id())

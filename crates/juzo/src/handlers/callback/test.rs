@@ -8,13 +8,12 @@ pub async fn ping(
     Extension(db): Extension<DbConn>,
 ) -> HandlerResult<()> {
     let module = ModuleChecker::new(&bot, &db);
-    let access = module
+    let true = module
         .check::<35>(ModuleAccess::C(&callback))
-        .await;
-    if !access {
+        .await
+    else {
         return Ok(());
-    }
-
+    };
     let from = callback.from;
     let username = from
         .username

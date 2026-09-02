@@ -33,12 +33,12 @@ pub async fn add(
     };
 
     let module = ModuleChecker::new(&bot, &db);
-    let access = module
+    let true = module
         .check::<25>(ModuleAccess::M(&message))
-        .await;
-    if !access {
+        .await
+    else {
         return Ok(());
-    }
+    };
 
     let model = chat_module::ActiveModel {
         chat_ids: Set(message
@@ -92,12 +92,12 @@ pub async fn delete(
     };
 
     let module = ModuleChecker::new(&bot, &db);
-    let access = module
+    let true = module
         .check::<25>(ModuleAccess::M(&message))
-        .await;
-    if !access {
+        .await
+    else {
         return Ok(());
-    }
+    };
 
     Ok(())
 }

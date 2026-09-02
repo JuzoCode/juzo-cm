@@ -5,7 +5,7 @@ use juzo_core::{
     db::user::{anketa, prelude::UserAnketa},
     domain::TimeFormatted,
 };
-use sea_orm::{EntityTrait, QuerySelect};
+use sea_orm::{EntityTrait, QuerySelect, raw_sql};
 
 use super::super::*;
 
@@ -59,15 +59,40 @@ pub async fn show(
         ArgsResult::Unk => return Ok(()),
     };
 
-    let access = module
+    let true = module
         .check::<28>(ModuleAccess::M(&message))
-        .await;
-    if !access {
+        .await
+    else {
         return Ok(());
-    }
+    };
 
-    // проблема с show
-    let Ok(Some(anketa)) = UserAnketa::find_by_id(user.ids)
+    // SAFETY: TBA will never return None in message.from().
+    let my_ids = unsafe {
+        message
+            .from()
+            .unwrap_unchecked()
+    }
+    .id;
+
+    let Ok(Some(anketa)) = UserAnketa::find()
+        .from_raw_sql(raw_sql!(
+            Postgres,
+            r#"
+            SELECT
+                user_ids,
+                CASE
+                    WHEN user_ids = {my_ids} THEN true
+                    ELSE show
+                END AS show,
+                is_user,
+                gender,
+                username,
+                full_name,
+                added
+            FROM u
+            WHERE user_ids = {user.ids};
+            "#
+        ))
         .one(&db)
         .await
     else {
@@ -143,12 +168,12 @@ pub async fn first_appearance(
         ArgsResult::Unk => return Ok(()),
     };
 
-    let access = module
+    let true = module
         .check::<29>(ModuleAccess::M(&message))
-        .await;
-    if !access {
+        .await
+    else {
         return Ok(());
-    }
+    };
 
     // Слышали про английский? -- Нет
     let added = UserAnketa::find_by_id(user.ids)

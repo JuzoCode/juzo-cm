@@ -14,12 +14,12 @@ pub async fn set(
     }
 
     let module = ModuleChecker::new(&bot, &db);
-    let access = module
+    let true = module
         .check::<22>(ModuleAccess::M(&message))
-        .await;
-    if !access {
+        .await
+    else {
         return Ok(());
-    }
+    };
 
     // SAFETY: The Command filter will not allow processing of a "None" value.
     let title = &unsafe {

@@ -76,12 +76,12 @@ pub async fn add(
         _ => return Ok(()),
     };
 
-    let access = module
+    let true = module
         .check::<22>(ModuleAccess::M(&message))
-        .await;
-    if !access {
+        .await
+    else {
         return Ok(());
-    }
+    };
 
     bot.send(SetChatMemberTag::new(message.chat().id(), user.ids).tag(tag))
         .await?;
@@ -138,12 +138,12 @@ pub async fn delete(
         ArgsResult::Unk => return Ok(()),
     };
 
-    let access = module
+    let true = module
         .check::<22>(ModuleAccess::M(&message))
-        .await;
-    if !access {
+        .await
+    else {
         return Ok(());
-    }
+    };
 
     bot.send(SetChatMemberTag::new(message.chat().id(), user.ids))
         .await?;

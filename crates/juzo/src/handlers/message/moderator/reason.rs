@@ -55,12 +55,12 @@ pub async fn info(
         ArgsResult::Unk => return Ok(()),
     };
 
-    let access = module
+    let true = module
         .check::<12>(ModuleAccess::M(&message))
-        .await;
-    if !access {
+        .await
+    else {
         return Ok(());
-    }
+    };
 
     let chat_ids = message.chat().id();
 
@@ -80,13 +80,18 @@ pub async fn info(
             ON a3.user_ids = c8.user_ids
             AND a3.function = 2
         WHERE
-            (c8.user_ids = {user.ids}
-            AND c8.chat_ids = {chat_ids}
-            AND c8.is_ban = true)
+            (
+                c8.user_ids = {user.ids}
+                AND c8.chat_ids = {chat_ids}
+                AND c8.is_ban = true
+                AND (
+                    c8.removed = 0
+                    OR c8.removed > EXTRACT(EPOCH FROM NOW())::bigint
+                )
+            )
             OR
-            (a3.user_ids = {user.ids}
-            AND a3.function = 2)
-            "#
+            (a3.user_ids = {user.ids} AND a3.function = 2)
+        "#
     ))
     .one(&db)
     .await
@@ -157,6 +162,96 @@ pub async fn info(
     Ok(())
 }
 
+pub async fn info_mute(
+    bot: Bot,
+    message: Message,
+    Extension(db): Extension<DbConn>,
+    Extension(result): Extension<CommandResult>,
+) -> HandlerResult<()> {
+    let user_ind = UserIndex::new(&bot, &db);
+    let module = ModuleChecker::new(&bot, &db);
+
+    // SAFETY: The Command filter will not allow processing of a "None" value.
+    let text = unsafe {
+        message
+            .text()
+            .or_else(|| message.caption())
+            .unwrap_unchecked()
+    };
+    let args = result.args::<1>(text);
+
+    let user: UserModel = match args {
+        ArgsResult::Some([a1], _) => {
+            let Ok(found_user) = user_ind
+                .search_user(&text[a1])
+                .await
+            else {
+                return Ok(());
+            };
+            found_user
+        }
+        // SAFETY: TBA will never return None in message.from().
+        ArgsResult::None => unsafe {
+            if let Some(r) = message.reply_to_message() {
+                r.from()
+                    .unwrap_unchecked()
+                    .into()
+            } else {
+                return Ok(());
+            }
+        },
+        ArgsResult::Unk => return Ok(()),
+    };
+
+    let true = module
+        .check::<43>(ModuleAccess::M(&message))
+        .await
+    else {
+        return Ok(());
+    };
+
+    let chat_ids = message.chat().id();
+
+    let Ok(Some(_info)) = BlockInfo::find_by_statement(raw_sql!(
+        Postgres,
+        r#"
+        SELECT
+            rank,
+            added,
+            removed,
+            sms_ids,
+            reason AS ban_reason,
+            moder_ids
+        FROM c8
+        WHERE
+            (
+                c8.user_ids = {user.ids}
+                AND c8.chat_ids = {chat_ids}
+                AND c8.is_ban = false
+                AND (
+                    c8.removed = 0
+                    OR c8.removed > EXTRACT(EPOCH FROM NOW())::bigint
+                )
+            )
+        "#
+    ))
+    .one(&db)
+    .await
+    else {
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} У <a href='{1}'>{2}</a> не заглушён.",
+            smail_pensil(true),
+            user.link(),
+            user.full_name()
+        )))
+        .await?;
+
+        return Ok(());
+    };
+
+    Ok(())
+}
+
 pub async fn scam(
     bot: Bot,
     message: Message,
@@ -198,12 +293,12 @@ pub async fn scam(
         ArgsResult::Unk => return Ok(()),
     };
 
-    let access = module
+    let true = module
         .check::<12>(ModuleAccess::M(&message))
-        .await;
-    if !access {
+        .await
+    else {
         return Ok(());
-    }
+    };
 
     let Ok(Some((reason, added))) = BlockSystem::find_by_id((user.ids, BlockFunc::Scam))
         .select_only()
@@ -234,6 +329,79 @@ pub async fn scam(
 
     bot.send(JuzoAnswer::message(&message).text(text))
         .await?;
+
+    Ok(())
+}
+
+pub async fn warn_list(
+    bot: Bot,
+    message: Message,
+    Extension(db): Extension<DbConn>,
+    Extension(result): Extension<CommandResult>,
+) -> HandlerResult<()> {
+    let user_ind = UserIndex::new(&bot, &db);
+    let module = ModuleChecker::new(&bot, &db);
+
+    // SAFETY: The Command filter will not allow processing of a "None" value.
+    let text = unsafe {
+        message
+            .text()
+            .or_else(|| message.caption())
+            .unwrap_unchecked()
+    };
+    let args = result.args::<1>(text);
+
+    let user: UserModel = match args {
+        ArgsResult::Some([a1], _) => {
+            let Ok(found_user) = user_ind
+                .search_user(&text[a1])
+                .await
+            else {
+                return Ok(());
+            };
+            found_user
+        }
+        // SAFETY: TBA will never return None in message.from().
+        ArgsResult::None => unsafe {
+            if let Some(r) = message.reply_to_message() {
+                r.from()
+                    .unwrap_unchecked()
+                    .into()
+            } else {
+                return Ok(());
+            }
+        },
+        ArgsResult::Unk => return Ok(()),
+    };
+
+    let true = module
+        .check::<17>(ModuleAccess::M(&message))
+        .await
+    else {
+        return Ok(());
+    };
+
+    let _chat_ids = message.chat().id();
+
+    let Ok(Some(_info)) = BlockInfo::find_by_statement(raw_sql!(
+        Postgres,
+        r#"
+
+        "#
+    ))
+    .one(&db)
+    .await
+    else {
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} ❕ <b>Предупреждения <a href='{1}'>{2}</a></b> пока отсутствуют",
+            smail_pensil(true),
+            user.link(),
+            user.full_name()
+        )))
+        .await?;
+
+        return Ok(());
+    };
 
     Ok(())
 }

@@ -1,11 +1,14 @@
 use juzo_core::{
     common::emojis::smail_pensil,
+    domain::ChatIds,
     payloads::{
         base::PackedPayload,
         callback::{Callback, CallbackKind},
     },
 };
-use telers::types::{InlineKeyboardButton, InlineKeyboardMarkup, ReplyParameters};
+use telers::types::{
+    InlineKeyboardButton, InlineKeyboardMarkup, InputRichMessage, ReplyParameters,
+};
 
 use super::super::*;
 
@@ -20,12 +23,12 @@ pub async fn ping(
     }
 
     let module = ModuleChecker::new(&bot, &db);
-    let access = module
+    let true = module
         .check::<35>(ModuleAccess::M(&message))
-        .await;
-    if !access {
+        .await
+    else {
         return Ok(());
-    }
+    };
 
     // SAFETY: TBA will never return None in message.from().
     let data = unsafe {
@@ -98,12 +101,12 @@ pub async fn sms_ids(
     }
 
     let module = ModuleChecker::new(&bot, &db);
-    let access = module
+    let true = module
         .check::<36>(ModuleAccess::M(&message))
-        .await;
-    if !access {
+        .await
+    else {
         return Ok(());
-    }
+    };
 
     let id = message
         .reply_to_message()
@@ -128,12 +131,12 @@ pub async fn chat_ids(
     }
 
     let module = ModuleChecker::new(&bot, &db);
-    let access = module
+    let true = module
         .check::<37>(ModuleAccess::M(&message))
-        .await;
-    if !access {
+        .await
+    else {
         return Ok(());
-    }
+    };
 
     bot.send(
         JuzoAnswer::message(&message)
@@ -147,20 +150,20 @@ pub async fn chat_ids(
 pub async fn show_thread_link(
     bot: Bot,
     message: Message,
-    Extension(db): Extension<DbConn>,
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
     if !result.args.is_empty() {
         return Ok(());
     }
 
-    let module = ModuleChecker::new(&bot, &db);
-    let access = module
-        .check::<22>(ModuleAccess::M(&message))
-        .await;
-    if !access {
+    if let Some(true) = message.chat().is_forum() {
+        bot.send(
+            JuzoAnswer::message(&message)
+                .text(format!("{0} Ветка не сработает с включенными темами.", smail_pensil(true))),
+        )
+        .await?;
         return Ok(());
-    }
+    };
 
     let Some(reply) = message.reply_to_message() else {
         bot.send(
@@ -178,20 +181,20 @@ pub async fn show_thread_link(
         .unwrap_or(reply.message_id());
     let reply_ids = reply.message_id();
 
-    let chat_ids_raw = message
-        .chat()
-        .id()
-        .abs()
-        .to_string();
-    let chat_ids = chat_ids_raw.trim_start_matches("100");
+    let chat_ids = ChatIds(message.chat().id()).some();
 
-    let url = format!("https://t.me/c/{chat_ids}/{reply_ids}?thread={thread_ids}",);
+    let url = format!("https://t.me/c/{chat_ids}/{reply_ids}?thread={thread_ids}");
 
-    let _keyboard = InlineKeyboardMarkup::new([[InlineKeyboardButton::new("Перейти").url(url)]]);
-
-    //     format!(
-    //         "<tg-emoji emoji-id='5229057940543005628'>🧵</tg-emoji> Отдельная ветка <a href='{url_string}'>этого</a> сообщения."
-    //     ),
+    bot.send(
+        JuzoAnswer::rich(&message)
+            .rich_message(InputRichMessage::new().html(format!(
+                "<tg-emoji emoji-id='5229057940543005628'>🧵</tg-emoji> Отдельная ветка <a \
+                 href='{url}'>этого</a> сообщения.<tg-button-row><tg-button type='url' \
+                 url='{url}'>Перейти</tg-button></tg-button-row>",
+            )))
+            .reply_parameters(ReplyParameters::new().message_id(reply_ids)),
+    )
+    .await?;
 
     Ok(())
 }

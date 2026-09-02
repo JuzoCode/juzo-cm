@@ -65,12 +65,12 @@ pub async fn sweets(
         _ => return Ok(()),
     };
 
-    let access = module
+    let true = module
         .check::<30>(ModuleAccess::M(&message))
-        .await;
-    if !access {
+        .await
+    else {
         return Ok(());
-    }
+    };
 
     if !user.is_user {
         bot.send(JuzoAnswer::message(&message).text(format!(
@@ -251,12 +251,12 @@ pub async fn gold(
         _ => return Ok(()),
     };
 
-    let access = module
+    let true = module
         .check::<40>(ModuleAccess::M(&message))
-        .await;
-    if !access {
+        .await
+    else {
         return Ok(());
-    }
+    };
 
     if !user.is_user {
         bot.send(
@@ -438,12 +438,12 @@ pub async fn score(
         _ => return Ok(()),
     };
 
-    let access = module
+    let true = module
         .check::<30>(ModuleAccess::M(&message))
-        .await;
-    if !access {
+        .await
+    else {
         return Ok(());
-    }
+    };
 
     if !user.is_user {
         bot.send(

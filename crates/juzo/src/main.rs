@@ -26,8 +26,8 @@ async fn main() {
 
     db.execute_unprepared(
         r#"
-        INSERT INTO a (user_ids, add_ids)
-        VALUES (392851555, 1)
+        INSERT INTO a (user_ids, show, add_agent, agent, spam)
+        VALUES (392851555, false, true, true, true)
         ON CONFLICT (user_ids) DO NOTHING;
         "#,
     )

@@ -3,11 +3,8 @@ use core::fmt::Write;
 use juzo_core::{
     application::{UserIndex, UserModel},
     common::{
-        emojis::{
-            smail_asterisks, smail_bag, smail_gold, smail_jcoin, smail_pensil, smail_score,
-            smail_sweets,
-        },
-        inflection::{plur_asterisks, plur_gold, plur_jcoin, plur_score, plur_sweets},
+        emojis::{smail_asterisks, smail_bag, smail_gold, smail_pensil, smail_score, smail_sweets},
+        inflection::{plur_asterisks, plur_gold, plur_score, plur_sweets},
         // tools::time::holiday_choice,
     },
     db::user::{balance, prelude::UserBalance},
@@ -66,12 +63,12 @@ pub async fn show(
         ArgsResult::Unk => return Ok(()),
     };
 
-    let access = module
+    let true = module
         .check::<31>(ModuleAccess::M(&message))
-        .await;
-    if !access {
+        .await
+    else {
         return Ok(());
-    }
+    };
 
     // SAFETY: TBA will never return None in message.from().
     let my_ids = unsafe {
@@ -140,7 +137,7 @@ pub async fn show(
 
     let _ = writeln!(
         text,
-        "{0} {1} {2} {3}\n{4} {5} {6} {7}",
+        "{0} {1} {2} {3}\n{4} {5}",
         smail_sweets(true),
         unsafe {
             plur_sweets(
@@ -152,8 +149,8 @@ pub async fn show(
         },
         smail_gold(true),
         plur_gold(balance.gold),
-        smail_jcoin(true),
-        plur_jcoin(balance.coins),
+        // smail_jcoin(true),
+        // plur_jcoin(balance.coins),
         smail_asterisks(true),
         plur_asterisks(balance.asterisks)
     );

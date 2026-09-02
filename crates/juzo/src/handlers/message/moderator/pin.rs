@@ -37,12 +37,12 @@ pub async fn add(
         ArgsResult::Unk => return Ok(()),
     };
 
-    let access = module
+    let true = module
         .check::<24>(ModuleAccess::M(&message))
-        .await;
-    if !access {
+        .await
+    else {
         return Ok(());
-    }
+    };
 
     bot.send(
         PinChatMessage::new(message.chat().id(), message_id)
@@ -87,12 +87,12 @@ pub async fn delete(
         ArgsResult::Unk => return Ok(()),
     };
 
-    let access = module
+    let true = module
         .check::<24>(ModuleAccess::M(&message))
-        .await;
-    if !access {
+        .await
+    else {
         return Ok(());
-    }
+    };
 
     bot.send(
         UnpinChatMessage::new(message.chat().id())

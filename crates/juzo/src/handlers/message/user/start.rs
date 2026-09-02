@@ -32,12 +32,12 @@ pub async fn help(
     }
 
     let module = ModuleChecker::new(&bot, &db);
-    let access = module
+    let true = module
         .check::<35>(ModuleAccess::M(&message))
-        .await;
-    if !access {
+        .await
+    else {
         return Ok(());
-    }
+    };
 
     let keyboard = InlineKeyboardMarkup::new([
         [

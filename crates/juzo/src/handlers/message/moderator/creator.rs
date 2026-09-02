@@ -17,12 +17,12 @@ pub async fn repair(
     }
 
     let module = ModuleChecker::new(&bot, &db);
-    let access = module
+    let true = module
         .check::<42>(ModuleAccess::M(&message))
-        .await;
-    if !access {
+        .await
+    else {
         return Ok(());
-    }
+    };
 
     // SAFETY: TBA will never return None in message.from().
     let _iam = unsafe {

@@ -54,21 +54,34 @@ pub async fn show(
         ArgsResult::Unk => return Ok(()),
     };
 
-    let access = module
+    let true = module
         .check::<34>(ModuleAccess::M(&message))
-        .await;
-    if !access {
+        .await
+    else {
         return Ok(());
-    }
+    };
 
-    bot.send(JuzoAnswer::message(&message).text(format!(
-        "{0} <a href='{1}'>{2}</a>: <code>@{3}</code>",
-        smail_tick(true),
-        user.link(),
-        user.full_name(),
-        user.ids,
-    )))
-    .await?;
+    let bare_ids = user.ids.0;
+
+    if bare_ids < 0 {
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} <a href='{1}'>{2}</a>: <code>@_{3}</code>",
+            smail_tick(true),
+            user.link(),
+            user.full_name(),
+            -bare_ids,
+        )))
+        .await?;
+    } else {
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} <a href='{1}'>{2}</a>: <code>@{3}</code>",
+            smail_tick(true),
+            user.link(),
+            user.full_name(),
+            bare_ids,
+        )))
+        .await?;
+    }
 
     Ok(())
 }

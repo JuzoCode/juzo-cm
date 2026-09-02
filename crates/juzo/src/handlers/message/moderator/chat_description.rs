@@ -14,12 +14,12 @@ pub async fn set(
     }
 
     let module = ModuleChecker::new(&bot, &db);
-    let access = module
+    let true = module
         .check::<22>(ModuleAccess::M(&message))
-        .await;
-    if !access {
+        .await
+    else {
         return Ok(());
-    }
+    };
 
     let first_line = result.first_line;
     if first_line.is_empty() {
@@ -74,12 +74,12 @@ pub async fn delete(
     }
 
     let module = ModuleChecker::new(&bot, &db);
-    let access = module
+    let true = module
         .check::<22>(ModuleAccess::M(&message))
-        .await;
-    if !access {
+        .await
+    else {
         return Ok(());
-    }
+    };
 
     bot.send(SetChatDescription::new(message.chat().id()).description_option::<&str>(None))
         .await?;

@@ -7,6 +7,7 @@ mod convey;
 mod description;
 mod start;
 mod test;
+#[cfg(debug_assertions)]
 mod trade;
 mod user_id;
 
@@ -22,8 +23,11 @@ pub fn routers() -> Router {
                     Command::many(&["биржа передать", "передать голд", "перевести голд"])
                         .no_prefix(),
                 ),
+                #[cfg(debug_assertions)]
                 Handler::new(trade::sell).filter(Command::one("биржа продать").no_prefix()),
+                #[cfg(debug_assertions)]
                 Handler::new(trade::buy).filter(Command::one("биржа купить").no_prefix()),
+                #[cfg(debug_assertions)]
                 Handler::new(trade::book)
                     .filter(Command::one("биржа").no_prefix())
                     .filter(
@@ -41,6 +45,7 @@ pub fn routers() -> Router {
                 Handler::new(user_id::show).filter(Command::one("ид")),
                 Handler::new(test::chat_ids).filter(Command::one("чат ид")),
                 Handler::new(bag::show).filter(Command::one("мешок").no_prefix()),
+                Handler::new(test::show_thread_link).filter(Command::one("ветка")),
             ])
         })
         .on_business_message(|observer| {
