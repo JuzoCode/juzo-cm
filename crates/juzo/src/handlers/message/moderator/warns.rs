@@ -187,7 +187,7 @@ pub async fn add(
     if row.is_none() {
         bot.send(JuzoAnswer::message(&message).text(format!(
             "{0} Ваш ранг либо недостаточен, либо его вовсе не хватает.",
-            smail_pensil(true)
+            smail_pensil(true),
         )))
         .await?;
         return Ok(());
