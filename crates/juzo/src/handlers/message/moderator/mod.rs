@@ -22,6 +22,7 @@ pub fn routers() -> Router {
     Router::new("router MODER connect")
         .on_message(|observer| {
             observer.registers([
+                #[cfg(debug_assertions)]
                 Handler::new(warns::delete)
                     .filter(Command::many(&["-варн"]).no_prefix())
                     .filter(ChatType::one(enums::ChatType::Private).invert()),
@@ -64,6 +65,7 @@ pub fn routers() -> Router {
                 Handler::new(pin::delete)
                     .filter(Command::many(&["анпин", "открепить"]))
                     .filter(ChatType::one(enums::ChatType::Private).invert()),
+                #[cfg(debug_assertions)]
                 Handler::new(warns::add)
                     .filter(Command::many(&["варн"]).no_prefix())
                     .filter(ChatType::one(enums::ChatType::Private).invert()),

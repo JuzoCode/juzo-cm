@@ -53,7 +53,7 @@ pub async fn help(
             INNER JOIN u
                 ON u.user_ids = a.user_ids
                AND u.username IS NOT NULL
-            WHERE (a.agent AND a.show) OR a.spam
+            WHERE a.show AND (a.agent OR a.spam);
             "#
         ))
         .await
