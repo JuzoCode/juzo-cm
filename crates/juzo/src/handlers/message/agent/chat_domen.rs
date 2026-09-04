@@ -1,5 +1,8 @@
-use juzo_core::{common::emojis::smail_tick, db::agent::prelude::Agent};
-use sea_orm::{EntityTrait, SelectExt};
+use juzo_core::{
+    common::emojis::smail_tick,
+    db::agent::{agent, prelude::Agent},
+};
+use sea_orm::{EntityTrait, QuerySelect};
 
 use super::super::*;
 
@@ -21,16 +24,15 @@ pub async fn edit(
     }
     .id;
 
-    let Ok(exists) = Agent::find_by_id(my_ids)
-        .exists(&db)
+    let Ok(Some(true)) = Agent::find_by_id(my_ids)
+        .select_only()
+        .column(agent::Column::Agent)
+        .into_tuple::<bool>()
+        .one(&db)
         .await
     else {
         return Ok(());
     };
-    if !exists {
-        return Ok(());
-    }
-
     // SAFETY: The Command filter will not allow processing of a "None" value.
     let text = unsafe {
         message

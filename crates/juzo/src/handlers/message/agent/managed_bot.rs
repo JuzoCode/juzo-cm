@@ -4,14 +4,13 @@ use juzo_core::{
     application::{UserIds, UserIndex, UserModel},
     common::emojis::{smail_pensil, smail_tick},
     db::{
-        agent::prelude::Agent,
+        agent::{agent, prelude::Agent},
         bot::{managed, prelude::ManagedBot},
     },
     payloads::base::encode_token,
 };
 use sea_orm::{
-    ColumnTrait, Condition, EntityTrait, QueryFilter, QuerySelect, SelectExt, Set,
-    sea_query::OnConflict,
+    ColumnTrait, Condition, EntityTrait, QueryFilter, QuerySelect, Set, sea_query::OnConflict,
 };
 use telers::utils::token::extract_bot_id;
 
@@ -31,15 +30,15 @@ pub async fn info(
     }
     .id;
 
-    let Ok(exists) = Agent::find_by_id(my_ids)
-        .exists(&db)
+    let Ok(Some(true)) = Agent::find_by_id(my_ids)
+        .select_only()
+        .column(agent::Column::Agent)
+        .into_tuple::<bool>()
+        .one(&db)
         .await
     else {
         return Ok(());
     };
-    if !exists {
-        return Ok(());
-    }
 
     let user_ind = UserIndex::new(&bot, &db);
 
@@ -216,15 +215,15 @@ pub async fn delete(
     .id
     .into();
 
-    let Ok(exists) = Agent::find_by_id(my_ids)
-        .exists(&db)
+    let Ok(Some(true)) = Agent::find_by_id(my_ids)
+        .select_only()
+        .column(agent::Column::Agent)
+        .into_tuple::<bool>()
+        .one(&db)
         .await
     else {
         return Ok(());
     };
-    if !exists {
-        return Ok(());
-    }
 
     let user_ind = UserIndex::new(&bot, &db);
 
@@ -313,16 +312,15 @@ pub async fn changing_creator(
     }
     .id;
 
-    let Ok(exists) = Agent::find_by_id(my_ids)
-        .exists(&db)
+    let Ok(Some(true)) = Agent::find_by_id(my_ids)
+        .select_only()
+        .column(agent::Column::Agent)
+        .into_tuple::<bool>()
+        .one(&db)
         .await
     else {
         return Ok(());
     };
-    if !exists {
-        return Ok(());
-    }
-
     let user_ind = UserIndex::new(&bot, &db);
 
     // SAFETY: The Command filter will not allow processing of a "None" value.

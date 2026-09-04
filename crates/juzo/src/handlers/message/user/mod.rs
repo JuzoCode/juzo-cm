@@ -1,10 +1,11 @@
 use juzo_core::filters::Command;
 #[cfg(debug_assertions)]
 use juzo_core::filters::{FloodKind, FloodType, FloodWait};
-use telers::{Router, event::telegram::Handler};
+use telers::{Filter, Router, enums, event::telegram::Handler, filters::ChatType};
 
 mod anketa;
 mod bag;
+mod chat_attach;
 mod convey;
 mod description;
 mod start;
@@ -45,9 +46,10 @@ pub fn routers() -> Router {
                 Handler::new(test::time_sms).filter(Command::one("смс время").no_prefix()),
                 Handler::new(test::ping).filter(Command::one("пинг").no_prefix()),
                 Handler::new(user_id::show).filter(Command::one("ид")),
-                Handler::new(test::chat_ids).filter(Command::one("чат ид")),
                 Handler::new(bag::show).filter(Command::one("мешок").no_prefix()),
-                Handler::new(test::show_thread_link).filter(Command::one("ветка")),
+                Handler::new(test::show_thread_link)
+                    .filter(Command::one("ветка"))
+                    .filter(ChatType::one(enums::ChatType::Private).invert()),
             ])
         })
         .on_business_message(|observer| {

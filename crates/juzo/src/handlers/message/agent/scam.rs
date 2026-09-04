@@ -2,11 +2,11 @@ use juzo_core::{
     application::{UserIds, UserIndex, UserModel},
     common::emojis::{smail_pensil, smail_tick},
     db::agent::{
-        BlockFunc, block_system,
+        BlockFunc, agent, block_system,
         prelude::{Agent, BlockSystem},
     },
 };
-use sea_orm::{EntityTrait, SelectExt, Set, sea_query::OnConflict};
+use sea_orm::{EntityTrait, QuerySelect, Set, sea_query::OnConflict};
 
 use super::super::*;
 
@@ -25,15 +25,15 @@ pub async fn add(
     .id
     .into();
 
-    let Ok(exists) = Agent::find_by_id(my_ids)
-        .exists(&db)
+    let Ok(Some(true)) = Agent::find_by_id(my_ids)
+        .select_only()
+        .column(agent::Column::Agent)
+        .into_tuple::<bool>()
+        .one(&db)
         .await
     else {
         return Ok(());
     };
-    if !exists {
-        return Ok(());
-    }
 
     let user_ind = UserIndex::new(&bot, &db);
 
@@ -130,15 +130,15 @@ pub async fn delete(
     }
     .id;
 
-    let Ok(exists) = Agent::find_by_id(my_ids)
-        .exists(&db)
+    let Ok(Some(true)) = Agent::find_by_id(my_ids)
+        .select_only()
+        .column(agent::Column::Agent)
+        .into_tuple::<bool>()
+        .one(&db)
         .await
     else {
         return Ok(());
     };
-    if !exists {
-        return Ok(());
-    }
 
     let user_ind = UserIndex::new(&bot, &db);
 

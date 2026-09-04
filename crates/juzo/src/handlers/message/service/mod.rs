@@ -11,8 +11,8 @@ pub fn routers() -> Router {
                 .filter(MessageType::one(enums::MessageType::CommunityChatAdded)),
             Handler::new(community::removed)
                 .filter(MessageType::one(enums::MessageType::CommunityChatRemoved)),
-            Handler::new(chat_owner::left)
-                .filter(MessageType::one(enums::MessageType::ChatOwnerLeft)),
+            Handler::new(chat_owner::changed)
+                .filter(MessageType::one(enums::MessageType::ChatOwnerChanged)),
             Handler::new(managed_bot_created::send)
                 .filter(MessageType::one(enums::MessageType::ManagedBotCreated)),
         ])

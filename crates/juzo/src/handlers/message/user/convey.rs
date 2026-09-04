@@ -72,6 +72,24 @@ pub async fn sweets(
         return Ok(());
     };
 
+    // SAFETY: TBA will never return None in message.from().
+    let iam: UserModel = unsafe {
+        message
+            .from()
+            .unwrap_unchecked()
+    }
+    .into();
+
+    if user.ids == iam.ids {
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} <b>Перевод получился неудачным.</b> Не бойтесь, ваши {1} в безопасности =)",
+            smail_warning(true),
+            holiday_choice(&"леденцы", &"мандаринки", &"тыковки")
+        )))
+        .await?;
+        return Ok(());
+    }
+
     if !user.is_user {
         bot.send(JuzoAnswer::message(&message).text(format!(
             "{0} {1} передаются только избранным.",
@@ -99,14 +117,6 @@ pub async fn sweets(
         .await?;
         return Ok(());
     }
-
-    // SAFETY: TBA will never return None in message.from().
-    let iam: UserModel = unsafe {
-        message
-            .from()
-            .unwrap_unchecked()
-    }
-    .into();
 
     let bag = UserBalance::find_by_id(iam.ids)
         .select_only()
@@ -186,11 +196,13 @@ pub async fn sweets(
 
     bot.send(JuzoAnswer::message(&message).text(text))
         .await?;
+
     let _ = bot
         .send(
             JuzoAnswer::message(&message)
                 .text(text_send)
                 .chat_id(user.ids.0)
+                .business_connection_id_option::<&str>(None)
                 .reply_parameters_option::<ReplyParameters>(None),
         )
         .await;
@@ -258,6 +270,24 @@ pub async fn gold(
         return Ok(());
     };
 
+    // SAFETY: TBA will never return None in message.from().
+    let iam: UserModel = unsafe {
+        message
+            .from()
+            .unwrap_unchecked()
+    }
+    .into();
+
+    if user.ids == iam.ids {
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} <b>Перевод получился неудачным.</b> Не бойтесь, ваши золотые леденцы в \
+             безопасности =)",
+            smail_warning(true)
+        )))
+        .await?;
+        return Ok(());
+    }
+
     if !user.is_user {
         bot.send(
             JuzoAnswer::message(&message).text(format!(
@@ -286,14 +316,6 @@ pub async fn gold(
         .await?;
         return Ok(());
     }
-
-    // SAFETY: TBA will never return None in message.from().
-    let iam: UserModel = unsafe {
-        message
-            .from()
-            .unwrap_unchecked()
-    }
-    .into();
 
     let bag = UserBalance::find_by_id(iam.ids)
         .select_only()
@@ -373,11 +395,13 @@ pub async fn gold(
 
     bot.send(JuzoAnswer::message(&message).text(text))
         .await?;
+
     let _ = bot
         .send(
             JuzoAnswer::message(&message)
                 .text(text_send)
                 .chat_id(user.ids.0)
+                .business_connection_id_option::<&str>(None)
                 .reply_parameters_option::<ReplyParameters>(None),
         )
         .await;
@@ -445,6 +469,24 @@ pub async fn score(
         return Ok(());
     };
 
+    // SAFETY: TBA will never return None in message.from().
+    let iam: UserModel = unsafe {
+        message
+            .from()
+            .unwrap_unchecked()
+    }
+    .into();
+
+    if user.ids == iam.ids {
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} <b>Перевод получился неудачным.</b> Не бойтесь, ваши очки доната в безопасности \
+             =)",
+            smail_warning(true)
+        )))
+        .await?;
+        return Ok(());
+    }
+
     if !user.is_user {
         bot.send(
             JuzoAnswer::message(&message)
@@ -471,14 +513,6 @@ pub async fn score(
         .await?;
         return Ok(());
     }
-
-    // SAFETY: TBA will never return None in message.from().
-    let iam: UserModel = unsafe {
-        message
-            .from()
-            .unwrap_unchecked()
-    }
-    .into();
 
     let bag = UserBalance::find_by_id(iam.ids)
         .select_only()
@@ -558,11 +592,13 @@ pub async fn score(
 
     bot.send(JuzoAnswer::message(&message).text(text))
         .await?;
+
     let _ = bot
         .send(
             JuzoAnswer::message(&message)
                 .text(text_send)
                 .chat_id(user.ids.0)
+                .business_connection_id_option::<&str>(None)
                 .reply_parameters_option::<ReplyParameters>(None),
         )
         .await;

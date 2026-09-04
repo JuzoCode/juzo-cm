@@ -120,7 +120,7 @@ pub async fn sms_ids(
     Ok(())
 }
 
-pub async fn chat_ids(
+pub async fn show_thread_link(
     bot: Bot,
     message: Message,
     Extension(db): Extension<DbConn>,
@@ -132,34 +132,16 @@ pub async fn chat_ids(
 
     let module = ModuleChecker::new(&bot, &db);
     let true = module
-        .check::<37>(ModuleAccess::M(&message))
+        .check::<44>(ModuleAccess::M(&message))
         .await
     else {
         return Ok(());
     };
 
-    bot.send(
-        JuzoAnswer::message(&message)
-            .text(format!("🗓 ID чата: <code>{0}</code>", message.chat().id())),
-    )
-    .await?;
-
-    Ok(())
-}
-
-pub async fn show_thread_link(
-    bot: Bot,
-    message: Message,
-    Extension(result): Extension<CommandResult>,
-) -> HandlerResult<()> {
-    if !result.args.is_empty() {
-        return Ok(());
-    }
-
     if let Some(true) = message.chat().is_forum() {
         bot.send(
             JuzoAnswer::message(&message)
-                .text(format!("{0} Ветка не сработает с включенными темами.", smail_pensil(true))),
+                .text(format!("{0} Ветка не сработает с включёнными темами.", smail_pensil(true))),
         )
         .await?;
         return Ok(());

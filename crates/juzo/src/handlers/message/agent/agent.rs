@@ -99,6 +99,7 @@ pub async fn add(
             JuzoAnswer::message(&message)
                 .text(format!("👨‍💻 Вы были назначены агентом поддержки «Juzo | Чат-Менеджер»"))
                 .chat_id(user.ids.0)
+                .business_connection_id_option::<&str>(None)
                 .reply_parameters_option::<ReplyParameters>(None),
         )
         .await;
@@ -198,6 +199,7 @@ pub async fn add_spam(
             JuzoAnswer::message(&message)
                 .text(format!("👨‍💻 Вы были назначены агентом антиспама «Juzo | Чат-Менеджер»"))
                 .chat_id(user.ids.0)
+                .business_connection_id_option::<&str>(None)
                 .reply_parameters_option::<ReplyParameters>(None),
         )
         .await;
@@ -265,7 +267,7 @@ pub async fn add_main(
 
     let model = agent::ActiveModel {
         user_ids: Set(user.ids),
-        add_agent: Set(false),
+        add_agent: Set(true),
         ..Default::default()
     };
 
@@ -293,6 +295,7 @@ pub async fn add_main(
                     "👨‍💻 Вы были назначены главный агентом поддержки «Juzo | Чат-Менеджер»"
                 ))
                 .chat_id(user.ids.0)
+                .business_connection_id_option::<&str>(None)
                 .reply_parameters_option::<ReplyParameters>(None),
         )
         .await;

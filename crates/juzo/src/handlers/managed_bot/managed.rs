@@ -42,7 +42,7 @@ pub async fn set(
     let _ = ManagedBot::insert(model)
         .on_conflict(
             OnConflict::column(managed::Column::BotIds)
-                .update_columns([managed::Column::Token, managed::Column::SecretToken])
+                .update_column(managed::Column::Token)
                 .to_owned(),
         )
         .exec(&db)

@@ -2,11 +2,12 @@ use juzo_core::{
     application::{JuzoAnswer, ParseTgLink, UserIndex, UserModel},
     common::{
         emojis::{smail_pensil, smail_tick},
-        inflection::{plur_deleted_a, plur_mark},
+        inflection::{plur_deleted_a, plur_mark, plur_mark_y},
     },
-    db::agent::{BlockFunc, prelude::Agent},
+    db::agent::{BlockFunc, agent, prelude::Agent},
 };
-use sea_orm::{ConnectionTrait, EntityTrait, SelectExt, raw_sql};
+use sea_orm::{ConnectionTrait, EntityTrait, QuerySelect, raw_sql};
+use telers::types::ReplyParameters;
 
 use super::super::*;
 
@@ -25,15 +26,15 @@ async fn delete_core(
     }
     .id;
 
-    let Ok(exists) = Agent::find_by_id(my_ids)
-        .exists(&db)
+    let Ok(Some(true)) = Agent::find_by_id(my_ids)
+        .select_only()
+        .column(agent::Column::Spam)
+        .into_tuple::<bool>()
+        .one(&db)
         .await
     else {
         return Ok(());
     };
-    if !exists {
-        return Ok(());
-    }
 
     let user_ind = UserIndex::new(&bot, &db);
 
@@ -131,18 +132,23 @@ async fn delete_core(
     };
 
     let affected = row.rows_affected();
+    let f = if function == BlockFunc::Spam {
+        "Juzo | Anti-Spam"
+    } else {
+        "Juzo | Ignore System"
+    };
 
     if affected == 0 {
         bot.send(
             JuzoAnswer::message(&message)
-                .text(format!("{0} Нет ни одной пометки для удаления.", smail_pensil(true))),
+                .text(format!("{0} Нет ни одной пометки «{f}» для удаления.", smail_pensil(true))),
         )
         .await?;
         return Ok(());
     }
 
     bot.send(JuzoAnswer::message(&message).text(format!(
-        "{0} У <a href='{1}'>{2}</a> {3} {4}",
+        "{0} У <a href='{1}'>{2}</a> {3} {4} «{f}»",
         smail_tick(true),
         user.link(),
         user.full_name(),
@@ -150,6 +156,16 @@ async fn delete_core(
         plur_mark(affected)
     )))
     .await?;
+
+    let _ = bot
+        .send(
+            JuzoAnswer::message(&message)
+                .text(format!("🗓 Вам удалили {0} «{f}»", plur_mark_y(affected)))
+                .chat_id(user.ids.0)
+                .business_connection_id_option::<&str>(None)
+                .reply_parameters_option::<ReplyParameters>(None),
+        )
+        .await;
 
     Ok(())
 }

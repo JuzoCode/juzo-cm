@@ -1,8 +1,8 @@
 use juzo_core::{
     application::{UserIndex, UserModel},
-    db::agent::prelude::Agent,
+    db::agent::{agent, prelude::Agent},
 };
-use sea_orm::{EntityTrait, SelectExt};
+use sea_orm::{EntityTrait, QuerySelect};
 
 use super::super::*;
 
@@ -21,15 +21,15 @@ pub async fn info(
     }
     .id;
 
-    let Ok(exists) = Agent::find_by_id(my_ids)
-        .exists(&db)
+    let Ok(Some((_is_agent, true))) = Agent::find_by_id(my_ids)
+        .select_only()
+        .columns([agent::Column::Agent, agent::Column::Spam])
+        .into_tuple::<(bool, bool)>()
+        .one(&db)
         .await
     else {
         return Ok(());
     };
-    if !exists {
-        return Ok(());
-    }
 
     let user_ind = UserIndex::new(&bot, &db);
 

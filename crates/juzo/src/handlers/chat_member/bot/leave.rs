@@ -19,7 +19,7 @@ pub async fn yes(
                 SELECT 1
                 FROM c
                 WHERE skip = false
-                    and bot_admin = true
+                    AND bot_admin = true
                 OFFSET 19
                 LIMIT 1
             ) AS allowed

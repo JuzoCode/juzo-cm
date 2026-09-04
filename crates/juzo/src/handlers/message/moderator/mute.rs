@@ -3,19 +3,11 @@ use core::fmt::Write;
 use chrono::Utc;
 use juzo_core::{
     application::{ParseTgLink, UserIndex, UserModel},
-    common::{
-        emojis::{smail_pensil, smail_tick},
-        tools::time::add_datetime,
-    },
+    common::{emojis::smail_pensil, tools::time::add_datetime},
     db::chat::prelude::ChatBlock,
     domain::TimeFormatted,
-    middlewares::inner::MemberTraffic,
 };
 use sea_orm::{ConnectionTrait, EntityTrait, raw_sql};
-use telers::{
-    methods::{BanChatMember, GetChatMember, UnbanChatMember},
-    types::{ChatMemberLeft, User},
-};
 
 use super::super::*;
 
@@ -36,7 +28,7 @@ pub async fn yes(
             .unwrap_unchecked()
     };
     let args = result.args::<11>(text);
-    let reason = &text[result.first_line];
+    let comment = &text[result.first_line];
 
     let (duration, user): (&str, UserModel) = match args {
         ArgsResult::Some(args, len) => {
@@ -84,7 +76,7 @@ pub async fn yes(
         }
         ArgsResult::Unk => return Ok(()),
     };
-    
+
     // SAFETY: TBA will never return None in message.from().
     let iam: UserModel = unsafe {
         message
@@ -94,17 +86,17 @@ pub async fn yes(
     .into();
 
     if iam.ids == user.ids {
-        return Ok(())
-    }
-
-    let access = module
-        .check::<19>(ModuleAccess::M(&message))
-        .await;
-    if !access {
         return Ok(());
     }
 
-    if reason
+    let true = module
+        .check::<19>(ModuleAccess::M(&message))
+        .await
+    else {
+        return Ok(());
+    };
+
+    if comment
         .chars()
         .nth(128)
         .is_some()
@@ -141,8 +133,8 @@ pub async fn yes(
         return Ok(());
     }
 
-    let Ok(_) = db
-        .execute_raw(raw_sql!(
+    let Ok(row) = db
+        .query_one_raw(raw_sql!(
             Postgres,
             r#"
             INSERT INTO c8 (
@@ -153,32 +145,51 @@ pub async fn yes(
                 sms_ids,
                 reason,
                 added,
-                removed
+                removed,
+                rank
             )
-            VALUES (
+            SELECT
                 {user.ids},
                 {chat_ids},
                 false,
                 {iam.ids},
                 {sms_ids},
-                {reason},
+                {comment},
                 {now_ts},
-                {until}
-            )
+                {until},
+                COALESCE(me.rank, 0)
+            FROM c4 AS me
+            LEFT JOIN c4 AS target
+                ON target.chat_ids = me.chat_ids
+                AND target.user_ids = {user.ids}
+            WHERE me.user_ids = {iam.ids}
+                AND me.chat_ids = {chat_ids}
+                AND COALESCE(me.rank, 0) > COALESCE(target.rank, 0)
             ON CONFLICT (user_ids, chat_ids, is_ban)
             DO UPDATE SET
                 moder_ids = EXCLUDED.moder_ids,
                 sms_ids = EXCLUDED.sms_ids,
                 reason = EXCLUDED.reason,
                 added = EXCLUDED.added,
-                removed = EXCLUDED.removed
+                removed = EXCLUDED.removed,
+                rank = EXCLUDED.rank
             WHERE c8.rank <= EXCLUDED.rank
+            RETURNING removed;
             "#
         ))
         .await
     else {
         return Ok(());
     };
+
+    if row.is_none() {
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Ваш ранг либо недостаточен, либо его вовсе не хватает.",
+            smail_pensil(true)
+        )))
+        .await?;
+        return Ok(());
+    }
 
     let mut text = String::with_capacity(2048);
 
@@ -197,9 +208,9 @@ pub async fn yes(
         iam.full_name()
     );
 
-    if !reason.is_empty() {
+    if !comment.is_empty() {
         text.push_str("<b>Причина: </b>");
-        text.push_str(reason);
+        text.push_str(comment);
     }
 
     text.push_str("</blockquote>");
@@ -251,16 +262,16 @@ pub async fn no(
         ArgsResult::Unk => return Ok(()),
     };
 
-    let access = module
+    let true = module
         .check::<20>(ModuleAccess::M(&message))
-        .await;
-    if !access {
+        .await
+    else {
         return Ok(());
-    }
+    };
 
     let chat_ids = message.chat().id();
 
-    let res = ChatBlock::delete_by_id((user.ids, chat_ids.into(), false))
+    let _res = ChatBlock::delete_by_id((user.ids, chat_ids.into(), false))
         .exec(&db)
         .await;
 

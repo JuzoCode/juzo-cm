@@ -1,5 +1,4 @@
-use juzo_core::db::chat::{chat, moder, prelude::Chat};
-use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set, prelude::Expr};
+use sea_orm::{ConnectionTrait, raw_sql};
 use telers::{
     methods::{GetChatAdministrators, SendMessage},
     types::ChatMember,
@@ -13,18 +12,34 @@ pub async fn set(
     Extension(db): Extension<DbConn>,
 ) -> HandlerResult<()> {
     let chat_ids = member.chat.id();
+    let full_name = unsafe {
+        member
+            .chat
+            .title()
+            .unwrap_unchecked()
+    };
 
-    let Ok(result) = Chat::update_many()
-        .col_expr(chat::Column::BotAdmin, Expr::value(true))
-        .filter(chat::Column::ChatIds.eq(chat_ids))
-        .filter(chat::Column::BotAdmin.eq(false))
-        .exec(&db)
+    let Ok(result) = db
+        .execute_raw(raw_sql!(
+            Postgres,
+            r#"
+            INSERT INTO c (
+                chat_ids,
+                bot_admin,
+                full_name
+            )
+            VALUES ({chat_ids}, true, {full_name})
+            ON CONFLICT (chat_ids) DO UPDATE
+                SET bot_admin = true
+                WHERE bot_admin = false
+            "#
+        ))
         .await
     else {
         return Ok(());
     };
 
-    if result.rows_affected == 0 {
+    if result.rows_affected() == 0 {
         return Ok(());
     }
 
@@ -39,22 +54,30 @@ pub async fn set(
             _ => None,
         })
     {
-        let _ = Chat::update_many()
-            .col_expr(chat::Column::OwnerIds, Expr::value(owner_ids))
-            .filter(chat::Column::ChatIds.eq(chat_ids))
-            .exec(&db)
-            .await;
+        let _ = db
+            .execute_raw(raw_sql!(
+                Postgres,
+                r#"
+                UPDATE c SET owner_ids = {owner_ids}
+                    WHERE chat_ids = {chat_ids};
 
-        let _ = moder::ActiveModel {
-            user_ids: Set(owner_ids.into()),
-            chat_ids: Set(chat_ids.into()),
-            peer_ids: Set(owner_ids.into()),
-            rank: Set(6),
-            sms_ids: Set(0),
-            ..Default::default()
-        }
-        .insert(&db)
-        .await;
+                INSERT INTO c4 (
+                    user_ids,
+                    chat_ids,
+                    peer_ids,
+                    rank,
+                    sms_ids
+                )
+                VALUES (
+                    {owner_ids},
+                    {chat_ids},
+                    {owner_ids},
+                    6,
+                    0
+                )
+                "#
+            ))
+            .await;
     }
 
     bot.send(SendMessage::new(chat_ids, "Я так рад что я стал администратором"))

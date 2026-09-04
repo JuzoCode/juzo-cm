@@ -7,13 +7,12 @@ use juzo_core::{
         emojis::{smail_pensil, smail_tick},
         tools::time::add_datetime,
     },
-    db::chat::prelude::ChatBlock,
-    domain::TimeFormatted,
+    domain::{AttachResult, TimeFormatted},
     middlewares::inner::MemberTraffic,
 };
-use sea_orm::{ConnectionTrait, EntityTrait, raw_sql};
+use sea_orm::{ConnectionTrait, raw_sql};
 use telers::{
-    methods::{BanChatMember, GetChatMember, UnbanChatMember},
+    methods::{BanChatMember, BanChatSenderChat, GetChatMember, UnbanChatMember},
     types::{ChatMemberLeft, User},
 };
 
@@ -23,6 +22,7 @@ pub async fn yes(
     bot: Bot,
     message: Message,
     Extension(db): Extension<DbConn>,
+    Extension(arch): Extension<AttachResult>, // не спрашивайте почему
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
     let user_ind = UserIndex::new(&bot, &db);
@@ -37,6 +37,7 @@ pub async fn yes(
     };
     let args = result.args::<11>(text);
     let comment = &text[result.first_line];
+    let chat_ids = arch.chat_ids.0;
 
     // Из-за него пришлось делать новый формат и перепридумывать велосипед парсинга аргии
     // Из-за него появилась идея парсить комбинированные аргию,
@@ -100,12 +101,12 @@ pub async fn yes(
         return Ok(());
     }
 
-    let access = module
-        .check::<9>(ModuleAccess::M(&message))
-        .await;
-    if !access {
+    let true = module
+        .check::<9>(ModuleAccess::CustomM(&message, chat_ids))
+        .await
+    else {
         return Ok(());
-    }
+    };
 
     if comment
         .chars()
@@ -120,9 +121,7 @@ pub async fn yes(
         return Ok(());
     }
 
-    let chat_ids = message.chat().id();
     let sms_ids = message.message_id();
-
     let now = Utc::now();
 
     let Some(delta) = add_datetime(now, duration) else {
@@ -152,13 +151,9 @@ pub async fn yes(
         });
 
     let to_return = MemberTraffic::state(&member) == 1;
-    let tg_ban = bot
-        .send(BanChatMember::new(chat_ids, user.ids))
-        .await
-        .unwrap_or_default();
 
-    let Ok(_) = db
-        .execute_raw(raw_sql!(
+    let Ok(row) = db
+        .query_one_raw(raw_sql!(
             Postgres,
             r#"
             INSERT INTO c8 (
@@ -170,9 +165,10 @@ pub async fn yes(
                 reason,
                 added,
                 removed,
-                to_return
+                to_return,
+                rank
             )
-            VALUES (
+            SELECT
                 {user.ids},
                 {chat_ids},
                 true,
@@ -181,21 +177,49 @@ pub async fn yes(
                 {comment},
                 {now_ts},
                 {until},
-                {to_return}
-            )
+                {to_return},
+                COALESCE(me.rank, 0)
+            FROM c4 AS me
+            LEFT JOIN c4 AS target
+                ON target.chat_ids = me.chat_ids
+                AND target.user_ids = {user.ids}
+            WHERE me.user_ids = {iam.ids}
+                AND me.chat_ids = {chat_ids}
+                AND COALESCE(me.rank, 0) > COALESCE(target.rank, 0)
             ON CONFLICT (user_ids, chat_ids, is_ban)
             DO UPDATE SET
                 moder_ids = EXCLUDED.moder_ids,
                 sms_ids = EXCLUDED.sms_ids,
                 reason = EXCLUDED.reason,
                 added = EXCLUDED.added,
-                removed = EXCLUDED.removed
+                removed = EXCLUDED.removed,
+                rank = EXCLUDED.rank
             WHERE c8.rank <= EXCLUDED.rank
+            RETURNING removed;
             "#
         ))
         .await
     else {
         return Ok(());
+    };
+
+    if row.is_none() {
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Ваш ранг либо недостаточен, либо его вовсе не хватает.",
+            smail_pensil(true)
+        )))
+        .await?;
+        return Ok(());
+    }
+
+    let tg_ban = if user.ids.0 < 0 {
+        bot.send(BanChatSenderChat::new(chat_ids, user.ids))
+            .await
+            .unwrap_or_default()
+    } else {
+        bot.send(BanChatMember::new(chat_ids, user.ids))
+            .await
+            .unwrap_or_default()
     };
 
     let mut text = String::with_capacity(2048);
@@ -273,32 +297,112 @@ pub async fn no(
         ArgsResult::Unk => return Ok(()),
     };
 
-    let access = module
+    let true = module
         .check::<10>(ModuleAccess::M(&message))
-        .await;
-    if !access {
+        .await
+    else {
         return Ok(());
-    }
+    };
 
     let chat_ids = message.chat().id();
 
-    let _ = bot
+    let member = bot
         .send(GetChatMember::new(chat_ids, user.ids))
+        .await
+        .unwrap_or_else(|_| {
+            ChatMemberLeft::new(User::new(392851555, false, "Hello, Juzo Code")).into()
+        });
+
+    // SAFETY: TBA will never return None in message.from().
+    let my_ids = unsafe {
+        message
+            .from()
+            .unwrap_unchecked()
+    }
+    .id;
+    let state = MemberTraffic::state(&member) == 1;
+    let Ok(Some(row)) = db
+        .query_one_raw(raw_sql!(
+            Postgres,
+            r#"
+            WITH target AS (
+                SELECT
+                    c8.rank,
+                    c8.moder_ids,
+                    coalesce(c4.rank, 0) AS my_rank
+                FROM c8
+                LEFT JOIN c4
+                ON c4.user_ids = {my_ids}
+                AND c4.chat_ids = {chat_ids}
+                WHERE c8.user_ids = {user.ids}
+                AND c8.chat_ids = {chat_ids}
+                AND c8.is_ban
+            ),
+            deleted AS (
+                DELETE FROM c8
+                USING target
+                WHERE c8.user_ids = {user.ids}
+                AND c8.chat_ids = {chat_ids}
+                AND c8.is_ban
+                AND (
+                    target.moder_ids = {my_ids}
+                    OR target.rank <= target.my_rank
+                )
+                RETURNING 1
+            )
+            SELECT CASE
+                WHEN EXISTS (SELECT 1 FROM deleted) THEN 1
+                WHEN EXISTS (SELECT 1 FROM target) THEN 0
+                ELSE 2
+            END AS affected;
+            "#
+        ))
+        .await
+    else {
+        return Ok(());
+    };
+
+    let affected = row
+        .try_get::<i16>("", "affected")
+        .unwrap_or(0);
+
+    if affected == 0 {
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Чтобы разбанить <a href='{1}'>{2}</a>, вашего ранга не хватает.",
+            smail_pensil(true),
+            user.link(),
+            user.full_name(),
+        )))
         .await?;
+        return Ok(());
+    }
 
     bot.send(UnbanChatMember::new(chat_ids, user.ids.0).only_if_banned(true))
         .await?;
 
-    let res = ChatBlock::delete_by_id((user.ids, chat_ids.into(), true))
-        .exec(&db)
-        .await;
-
-    match res {
-        Ok(r) if r.rows_affected > 0 => {
+    match (affected, state) {
+        (1, false) => {
             bot.send(JuzoAnswer::message(&message).text(format!(
                 "{0} <a href='{1}'>{2}</a> разбанен. Теперь можно добавить его в чат или <b>снова \
                  забанить</b> =)",
                 smail_tick(true),
+                user.link(),
+                user.full_name(),
+            )))
+            .await?;
+        }
+        (1, true) => {
+            bot.send(JuzoAnswer::message(&message).text(format!(
+                "🗓 <a href='{0}'>{1}</a> исключён из бан-листа, но уже находится в чате",
+                user.link(),
+                user.full_name(),
+            )))
+            .await?;
+        }
+        (_, true) => {
+            bot.send(JuzoAnswer::message(&message).text(format!(
+                "{0} <a href='{1}'>{2}</a> не забанен и уже находится в чате.",
+                smail_pensil(true),
                 user.link(),
                 user.full_name(),
             )))

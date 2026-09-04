@@ -229,6 +229,7 @@ async fn delete_core(
                     JuzoAnswer::message(&message)
                         .text("🗓 Вас вынесли из «Juzo | Anti-Spam».\n<b>Впредь больше не нарушайте</b>, лучше почитайте моё <a href='https://teletype.in/@juzo_cm/EULA'>пользовательское соглашение</a> =)")
                         .chat_id(user.ids.0)
+                        .business_connection_id_option::<&str>(None)
                         .reply_parameters_option::<ReplyParameters>(None),
                 )
                 .await;
@@ -247,6 +248,7 @@ async fn delete_core(
                     JuzoAnswer::message(&message)
                         .text("🗓 Вас вынесли из «Juzo | Anti-Spam» без пометки о выносе")
                         .chat_id(user.ids.0)
+                        .business_connection_id_option::<&str>(None)
                         .reply_parameters_option::<ReplyParameters>(None),
                 )
                 .await;
