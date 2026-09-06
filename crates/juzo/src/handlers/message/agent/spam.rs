@@ -59,21 +59,26 @@ pub async fn add(
 
                 (&text[args[0].start..last.start], found_user)
             } else {
-                let Some(reply) = message.reply_to_message() else {
+                let found_user = if let Some(r) = message.reply_to_message() {
+                    // SAFETY: TBA will never return None in message.from().
+                    unsafe {
+                        r.from()
+                            .unwrap_unchecked()
+                            .into()
+                    }
+                } else if message
+                    .business_connection_id()
+                    .is_some()
+                {
+                    message.chat().into()
+                } else {
                     return Ok(());
                 };
-
-                // SAFETY: TBA will never return None in message.from().
-                let found_user = unsafe {
-                    reply
-                        .from()
-                        .unwrap_unchecked()
-                }
-                .into();
 
                 (&text[args[0].start..], found_user)
             }
         }
+        // SAFETY: TBA will never return None in message.from().
         ArgsResult::None => unsafe {
             let found_user = if let Some(r) = message.reply_to_message() {
                 r.from()
@@ -89,7 +94,7 @@ pub async fn add(
             };
 
             ("", found_user)
-        }
+        },
         ArgsResult::Unk => return Ok(()),
     };
 
