@@ -8,9 +8,10 @@ use juzo_core::{
         agent::{BlockFunc, block_system, prelude::BlockSystem},
         chat::block::BlockInfo,
     },
-    domain::TimeFormatted,
+    domain::{AttachResult, TimeFormatted},
 };
 use sea_orm::{EntityTrait, FromQueryResult, QuerySelect, raw_sql};
+use telers::types::InputRichMessage;
 
 use super::super::*;
 
@@ -18,6 +19,7 @@ pub async fn info(
     bot: Bot,
     message: Message,
     Extension(db): Extension<DbConn>,
+    Extension(arch): Extension<AttachResult>,
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
     let user_ind = UserIndex::new(&bot, &db);
@@ -31,6 +33,7 @@ pub async fn info(
             .unwrap_unchecked()
     };
     let args = result.args::<1>(text);
+    let chat_ids = arch.chat_ids;
 
     let user: UserModel = match args {
         ArgsResult::Some([a1], _) => {
@@ -56,13 +59,11 @@ pub async fn info(
     };
 
     let true = module
-        .check::<12>(ModuleAccess::M(&message))
+        .check::<12>(ModuleAccess::CustomM(&message, chat_ids.0))
         .await
     else {
         return Ok(());
     };
-
-    let chat_ids = message.chat().id();
 
     let Ok(Some(info)) = BlockInfo::find_by_statement(raw_sql!(
         Postgres,
@@ -74,23 +75,32 @@ pub async fn info(
             c8.sms_ids,
             c8.reason AS ban_reason,
             c8.moder_ids,
+            u.full_name,
+            COALESCE(
+                'https://t.me/' || u.username,
+                'tg://openmessage/user_id=' || c8.moder_ids::text
+            ) AS link,
             a3.reason AS spam_reason
         FROM c8
         FULL JOIN a3
             ON a3.user_ids = c8.user_ids
             AND a3.function = 2
+        LEFT JOIN u
+            ON u.user_ids = c8.moder_ids
         WHERE
             (
                 c8.user_ids = {user.ids}
                 AND c8.chat_ids = {chat_ids}
-                AND c8.is_ban = true
+                AND c8.is_ban
                 AND (
                     c8.removed = 0
                     OR c8.removed > EXTRACT(EPOCH FROM NOW())::bigint
                 )
             )
-            OR
-            (a3.user_ids = {user.ids} AND a3.function = 2)
+            OR (
+                a3.user_ids = {user.ids}
+                AND a3.function = 2
+            )
         "#
     ))
     .one(&db)
@@ -103,14 +113,13 @@ pub async fn info(
             user.full_name()
         )))
         .await?;
-
         return Ok(());
     };
 
     let mut text =
         format!("🗓 <b>Список наказаний <a href='{0}'>{1}</a>.</b>", user.link(), user.full_name());
     if let Some(reason) = info.spam_reason {
-        text.push_str("\n* Находится в базе <b>«Джузо-антиспам»</b>");
+        text.push_str("<br>* Находится в базе <b>«Джузо-антиспам»</b>");
 
         if !reason.is_empty() {
             let _ = write!(text, ".<blockquote expandable><b>Причина: </b>{reason}</blockquote>");
@@ -120,6 +129,10 @@ pub async fn info(
     if let Some(reason) = info.ban_reason {
         let removed = unsafe {
             info.removed
+                .unwrap_unchecked()
+        };
+        let sms_ids = unsafe {
+            info.sms_ids
                 .unwrap_unchecked()
         };
         let added = DateTime::<Utc>::from_timestamp(
@@ -132,31 +145,45 @@ pub async fn info(
         .unwrap_or_default();
 
         if removed == 0 {
-            text.push_str("\n\n<b>❗️ Забанен навсегда");
+            let _ = write!(
+                text,
+                "<br><br><b>❗️ Забанен <tg-button type='url' style='danger' url='https://t.me/c/{0}/{1}'>навсегда",
+                chat_ids.some(),
+                sms_ids
+            );
         } else {
-            let _ = write!(text, "\n\n<b>❗️ Забанен на {0}", TimeFormatted::until(removed, added));
+            let _ = write!(
+                text,
+                "<br><br><b>❗️ Забанен на <tg-button type='url' style='danger' url='https://t.me/c/{0}/{1}'>{2}",
+                chat_ids.some(),
+                sms_ids,
+                TimeFormatted::until(removed, added)
+            );
         }
 
         unsafe {
             let _ = write!(
                 text,
-                " ({0})</b><blockquote expandable><b>Модератор: </b>{1}\n<b>Когда: </b>{2}",
+                "</tg-button> ({0})</b><blockquote expandable><b>Модератор: </b><a \
+                 href='{1}'>{2}</a><br><b>Когда: </b>{3}",
                 info.rank
                     .unwrap_unchecked(),
-                info.moder_ids
+                info.link
+                    .unwrap_unchecked(),
+                info.full_name
                     .unwrap_unchecked(),
                 added.format("%d.%m.%Y")
             );
         }
 
         if !reason.is_empty() {
-            let _ = write!(text, "\n<b>Причина: </b>{reason}");
+            let _ = write!(text, "<br><b>Причина: </b>{reason}");
         }
 
         text.push_str("</blockquote>")
     }
 
-    bot.send(JuzoAnswer::message(&message).text(text))
+    bot.send(JuzoAnswer::rich(&message).rich_message(InputRichMessage::new().html(text)))
         .await?;
 
     Ok(())
@@ -245,7 +272,6 @@ pub async fn info_mute(
             user.full_name()
         )))
         .await?;
-
         return Ok(());
     };
 
@@ -293,12 +319,18 @@ pub async fn scam(
         ArgsResult::Unk => return Ok(()),
     };
 
-    let true = module
-        .check::<12>(ModuleAccess::M(&message))
-        .await
-    else {
-        return Ok(());
-    };
+    if message
+        .chat()
+        .title()
+        .is_some()
+    {
+        let true = module
+            .check::<12>(ModuleAccess::M(&message))
+            .await
+        else {
+            return Ok(());
+        };
+    }
 
     let Ok(Some((reason, added))) = BlockSystem::find_by_id((user.ids, BlockFunc::Scam))
         .select_only()
@@ -321,10 +353,16 @@ pub async fn scam(
         user.full_name()
     );
 
+    let added = DateTime::<Utc>::from_timestamp(added, 0).unwrap_or_default();
+
     if !reason.is_empty() {
-        let _ = write!(text, "<b>Причина:</b> {reason}\n<b>Добавлен:</b> {added}</blockquote>");
+        let _ = write!(
+            text,
+            "<b>Причина:</b> {reason}\n<b>Добавлен:</b> {0}</blockquote>",
+            added.format("%d.%m.%Y")
+        );
     } else {
-        let _ = write!(text, "<b>Добавлен:</b> {added}</blockquote>");
+        let _ = write!(text, "<b>Добавлен:</b> {0}</blockquote>", added.format("%d.%m.%Y"));
     }
 
     bot.send(JuzoAnswer::message(&message).text(text))
@@ -333,7 +371,7 @@ pub async fn scam(
     Ok(())
 }
 
-pub async fn warn_list(
+pub async fn _warn_list(
     bot: Bot,
     message: Message,
     Extension(db): Extension<DbConn>,
@@ -399,7 +437,6 @@ pub async fn warn_list(
             user.full_name()
         )))
         .await?;
-
         return Ok(());
     };
 

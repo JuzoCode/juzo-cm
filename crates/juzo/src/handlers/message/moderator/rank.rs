@@ -2,7 +2,7 @@ use juzo_core::application::{ParseTgLink, UserIndex, UserModel};
 
 use super::super::*;
 
-async fn up_core(
+async fn _up_core(
     bot: Bot,
     message: Message,
     Extension(db): Extension<DbConn>,

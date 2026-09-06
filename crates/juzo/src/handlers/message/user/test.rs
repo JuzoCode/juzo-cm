@@ -22,14 +22,19 @@ pub async fn ping(
         return Ok(());
     }
 
-    let module = ModuleChecker::new(&bot, &db);
-    let true = module
-        .check::<35>(ModuleAccess::M(&message))
-        .await
-    else {
-        return Ok(());
-    };
-
+    if message
+        .chat()
+        .title()
+        .is_some()
+    {
+        let module = ModuleChecker::new(&bot, &db);
+        let true = module
+            .check::<35>(ModuleAccess::M(&message))
+            .await
+        else {
+            return Ok(());
+        };
+    }
     // SAFETY: TBA will never return None in message.from().
     let data = unsafe {
         PackedPayload::new(

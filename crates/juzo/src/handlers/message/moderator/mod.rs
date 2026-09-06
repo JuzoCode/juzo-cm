@@ -22,13 +22,19 @@ pub fn routers() -> Router {
     Router::new("router MODER connect")
         .on_message(|observer| {
             observer.registers([
+                Handler::new(module_access::edit_show_false)
+                    .filter(Command::many(&["-дм"]).no_prefix())
+                    .filter(Attach),
+                Handler::new(module_access::edit_show_true)
+                    .filter(Command::many(&["+дм"]).no_prefix())
+                    .filter(Attach),
                 #[cfg(debug_assertions)]
                 Handler::new(warns::delete)
                     .filter(Command::many(&["-варн"]).no_prefix())
                     .filter(ChatType::one(enums::ChatType::Private).invert()),
                 Handler::new(ban::no)
                     .filter(Command::many(&["разбан"]).no_prefix())
-                    .filter(ChatType::one(enums::ChatType::Private).invert()),
+                    .filter(Attach),
                 Handler::new(ban::yes)
                     .filter(Command::many(&["бан", "чс"]).no_prefix())
                     .filter(Attach),
@@ -40,7 +46,7 @@ pub fn routers() -> Router {
                     .filter(ChatType::one(enums::ChatType::Private).invert()),
                 Handler::new(mute::yes)
                     .filter(Command::many(&["мут"]).no_prefix())
-                    .filter(ChatType::one(enums::ChatType::Private).invert()),
+                    .filter(Attach),
                 Handler::new(tag::add)
                     .filter(Command::many(&["+тг тег", "+тг тэг"]).no_prefix())
                     .filter(ChatType::one(enums::ChatType::Private).invert()),
@@ -75,7 +81,7 @@ pub fn routers() -> Router {
                 Handler::new(topic_name::set)
                     .filter(Command::one("топик название"))
                     .filter(ChatType::one(enums::ChatType::Private).invert()),
-                Handler::new(topic_name::set)
+                Handler::new(chat_name::set)
                     .filter(Command::one("название"))
                     .filter(ChatType::one(enums::ChatType::Private).invert()),
                 Handler::new(topic_reopen::set)
@@ -89,10 +95,10 @@ pub fn routers() -> Router {
                 ),
                 Handler::new(reason::info_mute)
                     .filter(Command::many(&["причина мута", "проверить мут"]).no_prefix())
-                    .filter(ChatType::one(enums::ChatType::Private).invert()),
+                    .filter(Attach),
                 Handler::new(reason::info)
                     .filter(Command::one("причина").no_prefix())
-                    .filter(ChatType::one(enums::ChatType::Private).invert()),
+                    .filter(Attach),
             ])
         })
         .on_business_message(|observer| {

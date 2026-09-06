@@ -1,9 +1,16 @@
-use juzo_core::db::chat::{chat_module, prelude::ChatModule};
+use juzo_core::{
+    common::emojis::{smail_cross, smail_tick},
+    db::chat::{
+        chat_module,
+        prelude::{ChatModule, ChatSetting},
+        setting,
+    },
+};
 use sea_orm::{EntityTrait, Set, sea_query::OnConflict};
 
 use super::super::*;
 
-pub async fn add(
+pub async fn _add(
     bot: Bot,
     message: Message,
     Extension(db): Extension<DbConn>,
@@ -66,7 +73,7 @@ pub async fn add(
     Ok(())
 }
 
-pub async fn delete(
+pub async fn _delete(
     bot: Bot,
     message: Message,
     Extension(db): Extension<DbConn>,
@@ -102,4 +109,74 @@ pub async fn delete(
     Ok(())
 }
 
-// Через два месяца все сделаю, наверно =))) И то, что открытие 28 августа, меня не волнует
+async fn edit_show_core(
+    bot: Bot,
+    message: Message,
+    Extension(db): Extension<DbConn>,
+    Extension(result): Extension<CommandResult>,
+    show: bool,
+) -> HandlerResult<()> {
+    if !result.args.is_empty() {
+        return Ok(());
+    }
+
+    let module = ModuleChecker::new(&bot, &db);
+    let true = module
+        .check::<22>(ModuleAccess::M(&message))
+        .await
+    else {
+        return Ok(());
+    };
+
+    let model = setting::ActiveModel {
+        chat_ids: Set(message
+            .chat()
+            .id()
+            .into()),
+        access_command: Set(show),
+        ..Default::default()
+    };
+
+    let _ = ChatSetting::insert(model)
+        .on_conflict(
+            OnConflict::column(setting::Column::ChatIds)
+                .update_column(setting::Column::AccessCommand)
+                .to_owned(),
+        )
+        .exec(&db)
+        .await;
+
+    if show {
+        bot.send(
+            JuzoAnswer::message(&message)
+                .text(format!("{0} Оповещения о доступности модулей включены", smail_tick(true))),
+        )
+        .await?;
+    } else {
+        bot.send(
+            JuzoAnswer::message(&message)
+                .text(format!("{0} Оповещения о доступности модулей отключены", smail_cross(true))),
+        )
+        .await?;
+    }
+
+    Ok(())
+}
+
+pub async fn edit_show_true(
+    bot: Bot,
+    message: Message,
+    db: Extension<DbConn>,
+    result: Extension<CommandResult>,
+) -> HandlerResult<()> {
+    edit_show_core(bot, message, db, result, true).await
+}
+
+pub async fn edit_show_false(
+    bot: Bot,
+    message: Message,
+    db: Extension<DbConn>,
+    result: Extension<CommandResult>,
+) -> HandlerResult<()> {
+    edit_show_core(bot, message, db, result, false).await
+}

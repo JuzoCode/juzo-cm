@@ -3,13 +3,18 @@ use core::fmt::Write;
 use juzo_core::{
     application::{UserIndex, UserModel},
     common::{
-        emojis::{smail_asterisks, smail_bag, smail_gold, smail_pensil, smail_score, smail_sweets},
+        emojis::{
+            smail_asterisks, smail_bag, smail_cross, smail_gold, smail_pensil, smail_score,
+            smail_sweets, smail_tick,
+        },
         inflection::{plur_asterisks, plur_gold, plur_score, plur_sweets},
-        // tools::time::holiday_choice,
     },
     db::user::{balance, prelude::UserBalance},
 };
-use sea_orm::{EntityTrait, raw_sql, sea_query::prelude::rust_decimal::prelude::ToPrimitive};
+use sea_orm::{
+    EntityTrait, Set, raw_sql,
+    sea_query::{OnConflict, prelude::rust_decimal::prelude::ToPrimitive},
+};
 
 use super::super::*;
 
@@ -63,12 +68,30 @@ pub async fn show(
         ArgsResult::Unk => return Ok(()),
     };
 
-    let true = module
-        .check::<31>(ModuleAccess::M(&message))
-        .await
-    else {
+    if message
+        .chat()
+        .title()
+        .is_some()
+    {
+        let true = module
+            .check::<31>(ModuleAccess::M(&message))
+            .await
+        else {
+            return Ok(());
+        };
+    }
+
+    if !user.is_user {
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} <b><a href='{1}'>{2}</a></b> скрыл мешок.<blockquote>Заслужите его милость, и \
+             тогда <b>просите открыть его!</b> =)</blockquote>",
+            smail_pensil(true),
+            user.link(),
+            user.full_name(),
+        )))
+        .await?;
         return Ok(());
-    };
+    }
 
     // SAFETY: TBA will never return None in message.from().
     let my_ids = unsafe {
@@ -171,4 +194,92 @@ pub async fn show(
         .await?;
 
     Ok(())
+}
+
+async fn edit_show_core(
+    bot: Bot,
+    message: Message,
+    Extension(db): Extension<DbConn>,
+    Extension(result): Extension<CommandResult>,
+    show: bool,
+) -> HandlerResult<()> {
+    if !result.args.is_empty() {
+        return Ok(());
+    }
+
+    if message
+        .chat()
+        .title()
+        .is_some()
+    {
+        let module = ModuleChecker::new(&bot, &db);
+        let true = module
+            .check::<31>(ModuleAccess::M(&message))
+            .await
+        else {
+            return Ok(());
+        };
+    }
+
+    let iam: UserModel = unsafe {
+        message
+            .from()
+            .unwrap_unchecked()
+    }
+    .into();
+
+    if !iam.is_user {
+        return Ok(());
+    }
+
+    let model = balance::ActiveModel {
+        user_ids: Set(iam.ids),
+        show: Set(show),
+        ..Default::default()
+    };
+
+    let _ = UserBalance::insert(model)
+        .on_conflict(
+            OnConflict::column(balance::Column::UserIds)
+                .update_column(balance::Column::Show)
+                .to_owned(),
+        )
+        .exec(&db)
+        .await;
+
+    if show {
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Теперь <a href='{1}'>ваш</a> мешок открыт",
+            smail_tick(true),
+            iam.link()
+        )))
+        .await?;
+    } else {
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Теперь <a href='{1}'>ваш</a> мешок закрыт",
+            smail_cross(true),
+            iam.link()
+        )))
+        .await?;
+    }
+
+    Ok(())
+}
+
+pub async fn edit_show_true(
+    bot: Bot,
+    message: Message,
+    db: Extension<DbConn>,
+    result: Extension<CommandResult>,
+) -> HandlerResult<()> {
+    edit_show_core(bot, message, db, result, true).await
+}
+
+pub async fn edit_show_false(
+    bot: Bot,
+    message: Message,
+    db: Extension<DbConn>,
+    result: Extension<CommandResult>,
+) -> HandlerResult<()> {
+    edit_show_core(bot, message, db, result, false).await
 }

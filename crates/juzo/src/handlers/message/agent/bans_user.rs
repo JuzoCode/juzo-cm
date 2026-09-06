@@ -7,7 +7,7 @@ use sea_orm::{EntityTrait, QuerySelect};
 use super::super::*;
 
 /// TODO
-pub async fn info(
+pub async fn _info(
     bot: Bot,
     message: Message,
     Extension(db): Extension<DbConn>,

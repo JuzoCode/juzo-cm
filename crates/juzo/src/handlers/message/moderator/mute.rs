@@ -1,6 +1,6 @@
 use core::fmt::Write;
 
-use chrono::Utc;
+use chrono::{Timelike, Utc};
 use juzo_core::{
     application::{ParseTgLink, UserIndex, UserModel},
     common::{emojis::smail_pensil, tools::time::add_datetime},
@@ -111,8 +111,12 @@ pub async fn yes(
 
     let chat_ids = message.chat().id();
     let sms_ids = message.message_id();
-
-    let now = Utc::now();
+    // SAFETY: ¯\_(ツ)_/¯
+    let now = unsafe {
+        Utc::now()
+            .with_nanosecond(0)
+            .unwrap_unchecked()
+    };
 
     let Some(delta) = add_datetime(now, duration) else {
         return Ok(());
@@ -165,8 +169,7 @@ pub async fn yes(
             WHERE me.user_ids = {iam.ids}
                 AND me.chat_ids = {chat_ids}
                 AND COALESCE(me.rank, 0) > COALESCE(target.rank, 0)
-            ON CONFLICT (user_ids, chat_ids, is_ban)
-            DO UPDATE SET
+            ON CONFLICT (user_ids, chat_ids, is_ban) DO UPDATE SET
                 moder_ids = EXCLUDED.moder_ids,
                 sms_ids = EXCLUDED.sms_ids,
                 reason = EXCLUDED.reason,
@@ -221,7 +224,7 @@ pub async fn yes(
     Ok(())
 }
 
-pub async fn no(
+pub async fn _no(
     bot: Bot,
     message: Message,
     Extension(db): Extension<DbConn>,

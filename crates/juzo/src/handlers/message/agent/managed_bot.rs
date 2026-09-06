@@ -5,12 +5,13 @@ use juzo_core::{
     common::emojis::{smail_pensil, smail_tick},
     db::{
         agent::{agent, prelude::Agent},
-        bot::{managed, prelude::ManagedBot},
+        bot::{managed, managed::ManagedInfo, prelude::ManagedBot},
     },
     payloads::base::encode_token,
 };
 use sea_orm::{
-    ColumnTrait, Condition, EntityTrait, QueryFilter, QuerySelect, Set, sea_query::OnConflict,
+    ColumnTrait, Condition, EntityTrait, FromQueryResult, QueryFilter, QuerySelect, Set, raw_sql,
+    sea_query::OnConflict,
 };
 use telers::utils::token::extract_bot_id;
 
@@ -79,39 +80,50 @@ pub async fn info(
         ArgsResult::Unk => return Ok(()),
     };
 
-    let Ok(data) = ManagedBot::find_by_id(user.ids)
-        .select_only()
-        .columns([
-            managed::Column::ManagedBot,
-            managed::Column::CreatorIds,
-            managed::Column::IsOfficial,
-        ])
-        .into_tuple::<(i64, i64, bool)>()
-        .one(&db)
-        .await
+    let Ok(Some(info)) = ManagedInfo::find_by_statement(raw_sql!(
+        Postgres,
+        r#"
+        SELECT
+            creator_ids,
+            is_official,
+            full_name,
+            COALESCE(
+                'https://t.me/' || username,
+                'tg://openmessage/user_id=' || creator_ids::text
+            ) AS link,
+            COALESCE(mb.username, 'juzo_all') AS bot_username,
+            mb.full_name AS bot_full_name
+        FROM b
+        JOIN u ON user_ids = creator_ids
+        JOIN u AS mb ON mb.user_ids = managed_bot
+        WHERE bot_ids = {user.ids}
+        "#
+    ))
+    .one(&db)
+    .await
     else {
-        return Ok(());
-    };
-
-    if data.is_none() {
         bot.send(
             JuzoAnswer::message(&message)
                 .text(format!("{0} Данный бот не поддерживается Джузо.", smail_pensil(true))),
         )
         .await?;
         return Ok(());
-    }
-    let data = data.unwrap();
+    };
 
     let mut text = format!(
         "<tg-emoji emoji-id='5339267587337370029'>🤖</tg-emoji> <a href='{0}'>{1}</a> создан и \
-         поддерживается {2}",
+         поддерживается <a href='https://t.me/{2}'>{3}</a>",
         user.link(),
         user.full_name(),
-        data.0,
+        info.bot_username,
+        info.bot_full_name,
     );
-    if !data.2 {
-        let _ = write!(text, ".\n&lt;/&gt; <b>Создатель:</b> {0}", data.1);
+    if !info.is_official {
+        let _ = write!(
+            text,
+            ".\n&lt;/&gt; <b>Создатель:</b> <a href='{0}'>{1}</a> (<code>@{2}</code>)",
+            info.link, info.full_name, info.creator_ids
+        );
     }
 
     bot.send(JuzoAnswer::message(&message).text(text))
@@ -298,7 +310,7 @@ pub async fn delete(
 }
 
 /// добавить в бизнес мод и аргию команды тоже
-pub async fn changing_creator(
+pub async fn _changing_creator(
     bot: Bot,
     message: Message,
     Extension(db): Extension<DbConn>,
@@ -330,12 +342,21 @@ pub async fn changing_creator(
             .or_else(|| message.caption())
             .unwrap_unchecked()
     };
-    let args = result.args::<1>(text);
+    let args = result.args::<2>(text);
 
-    // тут два аргумента [a1: пользователь, a2: бот] или [a1: пользователь] и реплай бот
+    // тут два аргумента [a1: пользователь, a2: бот] или [a1: бот] и реплай бот
 
     let user: UserModel = match args {
-        ArgsResult::Some([a1], _) => {
+        ArgsResult::Some([_a1, a2], 2) => {
+            let Ok(found_user) = user_ind
+                .search_user(&text[a2])
+                .await
+            else {
+                return Ok(());
+            };
+            found_user
+        }
+        ArgsResult::Some([a1, _], _) => {
             let Ok(found_user) = user_ind
                 .search_user(&text[a1])
                 .await
@@ -359,7 +380,7 @@ pub async fn changing_creator(
                 return Ok(());
             }
         },
-        ArgsResult::Unk => return Ok(()),
+        _ => return Ok(()),
     };
 
     let res = ManagedBot::update(managed::ActiveModel {

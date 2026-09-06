@@ -1,11 +1,11 @@
 use chrono::Utc;
 use juzo_core::{
     application::{UserIndex, UserModel},
-    common::emojis::smail_pensil,
+    common::emojis::{smail_cross, smail_pensil, smail_tick},
     db::user::{anketa, prelude::UserAnketa},
     domain::TimeFormatted,
 };
-use sea_orm::{EntityTrait, QuerySelect, raw_sql};
+use sea_orm::{EntityTrait, QuerySelect, Set, raw_sql, sea_query::OnConflict};
 
 use super::super::*;
 
@@ -59,12 +59,18 @@ pub async fn show(
         ArgsResult::Unk => return Ok(()),
     };
 
-    let true = module
-        .check::<28>(ModuleAccess::M(&message))
-        .await
-    else {
-        return Ok(());
-    };
+    if message
+        .chat()
+        .title()
+        .is_some()
+    {
+        let true = module
+            .check::<28>(ModuleAccess::M(&message))
+            .await
+        else {
+            return Ok(());
+        };
+    }
 
     // SAFETY: TBA will never return None in message.from().
     let my_ids = unsafe {
@@ -167,13 +173,18 @@ pub async fn first_appearance(
         },
         ArgsResult::Unk => return Ok(()),
     };
-
-    let true = module
-        .check::<29>(ModuleAccess::M(&message))
-        .await
-    else {
-        return Ok(());
-    };
+    if message
+        .chat()
+        .title()
+        .is_some()
+    {
+        let true = module
+            .check::<29>(ModuleAccess::M(&message))
+            .await
+        else {
+            return Ok(());
+        };
+    }
 
     // Слышали про английский? -- Нет
     let added = UserAnketa::find_by_id(user.ids)
@@ -209,4 +220,89 @@ pub async fn first_appearance(
         .await?;
 
     Ok(())
+}
+
+async fn edit_show_core(
+    bot: Bot,
+    message: Message,
+    Extension(db): Extension<DbConn>,
+    Extension(result): Extension<CommandResult>,
+    show: bool,
+) -> HandlerResult<()> {
+    if !result.args.is_empty() {
+        return Ok(());
+    }
+
+    if message
+        .chat()
+        .title()
+        .is_some()
+    {
+        let module = ModuleChecker::new(&bot, &db);
+        let true = module
+            .check::<28>(ModuleAccess::M(&message))
+            .await
+        else {
+            return Ok(());
+        };
+    }
+
+    let iam: UserModel = unsafe {
+        message
+            .from()
+            .unwrap_unchecked()
+    }
+    .into();
+
+    let model = anketa::ActiveModel {
+        user_ids: Set(iam.ids),
+        show: Set(show),
+        is_user: Set(iam.is_user),
+        ..Default::default()
+    };
+
+    let _ = UserAnketa::insert(model)
+        .on_conflict(
+            OnConflict::column(anketa::Column::UserIds)
+                .update_column(anketa::Column::Show)
+                .to_owned(),
+        )
+        .exec(&db)
+        .await;
+
+    if show {
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Теперь <a href='{1}'>ваша</a> анкета видна",
+            smail_tick(true),
+            iam.link()
+        )))
+        .await?;
+    } else {
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Теперь <a href='{1}'>ваша</a> анкета скрыта",
+            smail_cross(true),
+            iam.link()
+        )))
+        .await?;
+    }
+
+    Ok(())
+}
+
+pub async fn edit_show_true(
+    bot: Bot,
+    message: Message,
+    db: Extension<DbConn>,
+    result: Extension<CommandResult>,
+) -> HandlerResult<()> {
+    edit_show_core(bot, message, db, result, true).await
+}
+
+pub async fn edit_show_false(
+    bot: Bot,
+    message: Message,
+    db: Extension<DbConn>,
+    result: Extension<CommandResult>,
+) -> HandlerResult<()> {
+    edit_show_core(bot, message, db, result, false).await
 }

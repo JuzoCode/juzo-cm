@@ -2,11 +2,11 @@ use juzo_core::{
     application::{UserIds, UserIndex, UserModel},
     common::emojis::{smail_pensil, smail_tick},
     db::agent::{
-        BlockFunc, agent, block_system,
+        BlockFunc, agent,
         prelude::{Agent, BlockSystem},
     },
 };
-use sea_orm::{EntityTrait, QuerySelect, Set, sea_query::OnConflict};
+use sea_orm::{ConnectionTrait, EntityTrait, QuerySelect, raw_sql};
 
 use super::super::*;
 
@@ -88,21 +88,27 @@ pub async fn add(
         return Ok(());
     }
 
-    let model = block_system::ActiveModel {
-        user_ids: Set(user.ids),
-        function: Set(BlockFunc::Scam),
-        agents_ids: Set(my_ids),
-        reason: Set(comment.into()),
-        ..Default::default()
-    };
-
-    let _ = BlockSystem::insert(model)
-        .on_conflict(
-            OnConflict::columns([block_system::Column::UserIds, block_system::Column::Function])
-                .do_nothing()
-                .to_owned(),
-        )
-        .exec(&db)
+    let _ = db
+        .execute_raw(raw_sql!(
+            Postgres,
+            r#"
+            INSERT INTO a3 (
+                user_ids,
+                function,
+                agents_ids,
+                reason
+            )
+            SELECT
+                {user.ids},
+                0,
+                {my_ids},
+                {comment}
+            ON CONFLICT (user_ids, function) DO UPDATE SET
+                reason = EXCLUDED.reason,
+                agents_ids = EXCLUDED.agents_ids
+                added = EXTRACT(EPOCH FROM NOW())
+            "#
+        ))
         .await;
 
     bot.send(JuzoAnswer::message(&message).text(format!(
@@ -204,15 +210,5 @@ pub async fn delete(
         }
     }
 
-    Ok(())
-}
-
-pub async fn take_delete(
-    _bot: Bot,
-    _message: Message,
-    Extension(_db): Extension<DbConn>,
-    Extension(_result): Extension<CommandResult>,
-) -> HandlerResult<()> {
-    // удаление пометки выноса
     Ok(())
 }

@@ -1,12 +1,9 @@
 use juzo_core::{
-    application::{UserIds, UserIndex, UserModel},
+    application::{ParseTgLink, UserIds, UserIndex, UserModel},
     common::emojis::{smail_pensil, smail_tick},
-    db::agent::{
-        BlockFunc, agent, block_system,
-        prelude::{Agent, BlockSystem},
-    },
+    db::agent::{agent, prelude::Agent},
 };
-use sea_orm::{ConnectionTrait, EntityTrait, QuerySelect, Set, raw_sql, sea_query::OnConflict};
+use sea_orm::{ConnectionTrait, EntityTrait, QuerySelect, raw_sql};
 use telers::types::ReplyParameters;
 
 use super::super::*;
@@ -26,7 +23,7 @@ pub async fn add(
     .id
     .into();
 
-    let Ok(Some((_is_agent, true))) = Agent::find_by_id(my_ids)
+    let Ok(Some((is_agent, true))) = Agent::find_by_id(my_ids)
         .select_only()
         .columns([agent::Column::Agent, agent::Column::Spam])
         .into_tuple::<(bool, bool)>()
@@ -45,34 +42,53 @@ pub async fn add(
             .or_else(|| message.caption())
             .unwrap_unchecked()
     };
-    let args = result.args::<1>(text);
+    let args = result.args::<4>(text);
     let comment = &text[result.first_line];
 
-    let user: UserModel = match args {
-        ArgsResult::Some([a1], _) => {
-            let Ok(found_user) = user_ind
-                .search_user(&text[a1])
-                .await
-            else {
+    let (system, user): (&str, UserModel) = match args {
+        ArgsResult::Some(args, len) => {
+            let last = args[len - 1];
+
+            if let Some(link) = ParseTgLink::new(&text[last]) {
+                let Ok(found_user) = user_ind
+                    .fetch_user(link)
+                    .await
+                else {
+                    return Ok(());
+                };
+
+                (&text[args[0].start..last.start], found_user)
+            } else {
+                let Some(reply) = message.reply_to_message() else {
+                    return Ok(());
+                };
+
+                // SAFETY: TBA will never return None in message.from().
+                let found_user = unsafe {
+                    reply
+                        .from()
+                        .unwrap_unchecked()
+                }
+                .into();
+
+                (&text[args[0].start..], found_user)
+            }
+        }
+        ArgsResult::None => {
+            let Some(reply) = message.reply_to_message() else {
                 return Ok(());
             };
-            found_user
-        }
-        // SAFETY: TBA will never return None in message.from().
-        ArgsResult::None => unsafe {
-            if let Some(r) = message.reply_to_message() {
-                r.from()
+
+            // SAFETY: TBA will never return None in message.from().
+            let found_user = unsafe {
+                reply
+                    .from()
                     .unwrap_unchecked()
-                    .into()
-            } else if message
-                .business_connection_id()
-                .is_some()
-            {
-                message.chat().into()
-            } else {
-                return Ok(());
             }
-        },
+            .into();
+
+            ("", found_user)
+        }
         ArgsResult::Unk => return Ok(()),
     };
 
@@ -89,30 +105,86 @@ pub async fn add(
         return Ok(());
     }
 
-    let model = block_system::ActiveModel {
-        user_ids: Set(user.ids),
-        function: Set(BlockFunc::Spam),
-        agents_ids: Set(my_ids),
-        reason: Set(comment.into()),
-        ..Default::default()
-    };
+    let bytes = system.as_bytes();
 
-    let _ = BlockSystem::insert(model)
-        .on_conflict(
-            OnConflict::columns([block_system::Column::UserIds, block_system::Column::Function])
-                .do_nothing()
-                .to_owned(),
-        )
-        .exec(&db)
+    let mut kick = false;
+    let mut ignore = false;
+    let mut scam = false;
+
+    let mut start = 0;
+
+    for i in 0..=bytes.len() {
+        if i != bytes.len() && bytes[i] != b' ' {
+            continue;
+        }
+
+        if start != i {
+            match &bytes[start..i] {
+                KICK => kick = true,
+                IGNORE => ignore = true,
+                SCAM => scam = true,
+                _ => {}
+            }
+        }
+
+        if i == bytes.len() || (ignore && scam) {
+            break;
+        }
+
+        start = i + 1;
+    }
+
+    if (kick || scam) && !is_agent {
+        return Ok(());
+    }
+
+    // Bit 0 = Scam
+    // Bit 1 = Ignore
+    // Bit 2 = Spam (always)
+    let functions = 4 | ((scam as i16) << 0) | ((ignore as i16) << 1);
+
+    let _ = db
+        .execute_raw(raw_sql!(
+            Postgres,
+            r#"
+            INSERT INTO a3 (
+                user_ids,
+                function,
+                agents_ids,
+                reason
+            )
+            SELECT
+                {user.ids},
+                function,
+                {my_ids},
+                {comment}
+            FROM generate_series(0, 2) AS function
+            WHERE ({functions} & (1 << function)) != 0
+            ON CONFLICT (user_ids, function) DO UPDATE SET
+                reason = EXCLUDED.reason,
+                agents_ids = EXCLUDED.agents_ids
+                added = EXTRACT(EPOCH FROM NOW())
+            "#
+        ))
         .await;
 
-    bot.send(JuzoAnswer::message(&message).text(format!(
+    let mut text = format!(
         "{0} <a href='{1}'>{2}</a> занесён в «Juzo | Anti-Spam»",
         smail_tick(true),
         user.link(),
         user.full_name(),
-    )))
-    .await?;
+    );
+
+    if ignore {
+        text.push_str("<b> c игнором команд</b>");
+    }
+
+    if scam {
+        text.push_str(", а также в «Juzo | Scam System»");
+    }
+
+    bot.send(JuzoAnswer::message(&message).text(text))
+        .await?;
 
     Ok(())
 }
@@ -284,3 +356,7 @@ pub async fn delete_takeaway(
 ) -> HandlerResult<()> {
     delete_core(bot, message, db, result, true).await
 }
+
+const KICK: &[u8] = "кик".as_bytes();
+const IGNORE: &[u8] = "игнор".as_bytes();
+const SCAM: &[u8] = "скам".as_bytes();

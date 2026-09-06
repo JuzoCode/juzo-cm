@@ -3,7 +3,7 @@ use juzo_core::{
     filters::Business,
     middlewares::{
         inner::Error,
-        outer::{ChatSync, UserSync},
+        outer::{ChatSync, IgnoreSystem, UserSync},
     },
 };
 pub use sea_orm::DbConn;
@@ -22,6 +22,7 @@ pub fn routers_connect() -> Router {
                 // Outer-middleware
                 .register_outer_middleware(UserSync)
                 .register_outer_middleware(ChatSync)
+                .register_outer_middleware(IgnoreSystem)
                 // Inner-middleware
                 .register_inner_middleware(Error)
         })

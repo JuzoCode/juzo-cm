@@ -1,4 +1,4 @@
-use chrono::Utc;
+use chrono::{Timelike, Utc};
 use juzo_core::{
     application::{ParseTgLink, UserIndex, UserModel},
     common::{emojis::smail_pensil, tools::time::add_datetime},
@@ -105,7 +105,12 @@ pub async fn add(
         return Ok(());
     }
     let chat_ids = message.chat().id();
-    let now = Utc::now();
+    // SAFETY: ¯\_(ツ)_/¯
+    let now = unsafe {
+        Utc::now()
+            .with_nanosecond(0)
+            .unwrap_unchecked()
+    };
 
     let Some(delta) = add_datetime(now, duration) else {
         return Ok(());
@@ -187,7 +192,7 @@ pub async fn add(
     if row.is_none() {
         bot.send(JuzoAnswer::message(&message).text(format!(
             "{0} Ваш ранг либо недостаточен, либо его вовсе не хватает.",
-            smail_pensil(true),
+            smail_pensil(true)
         )))
         .await?;
         return Ok(());
@@ -336,7 +341,7 @@ pub async fn delete(
     };
 
     let affected = row
-        .try_get::<i16>("", "affected")
+        .try_get::<i32>("", "affected")
         .unwrap_or(0);
 
     if affected == 0 {

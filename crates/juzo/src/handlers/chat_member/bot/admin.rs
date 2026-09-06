@@ -29,9 +29,9 @@ pub async fn set(
                 full_name
             )
             VALUES ({chat_ids}, true, {full_name})
-            ON CONFLICT (chat_ids) DO UPDATE
-                SET bot_admin = true
-                WHERE bot_admin = false
+            ON CONFLICT (chat_ids) DO UPDATE SET
+                bot_admin = true
+            WHERE bot_admin = false
             "#
         ))
         .await

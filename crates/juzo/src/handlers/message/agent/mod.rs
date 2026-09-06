@@ -19,6 +19,10 @@ pub fn routers() -> Router {
     Router::new("router AGENT connect")
         .on_message(|observer| {
             observer.registers([
+                Handler::new(agent::edit_show_false)
+                    .filter(Command::one("-моя видимость").no_prefix()),
+                Handler::new(agent::edit_show_true)
+                    .filter(Command::one("+моя видимость").no_prefix()),
                 Handler::new(managed_bot::info).filter(Command::one("клон инфо")),
                 Handler::new(managed_bot::delete).filter(Command::one("-клон").no_prefix()),
                 Handler::new(managed_bot::set_official)

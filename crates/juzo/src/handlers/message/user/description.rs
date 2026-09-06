@@ -3,7 +3,7 @@ use juzo_core::{application::UserIndex, common::emojis::smail_tick};
 use super::super::*;
 
 /// TODO
-pub async fn show(
+pub async fn _show(
     bot: Bot,
     message: Message,
     Extension(db): Extension<DbConn>,
@@ -30,7 +30,7 @@ pub async fn show(
 }
 
 /// TODO
-pub async fn edit(
+pub async fn _edit(
     bot: Bot,
     message: Message,
     Extension(db): Extension<DbConn>,

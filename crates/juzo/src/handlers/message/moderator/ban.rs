@@ -1,6 +1,6 @@
 use core::fmt::Write;
 
-use chrono::Utc;
+use chrono::{Timelike, Utc};
 use juzo_core::{
     application::{ParseTgLink, UserIndex, UserModel},
     common::{
@@ -122,7 +122,12 @@ pub async fn yes(
     }
 
     let sms_ids = message.message_id();
-    let now = Utc::now();
+    // SAFETY: ¯\_(ツ)_/¯
+    let now = unsafe {
+        Utc::now()
+            .with_nanosecond(0)
+            .unwrap_unchecked()
+    };
 
     let Some(delta) = add_datetime(now, duration) else {
         return Ok(());
@@ -186,8 +191,7 @@ pub async fn yes(
             WHERE me.user_ids = {iam.ids}
                 AND me.chat_ids = {chat_ids}
                 AND COALESCE(me.rank, 0) > COALESCE(target.rank, 0)
-            ON CONFLICT (user_ids, chat_ids, is_ban)
-            DO UPDATE SET
+            ON CONFLICT (user_ids, chat_ids, is_ban) DO UPDATE SET
                 moder_ids = EXCLUDED.moder_ids,
                 sms_ids = EXCLUDED.sms_ids,
                 reason = EXCLUDED.reason,
@@ -321,6 +325,7 @@ pub async fn no(
     }
     .id;
     let state = MemberTraffic::state(&member) == 1;
+
     let Ok(Some(row)) = db
         .query_one_raw(raw_sql!(
             Postgres,
@@ -363,7 +368,7 @@ pub async fn no(
     };
 
     let affected = row
-        .try_get::<i16>("", "affected")
+        .try_get::<i32>("", "affected")
         .unwrap_or(0);
 
     if affected == 0 {
@@ -377,11 +382,11 @@ pub async fn no(
         return Ok(());
     }
 
-    bot.send(UnbanChatMember::new(chat_ids, user.ids.0).only_if_banned(true))
-        .await?;
-
     match (affected, state) {
         (1, false) => {
+            bot.send(UnbanChatMember::new(chat_ids, user.ids.0).only_if_banned(true))
+                .await?;
+
             bot.send(JuzoAnswer::message(&message).text(format!(
                 "{0} <a href='{1}'>{2}</a> разбанен. Теперь можно добавить его в чат или <b>снова \
                  забанить</b> =)",
@@ -409,6 +414,9 @@ pub async fn no(
             .await?;
         }
         _ => {
+            bot.send(UnbanChatMember::new(chat_ids, user.ids.0).only_if_banned(true))
+                .await?;
+
             bot.send(JuzoAnswer::message(&message).text(format!(
                 "{0} <a href='{1}'>{2}</a> не забанен.\n<blockquote>Но было выполнено вынесение \
                  из черного списка в Телеграм</blockquote>",

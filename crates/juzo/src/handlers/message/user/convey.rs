@@ -5,9 +5,8 @@ use juzo_core::{
         inflection::{plur_gold, plur_score, plur_sweets},
         tools::time::holiday_choice,
     },
-    db::user::{balance, prelude::UserBalance},
 };
-use sea_orm::{ConnectionTrait, EntityTrait, QuerySelect, raw_sql, sea_query::Expr};
+use sea_orm::{ConnectionTrait, raw_sql};
 use telers::types::ReplyParameters;
 
 use super::super::*;
@@ -65,12 +64,18 @@ pub async fn sweets(
         _ => return Ok(()),
     };
 
-    let true = module
-        .check::<30>(ModuleAccess::M(&message))
-        .await
-    else {
-        return Ok(());
-    };
+    if message
+        .chat()
+        .title()
+        .is_some()
+    {
+        let true = module
+            .check::<30>(ModuleAccess::M(&message))
+            .await
+        else {
+            return Ok(());
+        };
+    }
 
     // SAFETY: TBA will never return None in message.from().
     let iam: UserModel = unsafe {
@@ -118,40 +123,61 @@ pub async fn sweets(
         return Ok(());
     }
 
-    let bag = UserBalance::find_by_id(iam.ids)
-        .select_only()
-        .column_as(Expr::cust("TRUNC(sweets)::int"), "sweets")
-        .into_tuple::<u32>()
-        .one(&db)
-        .await
-        .ok()
-        .flatten()
-        .unwrap_or_default();
-
-    if value > bag {
-        bot.send(
-            JuzoAnswer::message(&message)
-                .text(format!("{0} Ваш мешок не согласен с таким переводом.", smail_pensil(true))),
-        )
-        .await?;
-        return Ok(());
-    }
-
-    let Ok(_) = db
-        .execute_raw(raw_sql!(
+    let Ok(Some(row)) = db
+        .query_one_raw(raw_sql!(
             Postgres,
             r#"
             WITH moved AS (
                 UPDATE u2
                 SET sweets = sweets - {value}
                 WHERE user_ids = {iam.ids}
-                RETURNING user_ids
+                    AND sweets >= {value}
+                RETURNING sweets AS balance
+            ),
+            received AS (
+                INSERT INTO u2 (user_ids, sweets)
+                SELECT {user.ids}, {value}
+                FROM moved
+                ON CONFLICT (user_ids) DO UPDATE SET
+                    sweets = u2.sweets + EXCLUDED.sweets
+                RETURNING sweets AS balance
+            ),
+            logs AS (
+                INSERT INTO u5 (
+                    user_ids,
+                    peer_ids,
+                    balance,
+                    amount,
+                    log,
+                    currency
+                )
+                SELECT
+                    v.user_ids,
+                    v.peer_ids,
+                    v.balance,
+                    v.amount,
+                    v.log,
+                    1
+                FROM (
+                    VALUES
+                        ({iam.ids}, {user.ids}, (SELECT balance FROM moved), -{value}, 1),
+                        ({user.ids}, {iam.ids}, (SELECT balance FROM received), {value}, 3)
+                ) AS v (
+                    user_ids,
+                    peer_ids,
+                    balance,
+                    amount,
+                    log
+                )
+                WHERE EXISTS (
+                    SELECT 1
+                    FROM moved
+                )
             )
-            INSERT INTO u2(user_ids, sweets)
-            SELECT {user.ids}, {value}
-            FROM moved
-            ON CONFLICT (user_ids)
-            DO UPDATE SET sweets = u2.sweets + EXCLUDED.sweets
+            SELECT EXISTS (
+                SELECT 1
+                FROM moved
+            ) as affected;
             "#
         ))
         .await
@@ -164,6 +190,19 @@ pub async fn sweets(
         .await?;
         return Ok(());
     };
+
+    let affected = row
+        .try_get::<bool>("", "affected")
+        .unwrap_or(false);
+
+    if !affected {
+        bot.send(
+            JuzoAnswer::message(&message)
+                .text(format!("{0} Ваш мешок не согласен с таким переводом.", smail_pensil(true))),
+        )
+        .await?;
+        return Ok(());
+    }
 
     let smail_sweets = smail_sweets(true);
     let sweets_name = plur_sweets(value);
@@ -263,12 +302,18 @@ pub async fn gold(
         _ => return Ok(()),
     };
 
-    let true = module
-        .check::<40>(ModuleAccess::M(&message))
-        .await
-    else {
-        return Ok(());
-    };
+    if message
+        .chat()
+        .title()
+        .is_some()
+    {
+        let true = module
+            .check::<40>(ModuleAccess::M(&message))
+            .await
+        else {
+            return Ok(());
+        };
+    }
 
     // SAFETY: TBA will never return None in message.from().
     let iam: UserModel = unsafe {
@@ -317,40 +362,61 @@ pub async fn gold(
         return Ok(());
     }
 
-    let bag = UserBalance::find_by_id(iam.ids)
-        .select_only()
-        .column(balance::Column::Gold)
-        .into_tuple::<u32>()
-        .one(&db)
-        .await
-        .ok()
-        .flatten()
-        .unwrap_or_default();
-
-    if value > bag {
-        bot.send(
-            JuzoAnswer::message(&message)
-                .text(format!("{0} Ваш мешок не согласен с таким переводом.", smail_pensil(true))),
-        )
-        .await?;
-        return Ok(());
-    }
-
-    let Ok(_) = db
-        .execute_raw(raw_sql!(
+    let Ok(Some(row)) = db
+        .query_one_raw(raw_sql!(
             Postgres,
             r#"
             WITH moved AS (
                 UPDATE u2
                 SET gold = gold::bigint - {value}
                 WHERE user_ids = {iam.ids}
-                RETURNING user_ids
+                    AND gold >= {value}
+                RETURNING gold::bigint AS balance
+            ),
+            received AS (
+                INSERT INTO u2 (user_ids, gold)
+                SELECT {user.ids}, {value}
+                FROM moved
+                ON CONFLICT (user_ids) DO UPDATE SET
+                    gold = u2.gold::bigint + EXCLUDED.gold::bigint
+                RETURNING gold::bigint AS balance
+            ),
+            logs AS (
+                INSERT INTO u5 (
+                    user_ids,
+                    peer_ids,
+                    balance,
+                    amount,
+                    log,
+                    currency
+                )
+                SELECT
+                    v.user_ids,
+                    v.peer_ids,
+                    v.balance,
+                    v.amount,
+                    v.log,
+                    3
+                FROM (
+                    VALUES
+                        ({iam.ids}, {user.ids}, (SELECT balance FROM moved), -{value}, 2),
+                        ({user.ids}, {iam.ids}, (SELECT balance FROM received), {value}, 4)
+                ) AS v (
+                    user_ids,
+                    peer_ids,
+                    balance,
+                    amount,
+                    log
+                )
+                WHERE EXISTS (
+                    SELECT 1
+                    FROM moved
+                )
             )
-            INSERT INTO u2(user_ids, gold)
-            SELECT {user.ids}, {value}
-            FROM moved
-            ON CONFLICT (user_ids)
-            DO UPDATE SET gold = u2.gold::bigint + EXCLUDED.gold::bigint
+            SELECT EXISTS (
+                SELECT 1
+                FROM moved
+            ) AS affected;
             "#
         ))
         .await
@@ -363,6 +429,19 @@ pub async fn gold(
         .await?;
         return Ok(());
     };
+
+    let affected = row
+        .try_get::<bool>("", "affected")
+        .unwrap_or(false);
+
+    if !affected {
+        bot.send(
+            JuzoAnswer::message(&message)
+                .text(format!("{0} Ваш мешок не согласен с таким переводом.", smail_pensil(true))),
+        )
+        .await?;
+        return Ok(());
+    }
 
     let mut text = format!(
         "{0} <a href='{1}'>{2}</a> получил {3}",
@@ -462,12 +541,18 @@ pub async fn score(
         _ => return Ok(()),
     };
 
-    let true = module
-        .check::<30>(ModuleAccess::M(&message))
-        .await
-    else {
-        return Ok(());
-    };
+    if message
+        .chat()
+        .title()
+        .is_some()
+    {
+        let true = module
+            .check::<30>(ModuleAccess::M(&message))
+            .await
+        else {
+            return Ok(());
+        };
+    }
 
     // SAFETY: TBA will never return None in message.from().
     let iam: UserModel = unsafe {
@@ -514,40 +599,61 @@ pub async fn score(
         return Ok(());
     }
 
-    let bag = UserBalance::find_by_id(iam.ids)
-        .select_only()
-        .column(balance::Column::Gold)
-        .into_tuple::<u32>()
-        .one(&db)
-        .await
-        .ok()
-        .flatten()
-        .unwrap_or_default();
-
-    if value > bag {
-        bot.send(
-            JuzoAnswer::message(&message)
-                .text(format!("{0} Ваш мешок не согласен с таким переводом.", smail_pensil(true))),
-        )
-        .await?;
-        return Ok(());
-    }
-
-    let Ok(_) = db
-        .execute_raw(raw_sql!(
+    let Ok(Some(row)) = db
+        .query_one_raw(raw_sql!(
             Postgres,
             r#"
             WITH moved AS (
                 UPDATE u2
                 SET score = score::bigint - {value}
                 WHERE user_ids = {iam.ids}
-                RETURNING user_ids
+                    AND score >= {value}
+                RETURNING score::bigint AS balance
+            ),
+            received AS (
+                INSERT INTO u2 (user_ids, score)
+                SELECT {user.ids}, {value}
+                FROM moved
+                ON CONFLICT (user_ids) DO UPDATE SET
+                    score = u2.score::bigint + EXCLUDED.score::bigint
+                RETURNING score::bigint AS balance
+            ),
+            logs AS (
+                INSERT INTO u5 (
+                    user_ids,
+                    peer_ids,
+                    balance,
+                    amount,
+                    log,
+                    currency
+                )
+                SELECT
+                    v.user_ids,
+                    v.peer_ids,
+                    v.balance,
+                    v.amount,
+                    v.log,
+                    2
+                FROM (
+                    VALUES
+                        ({iam.ids}, {user.ids}, (SELECT balance FROM moved), -{value}, 1),
+                        ({user.ids}, {iam.ids}, (SELECT balance FROM received), {value}, 2)
+                ) AS v (
+                    user_ids,
+                    peer_ids,
+                    balance,
+                    amount,
+                    log
+                )
+                WHERE EXISTS (
+                    SELECT 1
+                    FROM moved
+                )
             )
-            INSERT INTO u2(user_ids, score)
-            SELECT {user.ids}, {value}
-            FROM moved
-            ON CONFLICT (user_ids)
-            DO UPDATE SET score = u2.score::bigint + EXCLUDED.score::bigint
+            SELECT EXISTS (
+                SELECT 1
+                FROM moved
+            ) AS affected;
             "#
         ))
         .await
@@ -560,6 +666,19 @@ pub async fn score(
         .await?;
         return Ok(());
     };
+
+    let affected = row
+        .try_get::<bool>("", "affected")
+        .unwrap_or(false);
+
+    if !affected {
+        bot.send(
+            JuzoAnswer::message(&message)
+                .text(format!("{0} Ваш мешок не согласен с таким переводом.", smail_pensil(true))),
+        )
+        .await?;
+        return Ok(());
+    }
 
     let mut text = format!(
         "{0} <a href='{1}'>{2}</a> получил {3}",

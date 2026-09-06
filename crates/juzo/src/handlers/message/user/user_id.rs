@@ -54,12 +54,18 @@ pub async fn show(
         ArgsResult::Unk => return Ok(()),
     };
 
-    let true = module
-        .check::<34>(ModuleAccess::M(&message))
-        .await
-    else {
-        return Ok(());
-    };
+    if message
+        .chat()
+        .title()
+        .is_some()
+    {
+        let true = module
+            .check::<34>(ModuleAccess::M(&message))
+            .await
+        else {
+            return Ok(());
+        };
+    }
 
     let bare_ids = user.ids.0;
 
