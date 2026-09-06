@@ -4,6 +4,7 @@ use juzo_core::{
     domain::UserModel,
 };
 use sea_orm::{EntityTrait, Set, sea_query::OnConflict};
+use telers::types::ReplyParameters;
 
 use super::super::*;
 
@@ -53,8 +54,15 @@ pub async fn yes(
         .exec(&db)
         .await;
 
-    bot.send(JuzoAnswer::message(&message).text(format!("{0} Чат был привязан", smail_tick(true))))
-        .await?;
+    let _ = bot
+        .send(
+            JuzoAnswer::message(&message)
+                .text(format!("{0} Чат был привязан", smail_tick(true)))
+                .chat_id(iam.ids.0)
+                .business_connection_id_option::<&str>(None)
+                .reply_parameters_option::<ReplyParameters>(None),
+        )
+        .await;
 
     Ok(())
 }

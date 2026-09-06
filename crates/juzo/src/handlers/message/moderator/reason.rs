@@ -193,6 +193,7 @@ pub async fn info_mute(
     bot: Bot,
     message: Message,
     Extension(db): Extension<DbConn>,
+    Extension(_arch): Extension<AttachResult>,
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
     let user_ind = UserIndex::new(&bot, &db);

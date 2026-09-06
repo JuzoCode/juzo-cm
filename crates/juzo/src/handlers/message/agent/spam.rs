@@ -113,11 +113,9 @@ pub async fn add(
 
     let bytes = system.as_bytes();
 
-    let mut kick = false;
-    let mut ignore = false;
-    let mut scam = false;
-
+    let mut functions: i16 = 4;
     let mut start = 0;
+    let mut kick = false;
 
     for i in 0..=bytes.len() {
         if i != bytes.len() && bytes[i] != b' ' {
@@ -127,27 +125,22 @@ pub async fn add(
         if start != i {
             match &bytes[start..i] {
                 KICK => kick = true,
-                IGNORE => ignore = true,
-                SCAM => scam = true,
+                IGNORE => functions |= 2,
+                SCAM => functions |= 1,
                 _ => return Ok(()),
             }
         }
 
-        if i == bytes.len() || (ignore && scam) {
+        if i == bytes.len() || functions == 7 {
             break;
         }
 
         start = i + 1;
     }
 
-    if (kick || scam) && !is_agent {
+    if (kick || functions & 1 != 0) && !is_agent {
         return Ok(());
     }
-
-    // Bit 0 = Scam
-    // Bit 1 = Ignore
-    // Bit 2 = Spam (always)
-    let functions = 4 | ((scam as i16) << 0) | ((ignore as i16) << 1);
 
     let _ = db
         .execute_raw(raw_sql!(
@@ -181,11 +174,11 @@ pub async fn add(
         user.full_name(),
     );
 
-    if ignore {
+    if functions & 2 != 0 {
         text.push_str("<b> c игнором команд</b>");
     }
 
-    if scam {
+    if functions & 1 != 0 {
         text.push_str(", а также в «Juzo | Scam System»");
     }
 

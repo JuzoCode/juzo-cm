@@ -2,10 +2,7 @@ use core::fmt::Write;
 
 use chrono::{Timelike, Utc};
 use juzo_core::{
-    application::{ParseTgLink, UserIndex, UserModel},
-    common::{emojis::smail_pensil, tools::time::add_datetime},
-    db::chat::prelude::ChatBlock,
-    domain::TimeFormatted,
+    application::{ParseTgLink, UserIndex, UserModel}, common::{emojis::smail_pensil, tools::time::add_datetime}, db::chat::prelude::ChatBlock, domain::{AttachResult, TimeFormatted},
 };
 use sea_orm::{ConnectionTrait, EntityTrait, raw_sql};
 
@@ -15,6 +12,7 @@ pub async fn yes(
     bot: Bot,
     message: Message,
     Extension(db): Extension<DbConn>,
+    Extension(arch): Extension<AttachResult>,
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
     let user_ind = UserIndex::new(&bot, &db);
@@ -29,6 +27,7 @@ pub async fn yes(
     };
     let args = result.args::<11>(text);
     let comment = &text[result.first_line];
+    let chat_ids = arch.chat_ids.0;
 
     let (duration, user): (&str, UserModel) = match args {
         ArgsResult::Some(args, len) => {
@@ -90,7 +89,7 @@ pub async fn yes(
     }
 
     let true = module
-        .check::<19>(ModuleAccess::M(&message))
+        .check::<19>(ModuleAccess::CustomM(&message, chat_ids))
         .await
     else {
         return Ok(());
@@ -109,7 +108,6 @@ pub async fn yes(
         return Ok(());
     }
 
-    let chat_ids = message.chat().id();
     let sms_ids = message.message_id();
     // SAFETY: ¯\_(ツ)_/¯
     let now = unsafe {

@@ -264,6 +264,7 @@ pub async fn no(
     bot: Bot,
     message: Message,
     Extension(db): Extension<DbConn>,
+    Extension(arch): Extension<AttachResult>,
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
     let user_ind = UserIndex::new(&bot, &db);
@@ -277,6 +278,7 @@ pub async fn no(
             .unwrap_unchecked()
     };
     let args = result.args::<1>(text);
+    let chat_ids = arch.chat_ids.0;
 
     let user: UserModel = match args {
         ArgsResult::Some([a1], _) => {
@@ -302,13 +304,11 @@ pub async fn no(
     };
 
     let true = module
-        .check::<10>(ModuleAccess::M(&message))
+        .check::<10>(ModuleAccess::CustomM(&message, chat_ids))
         .await
     else {
         return Ok(());
     };
-
-    let chat_ids = message.chat().id();
 
     let member = bot
         .send(GetChatMember::new(chat_ids, user.ids))

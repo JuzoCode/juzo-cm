@@ -1,10 +1,9 @@
 use juzo_core::{
-    common::emojis::{smail_cross, smail_tick},
-    db::chat::{
+    common::emojis::{smail_cross, smail_tick}, db::chat::{
         chat_module,
         prelude::{ChatModule, ChatSetting},
         setting,
-    },
+    }, domain::AttachResult,
 };
 use sea_orm::{EntityTrait, Set, sea_query::OnConflict};
 
@@ -113,6 +112,7 @@ async fn edit_show_core(
     bot: Bot,
     message: Message,
     Extension(db): Extension<DbConn>,
+    Extension(arch): Extension<AttachResult>,
     Extension(result): Extension<CommandResult>,
     show: bool,
 ) -> HandlerResult<()> {
@@ -121,18 +121,17 @@ async fn edit_show_core(
     }
 
     let module = ModuleChecker::new(&bot, &db);
+    let chat_ids = arch.chat_ids;
+
     let true = module
-        .check::<22>(ModuleAccess::M(&message))
+        .check::<22>(ModuleAccess::CustomM(&message, chat_ids.0))
         .await
     else {
         return Ok(());
     };
 
     let model = setting::ActiveModel {
-        chat_ids: Set(message
-            .chat()
-            .id()
-            .into()),
+        chat_ids: Set(chat_ids),
         access_command: Set(show),
         ..Default::default()
     };
@@ -167,16 +166,18 @@ pub async fn edit_show_true(
     bot: Bot,
     message: Message,
     db: Extension<DbConn>,
+    arch: Extension<AttachResult>,
     result: Extension<CommandResult>,
 ) -> HandlerResult<()> {
-    edit_show_core(bot, message, db, result, true).await
+    edit_show_core(bot, message, db, arch, result, true).await
 }
 
 pub async fn edit_show_false(
     bot: Bot,
     message: Message,
     db: Extension<DbConn>,
+    arch: Extension<AttachResult>,
     result: Extension<CommandResult>,
 ) -> HandlerResult<()> {
-    edit_show_core(bot, message, db, result, false).await
+    edit_show_core(bot, message, db, arch, result, false).await
 }
