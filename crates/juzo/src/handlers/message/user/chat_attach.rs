@@ -33,7 +33,7 @@ pub async fn yes(
     }
     .into();
 
-    if iam.is_user {
+    if !iam.is_user {
         return Ok(());
     }
 
