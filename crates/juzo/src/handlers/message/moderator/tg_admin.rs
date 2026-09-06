@@ -49,7 +49,7 @@ pub async fn add(
 
                 (tag, found_user)
             } else {
-                let tag = &text[args[0].start..];
+                let tag = &text[args[0].start..last.end];
                 if tag.is_empty()
                     || tag
                         .chars()

@@ -16,6 +16,7 @@ mod tg_admin;
 mod topic_close;
 mod topic_name;
 mod topic_reopen;
+#[cfg(debug_assertions)]
 mod warns;
 
 pub fn routers() -> Router {

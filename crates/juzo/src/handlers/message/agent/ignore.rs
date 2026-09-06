@@ -103,7 +103,7 @@ pub async fn add(
                 {comment}
             ON CONFLICT (user_ids, function) DO UPDATE SET
                 reason = EXCLUDED.reason,
-                agents_ids = EXCLUDED.agents_ids
+                agents_ids = EXCLUDED.agents_ids,
                 added = EXTRACT(EPOCH FROM NOW())
             "#
         ))

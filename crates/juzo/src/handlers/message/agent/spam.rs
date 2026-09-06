@@ -75,7 +75,7 @@ pub async fn add(
                     return Ok(());
                 };
 
-                (&text[args[0].start..], found_user)
+                (&text[args[0].start..last.end], found_user)
             }
         }
         // SAFETY: TBA will never return None in message.from().
@@ -129,7 +129,7 @@ pub async fn add(
                 KICK => kick = true,
                 IGNORE => ignore = true,
                 SCAM => scam = true,
-                _ => {}
+                _ => return Ok(()),
             }
         }
 
@@ -168,7 +168,7 @@ pub async fn add(
             WHERE ({functions} & (1 << function)) != 0
             ON CONFLICT (user_ids, function) DO UPDATE SET
                 reason = EXCLUDED.reason,
-                agents_ids = EXCLUDED.agents_ids
+                agents_ids = EXCLUDED.agents_ids,
                 added = EXTRACT(EPOCH FROM NOW())
             "#
         ))

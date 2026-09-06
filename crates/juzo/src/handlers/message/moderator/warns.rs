@@ -52,7 +52,7 @@ pub async fn add(
                 }
                 .into();
 
-                (&text[args[0].start..], found_user)
+                (&text[args[0].start..last.end], found_user)
             }
         }
         ArgsResult::None => {
