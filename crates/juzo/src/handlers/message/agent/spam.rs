@@ -74,18 +74,19 @@ pub async fn add(
                 (&text[args[0].start..], found_user)
             }
         }
-        ArgsResult::None => {
-            let Some(reply) = message.reply_to_message() else {
+        ArgsResult::None => unsafe {
+            let found_user = if let Some(r) = message.reply_to_message() {
+                r.from()
+                    .unwrap_unchecked()
+                    .into()
+            } else if message
+                .business_connection_id()
+                .is_some()
+            {
+                message.chat().into()
+            } else {
                 return Ok(());
             };
-
-            // SAFETY: TBA will never return None in message.from().
-            let found_user = unsafe {
-                reply
-                    .from()
-                    .unwrap_unchecked()
-            }
-            .into();
 
             ("", found_user)
         }
