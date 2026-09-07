@@ -2,6 +2,7 @@ use juzo_core::{
     application::{UserIds, UserIndex, UserModel},
     common::emojis::{smail_pensil, smail_tick},
     db::agent::{agent, prelude::Agent},
+    middlewares::outer::IgnoreSystem,
 };
 use sea_orm::{ConnectionTrait, EntityTrait, QuerySelect, raw_sql};
 use telers::types::ReplyParameters;
@@ -109,6 +110,8 @@ pub async fn add(
         ))
         .await;
 
+    IgnoreSystem::edit(user.ids, true);
+
     bot.send(JuzoAnswer::message(&message).text(format!(
         "{0} <a href='{1}'>{2}</a> занесён в «Juzo | Ignore System»",
         smail_tick(true),
@@ -204,6 +207,8 @@ async fn delete_core(
 
     match res {
         Ok(Some(r)) if !takeaway => {
+            IgnoreSystem::edit(user.ids, false);
+
             let _ = db
                 .execute_raw(raw_sql!(
                     Postgres,
@@ -238,6 +243,8 @@ async fn delete_core(
                 .await;
         }
         Ok(Some(_)) => {
+            IgnoreSystem::edit(user.ids, false);
+
             bot.send(JuzoAnswer::message(&message).text(format!(
                 "{0} <a href='{1}'>{2}</a> вынесен из «Juzo | Ignore System» без пометки о выносе",
                 smail_tick(true),

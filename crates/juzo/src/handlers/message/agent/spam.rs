@@ -2,6 +2,7 @@ use juzo_core::{
     application::{ParseTgLink, UserIds, UserIndex, UserModel},
     common::emojis::{smail_pensil, smail_tick},
     db::agent::{agent, prelude::Agent},
+    middlewares::outer::IgnoreSystem,
 };
 use sea_orm::{ConnectionTrait, EntityTrait, QuerySelect, raw_sql};
 use telers::types::ReplyParameters;
@@ -175,6 +176,8 @@ pub async fn add(
     );
 
     if functions & 2 != 0 {
+        IgnoreSystem::edit(user.ids, true);
+
         text.push_str("<b> c игнором команд</b>");
     }
 

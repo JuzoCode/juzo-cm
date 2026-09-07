@@ -1,9 +1,11 @@
 use juzo_core::{
-    common::emojis::{smail_cross, smail_tick}, db::chat::{
+    common::emojis::{smail_cross, smail_tick},
+    db::chat::{
         chat_module,
         prelude::{ChatModule, ChatSetting},
         setting,
-    }, domain::AttachResult,
+    },
+    domain::AttachResult,
 };
 use sea_orm::{EntityTrait, Set, sea_query::OnConflict};
 
