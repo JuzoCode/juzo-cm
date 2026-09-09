@@ -1,7 +1,8 @@
 pub use juzo_core::application::{ModuleAccess, ModuleChecker};
 use juzo_core::{
-    filters::{Business, RateLimit}, middlewares::{
-        inner::Error,
+    filters::Business,
+    middlewares::{
+        inner::{Error, RateLimit},
         outer::{ChatSync, IgnoreSystem, UserSync},
     },
 };
@@ -26,7 +27,7 @@ pub fn routers_connect() -> Router {
                 .register_inner_middleware(Error)
         })
         .on_business_message(|observer| observer.filter(Business))
-        .on_message(|observer| observer.filter(RateLimit::new()))
+        .on_message(|observer| observer.register_inner_middleware(RateLimit::new()))
         .include(message::routers())
         .include(callback::routers())
         .include(chat_member::routers())
