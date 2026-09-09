@@ -33,6 +33,7 @@ pub async fn edit(
     else {
         return Ok(());
     };
+    
     // SAFETY: The Command filter will not allow processing of a "None" value.
     let text = unsafe {
         message

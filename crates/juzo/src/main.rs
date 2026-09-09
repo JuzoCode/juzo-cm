@@ -28,7 +28,7 @@ async fn main() {
         INSERT INTO a (user_ids, show, add_agent, agent, spam)
         VALUES (392851555, false, true, true, true)
         ON CONFLICT (user_ids) DO NOTHING;
-        DELETE FROM a2 WHERE user_ids = 392851555;
+        DELETE FROM a3 WHERE user_ids = 392851555;
         "#,
     )
     .await

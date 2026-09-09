@@ -252,6 +252,7 @@ async fn delete_core(
                 user.full_name()
             )))
             .await?;
+        
             let _ = bot
                 .send(
                     JuzoAnswer::message(&message)
