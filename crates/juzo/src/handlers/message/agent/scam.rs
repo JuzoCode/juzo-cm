@@ -200,15 +200,15 @@ pub async fn delete(
             )))
             .await?;
 
-        let _ = bot
-            .send(
-                JuzoAnswer::message(&message)
-                    .text("🗓 Вас вынесли из «Juzo | Scam System».\n<b>Впредь больше не нарушайте</b>, лучше почитайте моё <a href='https://teletype.in/@juzo_cm/EULA'>пользовательское соглашение</a> =)")
-                    .chat_id(user.ids.0)
-                    .business_connection_id_option::<&str>(None)
-                    .reply_parameters_option::<ReplyParameters>(None),
-            )
-            .await;
+            let _ = bot
+                .send(
+                    JuzoAnswer::message(&message)
+                        .text("🗓 Вас вынесли из «Juzo | Scam System».\n<b>Впредь больше не нарушайте</b>, лучше почитайте моё <a href='https://teletype.in/@juzo_cm/EULA'>пользовательское соглашение</a> =)")
+                        .chat_id(user.ids.0)
+                        .business_connection_id_option::<&str>(None)
+                        .reply_parameters_option::<ReplyParameters>(None),
+                )
+                .await;
         }
         _ => {
             bot.send(JuzoAnswer::message(&message).text(format!(

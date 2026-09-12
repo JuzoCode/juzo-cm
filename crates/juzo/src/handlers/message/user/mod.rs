@@ -67,6 +67,9 @@ pub fn routers() -> Router {
                 Handler::new(chat_attach::no)
                     .filter(Command::one("отвязать"))
                     .filter(ChatType::one(enums::ChatType::Private)),
+                Handler::new(test::my_spam)
+                    .filter(Command::one("мой спам").no_prefix())
+                    .filter(ChatType::one(enums::ChatType::Private)),
             ])
         })
         .on_business_message(|observer| {

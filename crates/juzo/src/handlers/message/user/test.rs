@@ -1,11 +1,15 @@
+use core::fmt::Write;
+
+use chrono::{Local, TimeZone};
 use juzo_core::{
-    common::emojis::smail_pensil,
-    domain::ChatIds,
+    common::{emojis::smail_pensil, inflection::plur_mark},
+    domain::{ChatIds, UserModel},
     payloads::{
         base::PackedPayload,
         callback::{Callback, CallbackKind},
     },
 };
+use sea_orm::{ConnectionTrait, raw_sql};
 use telers::types::{
     InlineKeyboardButton, InlineKeyboardMarkup, InputRichMessage, ReplyParameters,
 };
@@ -35,6 +39,7 @@ pub async fn ping(
             return Ok(());
         };
     }
+
     // SAFETY: TBA will never return None in message.from().
     let data = unsafe {
         PackedPayload::new(
@@ -56,6 +61,142 @@ pub async fn ping(
             .reply_markup(keyboard),
     )
     .await?;
+
+    Ok(())
+}
+
+pub async fn my_spam(
+    bot: Bot,
+    message: Message,
+    Extension(db): Extension<DbConn>,
+    Extension(result): Extension<CommandResult>,
+) -> HandlerResult<()> {
+    if !result.args.is_empty() {
+        return Ok(());
+    }
+
+    // SAFETY: TBA will never return None in message.from().
+    let iam: UserModel = unsafe {
+        message
+            .from()
+            .unwrap_unchecked()
+    }
+    .into();
+
+    let antispam = db
+        .query_one_raw(raw_sql!(
+            Postgres,
+            r#"
+            SELECT
+                a3.reason AS spam_reason,
+                a2.removed,
+                a2.reason AS take_reason,
+                u.full_name,
+                COALESCE(
+                    'https://t.me/' || u.username,
+                    'tg://openmessage/user_id=' || a2.agents_ids::text
+                ) AS link,
+                a2.count
+            FROM (SELECT {iam.ids} AS user_ids) AS base
+            LEFT JOIN (
+                SELECT
+                    removed,
+                    reason,
+                    agents_ids,
+                    COUNT(*) OVER () AS count
+                FROM a2
+                WHERE user_ids = {iam.ids}
+                ORDER BY removed DESC
+                LIMIT 1
+            ) AS a2
+                ON true
+            LEFT JOIN a3
+                ON a3.user_ids = base.user_ids
+                AND a3.function = 2
+            LEFT JOIN u
+                ON u.user_ids = a2.agents_ids
+            "#
+        ))
+        .await
+        .ok()
+        .flatten();
+
+    let spam_reason = antispam
+        .as_ref()
+        .and_then(|row| {
+            row.try_get::<String>("", "spam_reason")
+                .ok()
+        });
+
+    let take_reason = antispam
+        .as_ref()
+        .and_then(|row| {
+            row.try_get::<String>("", "take_reason")
+                .ok()
+        });
+
+    let mut text = format!("<b>Баны <a href='{0}'>{1}</a>.</b>\n", iam.link(), iam.full_name());
+    let mut meow = "\n🗓 Вы абсолютно чисты и <b>не имеете выносов</b> в базе «Джузо-антиспам»";
+
+    if let Some(reason) = spam_reason {
+        text.push_str("* В базе <b>«Джузо-антиспам»</b>");
+        meow = "\n🗓 Вы <b>не имеете выносов</b> в базе «Джузо-антиспам»";
+
+        if !reason.is_empty() {
+            let _ = write!(text, ".<blockquote expandable><b>Причина: </b>{reason}</blockquote>\n");
+        } else {
+            text.push_str("\n");
+        }
+    }
+
+    if let Some(reason) = take_reason {
+        // SAFETY: take_reason = Some(...) guarantees that antispam = Some(...)
+        let row = unsafe { antispam.unwrap_unchecked() };
+
+        let (full_name, link, count, unix) = unsafe {
+            (
+                row.try_get::<String>("", "full_name")
+                    .unwrap_unchecked(),
+                row.try_get::<String>("", "link")
+                    .unwrap_unchecked(),
+                row.try_get::<i64>("", "count")
+                    .unwrap_unchecked(),
+                row.try_get::<i64>("", "removed")
+                    .unwrap_unchecked(),
+            )
+        };
+
+        let removed = Local
+            .timestamp_opt(unix, 0)
+            .unwrap();
+
+        let _ = write!(
+            text,
+            "\n🗓 Последний вынос из базы <b>«Джузо-антиспам»</b>\n* В сумме <b>{0}",
+            plur_mark(count as u64)
+        );
+
+        if !reason.is_empty() {
+            let _ = write!(
+                text,
+                ".</b>\n<blockquote expandable><b>Причина: </b>{reason}\n<b>Модератор: </b><a \
+                 href='{link}'>{full_name}</a> {0}</blockquote>",
+                removed.format("в %d.%m.%Y %H:%M")
+            );
+        } else {
+            let _ = write!(
+                text,
+                ".</b>\n<blockquote expandable><b>Модератор: </b><a href='{link}'>{full_name}</a> \
+                 {0}</blockquote>",
+                removed.format("в %d.%m.%Y %H:%M")
+            );
+        }
+    } else {
+        text.push_str(meow)
+    }
+
+    bot.send(JuzoAnswer::message(&message).text(text))
+        .await?;
 
     Ok(())
 }

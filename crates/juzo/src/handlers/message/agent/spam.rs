@@ -182,7 +182,7 @@ pub async fn add(
     }
 
     if functions & 1 != 0 {
-        text.push_str(", а также в «Juzo | Scam System»");
+        text.push_str("<b>, а также в скам-базу</b>");
     }
 
     bot.send(JuzoAnswer::message(&message).text(text))

@@ -1,5 +1,6 @@
 use sea_orm::{ConnectionTrait, raw_sql};
 use telers::{
+    enums::ParseMode,
     methods::{GetChatAdministrators, SendMessage},
     types::ChatMember,
 };
@@ -28,10 +29,14 @@ pub async fn set(
                 bot_admin,
                 full_name
             )
-            VALUES ({chat_ids}, true, {full_name})
+            VALUES (
+                {chat_ids},
+                true,
+                {full_name}
+            )
             ON CONFLICT (chat_ids) DO UPDATE SET
                 bot_admin = true
-            WHERE bot_admin = false
+            WHERE c.bot_admin = false
             "#
         ))
         .await
@@ -60,7 +65,14 @@ pub async fn set(
                 r#"
                 UPDATE c SET owner_ids = {owner_ids}
                     WHERE chat_ids = {chat_ids};
+                "#
+            ))
+            .await;
 
+        let _ = db
+            .execute_raw(raw_sql!(
+                Postgres,
+                r#"
                 INSERT INTO c4 (
                     user_ids,
                     chat_ids,
@@ -80,8 +92,17 @@ pub async fn set(
             .await;
     }
 
-    bot.send(SendMessage::new(chat_ids, "Я так рад что я стал администратором"))
-        .await?;
+    bot.send(
+        SendMessage::new(
+            chat_ids,
+            "🗓 <b>Я так рад</b>, что меня добавили в статус администрации!\n\nТеперь у меня \
+             <b>много возможностей</b>. Какие именно? Можно посмотреть в <a \
+             href='https://teletype.in/@juzo_cm/commands'>нашей статье</a>.\nЕсли вам непонятны какие-то \
+             моменты, можно обратиться в <a href='https://t.me/juzo_cm_chat'>чат поддержки</a>",
+        )
+        .parse_mode(ParseMode::HTML),
+    )
+    .await?;
 
     Ok(())
 }

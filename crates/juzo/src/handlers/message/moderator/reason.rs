@@ -133,14 +133,15 @@ pub async fn info(
     }
 
     if let Some(reason) = info.ban_reason {
-        let removed = unsafe {
-            info.removed
-                .unwrap_unchecked()
+        let (removed, sms_ids) = unsafe {
+            (
+                info.removed
+                    .unwrap_unchecked(),
+                info.sms_ids
+                    .unwrap_unchecked(),
+            )
         };
-        let sms_ids = unsafe {
-            info.sms_ids
-                .unwrap_unchecked()
-        };
+
         let added = DateTime::<Utc>::from_timestamp(
             unsafe {
                 info.added
@@ -151,20 +152,9 @@ pub async fn info(
         .unwrap_or_default();
 
         if removed == 0 {
-            let _ = write!(
-                text,
-                "<br><b>❗️ Забанен <tg-button type='url' style='danger' url='https://t.me/c/{0}/{1}'>навсегда",
-                chat_ids.some(),
-                sms_ids
-            );
+            let _ = write!(text, "<br><b>❗️ Забанен <tg-button type='url' style='danger' url='https://t.me/c/{0}/{1}'>навсегда", chat_ids.some(), sms_ids);
         } else {
-            let _ = write!(
-                text,
-                "<br><b>❗️ Забанен на <tg-button type='url' style='danger' url='https://t.me/c/{0}/{1}'>{2}",
-                chat_ids.some(),
-                sms_ids,
-                TimeFormatted::until(removed, added)
-            );
+            let _ = write!(text, "<br><b>❗️ Забанен на <tg-button type='url' style='danger' url='https://t.me/c/{0}/{1}'>{2}", chat_ids.some(), sms_ids, TimeFormatted::until(removed, added));
         }
 
         unsafe {
@@ -355,7 +345,7 @@ pub async fn scam(
     };
 
     let mut text = format!(
-        "🗓 <a href='{0}'>{1}</a> находится в базе «Juzo | Scam System».\n<blockquote expandable>",
+        "🗓 <a href='{0}'>{1}</a> находится в скам-базе.\n<blockquote expandable>",
         user.link(),
         user.full_name()
     );

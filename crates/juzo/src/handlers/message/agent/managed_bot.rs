@@ -118,6 +118,7 @@ pub async fn info(
         info.bot_username,
         info.bot_full_name,
     );
+
     if !info.is_official {
         let _ = write!(
             text,
