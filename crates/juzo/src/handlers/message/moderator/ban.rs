@@ -8,7 +8,7 @@ use juzo_core::{
         tools::time::add_datetime,
     },
     domain::{AttachResult, TimeFormatted},
-    middlewares::inner::MemberTraffic,
+    filters::MemberEvent,
 };
 use sea_orm::{ConnectionTrait, raw_sql};
 use telers::{
@@ -113,10 +113,10 @@ pub async fn yes(
         .nth(128)
         .is_some()
     {
-        bot.send(
-            JuzoAnswer::message(&message)
-                .text(format!("{0} Длина текста превышает 128 символов.", smail_pensil(true))),
-        )
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Длина текста превышает 128 символов.",
+            smail_pensil(true)
+        )))
         .await?;
         return Ok(());
     }
@@ -155,7 +155,7 @@ pub async fn yes(
             ChatMemberLeft::new(User::new(392851555, false, "Hello, Juzo Code")).into()
         });
 
-    let to_return = MemberTraffic::state(&member) == 1;
+    let to_return = MemberEvent::state(&member) == 1;
 
     let Ok(row) = db
         .query_one_raw(raw_sql!(
@@ -228,7 +228,12 @@ pub async fn yes(
 
     let mut text = String::with_capacity(2048);
 
-    let _ = write!(text, "🔴 <a href='{0}'>{1}</a> получает бан ", user.link(), user.full_name());
+    let _ = write!(
+        text,
+        "🔴 <a href='{0}'>{1}</a> получает бан ",
+        user.link(),
+        user.full_name()
+    );
 
     if until == 0 {
         text.push_str("навсегда");
@@ -324,7 +329,7 @@ pub async fn no(
             .unwrap_unchecked()
     }
     .id;
-    let state = MemberTraffic::state(&member) == 1;
+    let state = MemberEvent::state(&member) == 1;
 
     let Ok(Some(row)) = db
         .query_one_raw(raw_sql!(

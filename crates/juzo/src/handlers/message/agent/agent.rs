@@ -97,7 +97,9 @@ pub async fn add(
     let _ = bot
         .send(
             JuzoAnswer::message(&message)
-                .text(format!("👨‍💻 Вы были назначены агентом поддержки «Juzo | Чат-Менеджер»"))
+                .text(format!(
+                    "👨‍💻 Вы были назначены агентом поддержки «Juzo | Чат-Менеджер»"
+                ))
                 .chat_id(user.ids.0)
                 .business_connection_id_option::<&str>(None)
                 .reply_parameters_option::<ReplyParameters>(None),
@@ -197,7 +199,9 @@ pub async fn add_spam(
     let _ = bot
         .send(
             JuzoAnswer::message(&message)
-                .text(format!("👨‍💻 Вы были назначены агентом антиспама «Juzo | Чат-Менеджер»"))
+                .text(format!(
+                    "👨‍💻 Вы были назначены агентом антиспама «Juzo | Чат-Менеджер»"
+                ))
                 .chat_id(user.ids.0)
                 .business_connection_id_option::<&str>(None)
                 .reply_parameters_option::<ReplyParameters>(None),

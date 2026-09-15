@@ -62,7 +62,7 @@ async fn delete_core(
 
             (count, found_user)
         }
-        ArgsResult::Some([a1, _], 1) => unsafe {
+        ArgsResult::Some([a1, _], _) => unsafe {
             if let Some(link) = ParseTgLink::new(&text[a1]) {
                 let Ok(found_user) = user_ind
                     .fetch_user(link)
@@ -139,10 +139,10 @@ async fn delete_core(
     };
 
     if affected == 0 {
-        bot.send(
-            JuzoAnswer::message(&message)
-                .text(format!("{0} Нет ни одной пометки «{f}» для удаления.", smail_pensil(true))),
-        )
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Нет ни одной пометки «{f}» для удаления.",
+            smail_pensil(true)
+        )))
         .await?;
         return Ok(());
     }

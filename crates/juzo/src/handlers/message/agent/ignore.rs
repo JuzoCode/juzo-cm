@@ -79,10 +79,10 @@ pub async fn add(
         .nth(128)
         .is_some()
     {
-        bot.send(
-            JuzoAnswer::message(&message)
-                .text(format!("{0} Длина текста превышает 128 символов.", smail_pensil(true))),
-        )
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Длина текста превышает 128 символов.",
+            smail_pensil(true)
+        )))
         .await?;
         return Ok(());
     }

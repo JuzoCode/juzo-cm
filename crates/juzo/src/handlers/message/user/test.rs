@@ -135,7 +135,11 @@ pub async fn my_spam(
                 .ok()
         });
 
-    let mut text = format!("<b>Баны <a href='{0}'>{1}</a>.</b>\n", iam.link(), iam.full_name());
+    let mut text = format!(
+        "<b>Баны <a href='{0}'>{1}</a>.</b>\n",
+        iam.link(),
+        iam.full_name()
+    );
     let mut meow = "\n🗓 Вы абсолютно чисты и <b>не имеете выносов</b> в базе «Джузо-антиспам»";
 
     if let Some(reason) = spam_reason {
@@ -143,7 +147,10 @@ pub async fn my_spam(
         meow = "\n🗓 Вы <b>не имеете выносов</b> в базе «Джузо-антиспам»";
 
         if !reason.is_empty() {
-            let _ = write!(text, ".<blockquote expandable><b>Причина: </b>{reason}</blockquote>\n");
+            let _ = write!(
+                text,
+                ".<blockquote expandable><b>Причина: </b>{reason}</blockquote>\n"
+            );
         } else {
             text.push_str("\n");
         }
@@ -221,7 +228,9 @@ pub async fn time_sms(
 
     let (label, time) = reply
         .forward_origin()
-        .map_or(("сообщения", reply.date()), |f| ("пересланного сообщения", f.date()));
+        .map_or(("сообщения", reply.date()), |f| {
+            ("пересланного сообщения", f.date())
+        });
 
     bot.send(
         JuzoAnswer::message(&message)
@@ -285,21 +294,19 @@ pub async fn show_thread_link(
     };
 
     if let Some(true) = message.chat().is_forum() {
-        bot.send(
-            JuzoAnswer::message(&message)
-                .text(format!("{0} Ветка не сработает с включёнными темами.", smail_pensil(true))),
-        )
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Ветка не сработает с включёнными темами.",
+            smail_pensil(true)
+        )))
         .await?;
         return Ok(());
     };
 
     let Some(reply) = message.reply_to_message() else {
-        bot.send(
-            JuzoAnswer::message(&message).text(format!(
-                "{0} Вы не сделали ответ ни на какое сообщение.",
-                smail_pensil(true)
-            )),
-        )
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Вы не сделали ответ ни на какое сообщение.",
+            smail_pensil(true)
+        )))
         .await?;
         return Ok(());
     };

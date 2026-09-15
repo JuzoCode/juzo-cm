@@ -20,10 +20,10 @@ pub async fn _show(
     };
     let _args = result.args::<1>(text);
 
-    bot.send(
-        JuzoAnswer::message(&message)
-            .text(format!("{0} {{}} пока не заполнил описание о себе.", smail_tick(true))),
-    )
+    bot.send(JuzoAnswer::message(&message).text(format!(
+        "{0} {{}} пока не заполнил описание о себе.",
+        smail_tick(true)
+    )))
     .await?;
 
     Ok(())
@@ -47,10 +47,10 @@ pub async fn _edit(
     };
     let _args = result.args::<1>(text);
 
-    bot.send(
-        JuzoAnswer::message(&message)
-            .text(format!("{0} Описание пользователя обновлено", smail_tick(true))),
-    )
+    bot.send(JuzoAnswer::message(&message).text(format!(
+        "{0} Описание пользователя обновлено",
+        smail_tick(true)
+    )))
     .await?;
 
     Ok(())

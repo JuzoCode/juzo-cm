@@ -66,9 +66,10 @@ pub async fn yes(
     );
 
     for row in rows {
-        let (Ok(full_name), Ok(link)) =
-            (row.try_get::<String>("", "full_name"), row.try_get::<String>("", "link"))
-        else {
+        let (Ok(full_name), Ok(link)) = (
+            row.try_get::<String>("", "full_name"),
+            row.try_get::<String>("", "link"),
+        ) else {
             continue;
         };
 
@@ -152,9 +153,10 @@ pub async fn help(
     let mut text = String::from("<tg-emoji emoji-id='5471999544415783597'>📖</tg-emoji> Помощь по боту<b> <a href='https://juzo_cm_bot.t.me'>Juzo | Чат-менеджер</a></b>");
 
     for row in rows {
-        let (Ok(full_name), Ok(link)) =
-            (row.try_get::<String>("", "full_name"), row.try_get::<String>("", "link"))
-        else {
+        let (Ok(full_name), Ok(link)) = (
+            row.try_get::<String>("", "full_name"),
+            row.try_get::<String>("", "link"),
+        ) else {
             continue;
         };
 

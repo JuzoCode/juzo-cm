@@ -31,10 +31,10 @@ pub async fn repair(
             .unwrap_unchecked()
     };
 
-    bot.send(
-        JuzoAnswer::message(&message)
-            .text(format!("{0} Основателю чата возвращены права владения", smail_tick(true))),
-    )
+    bot.send(JuzoAnswer::message(&message).text(format!(
+        "{0} Основателю чата возвращены права владения",
+        smail_tick(true)
+    )))
     .await?;
 
     Ok(())

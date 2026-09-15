@@ -179,7 +179,12 @@ pub async fn show(
     );
 
     if balance.score > 0 {
-        let _ = writeln!(text, "{0} {1}", smail_score(true), plur_score(balance.score));
+        let _ = writeln!(
+            text,
+            "{0} {1}",
+            smail_score(true),
+            plur_score(balance.score)
+        );
     }
 
     text.push_str("</blockquote>");

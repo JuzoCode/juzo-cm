@@ -10,5 +10,5 @@ reorder_impl_items = true
 single_line_let_else_max_width = 0
 struct_lit_single_line = false
 use_field_init_shorthand = true
-use_small_heuristics = "Off"
+use_small_heuristics = "Default"
 chain_width = 25

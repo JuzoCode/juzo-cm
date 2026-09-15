@@ -16,7 +16,7 @@ juzo-macros = { path = "crates/juzo-macros" }
 
 [workspace.dependencies]
 tokio = { version = "1.52.1", features = ["full"] }
-telers = { git = "https://github.com/Desiders/telers" }
+telers = { git = "https://github.com/Desiders/telers", rev = "9995b9666a1e5001e0c7ad2535d0db7908c3a0bc" }
 
 # БД.
 sea-orm = { version = "2.0.0", features = [
@@ -29,7 +29,6 @@ sea-orm = { version = "2.0.0", features = [
 
 # Математика.
 rust_decimal = "1.42.1"
-rust_decimal_macros = "1.40.0"
 
 # Время.
 chrono = { version = "0.4.45", features = ["serde"] }

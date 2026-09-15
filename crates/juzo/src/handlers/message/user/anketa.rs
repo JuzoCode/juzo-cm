@@ -102,19 +102,19 @@ pub async fn show(
         .one(&db)
         .await
     else {
-        bot.send(
-            JuzoAnswer::message(&message)
-                .text(format!("{0} О данном пользователе ни слуху, ни духу.", smail_pensil(true))),
-        )
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} О данном пользователе ни слуху, ни духу.",
+            smail_pensil(true)
+        )))
         .await?;
         return Ok(());
     };
 
     if !anketa.show {
-        bot.send(
-            JuzoAnswer::message(&message)
-                .text(format!("{0} Анкета же скрыта от незрелых глазок.", smail_pensil(true))),
-        )
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Анкета же скрыта от незрелых глазок.",
+            smail_pensil(true)
+        )))
         .await?;
         return Ok(());
     }

@@ -104,10 +104,10 @@ pub async fn yes(
         .nth(128)
         .is_some()
     {
-        bot.send(
-            JuzoAnswer::message(&message)
-                .text(format!("{0} Длина текста превышает 128 символов.", smail_pensil(true))),
-        )
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Длина текста превышает 128 символов.",
+            smail_pensil(true)
+        )))
         .await?;
         return Ok(());
     }
@@ -198,7 +198,12 @@ pub async fn yes(
 
     let mut text = String::with_capacity(2048);
 
-    let _ = write!(text, "🔴 <a href='{0}'>{1}</a> получает мут ", user.link(), user.full_name());
+    let _ = write!(
+        text,
+        "🔴 <a href='{0}'>{1}</a> получает мут ",
+        user.link(),
+        user.full_name()
+    );
 
     if until == 0 {
         text.push_str("навсегда");

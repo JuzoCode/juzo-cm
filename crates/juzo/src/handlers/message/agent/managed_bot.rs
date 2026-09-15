@@ -102,10 +102,10 @@ pub async fn info(
     .one(&db)
     .await
     else {
-        bot.send(
-            JuzoAnswer::message(&message)
-                .text(format!("{0} Данный бот не поддерживается Джузо.", smail_pensil(true))),
-        )
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Данный бот не поддерживается Джузо.",
+            smail_pensil(true)
+        )))
         .await?;
         return Ok(());
     };
@@ -169,10 +169,10 @@ pub async fn set_official(
 
     let token = &text[a1];
     let Some(bot_ids) = extract_bot_id(token) else {
-        bot.send(
-            JuzoAnswer::message(&message)
-                .text(format!("{0} Токен не является валидным.", smail_pensil(true))),
-        )
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Токен не является валидным.",
+            smail_pensil(true)
+        )))
         .await?;
         return Ok(());
     };
@@ -204,10 +204,10 @@ pub async fn set_official(
     //         .secret_token(secret_token)
     // ).await?;
 
-    bot.send(
-        JuzoAnswer::message(&message)
-            .text(format!("{0} Был создан санкционированный клон Джузо", smail_tick(true))),
-    )
+    bot.send(JuzoAnswer::message(&message).text(format!(
+        "{0} Был создан санкционированный клон Джузо",
+        smail_tick(true)
+    )))
     .await?;
 
     Ok(())

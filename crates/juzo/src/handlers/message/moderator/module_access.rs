@@ -148,16 +148,16 @@ async fn edit_show_core(
         .await;
 
     if show {
-        bot.send(
-            JuzoAnswer::message(&message)
-                .text(format!("{0} Оповещения о доступности модулей включены", smail_tick(true))),
-        )
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Оповещения о доступности модулей включены",
+            smail_tick(true)
+        )))
         .await?;
     } else {
-        bot.send(
-            JuzoAnswer::message(&message)
-                .text(format!("{0} Оповещения о доступности модулей отключены", smail_cross(true))),
-        )
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Оповещения о доступности модулей отключены",
+            smail_cross(true)
+        )))
         .await?;
     }
 

@@ -1,4 +1,4 @@
-use juzo_core::middlewares::inner::MemberTraffic;
+use juzo_core::filters::MemberEvent;
 pub use telers::types::ChatMemberUpdated;
 use telers::{
     Router, enums::ChatMemberType as MemberStatus, event::telegram::Handler,
@@ -19,5 +19,10 @@ pub fn routers() -> Router {
                     .filter(MemberFilter::new(MemberStatus::Administrator)),
             ])
         })
-        .on_chat_member(|observer| observer.register_inner_middleware(MemberTraffic))
+        .on_chat_member(|observer| {
+            observer.registers([
+                Handler::new(user::ban::yes).filter(MemberEvent::new().join()),
+                Handler::new(user::spam::yes).filter(MemberEvent::new().join()),
+            ])
+        })
 }

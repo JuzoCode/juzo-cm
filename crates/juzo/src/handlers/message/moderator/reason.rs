@@ -126,7 +126,10 @@ pub async fn info(
         text.push_str("* Находится в базе <b>«Джузо-антиспам»</b>");
 
         if !reason.is_empty() {
-            let _ = write!(text, ".<blockquote expandable><b>Причина: </b>{reason}</blockquote>");
+            let _ = write!(
+                text,
+                ".<blockquote expandable><b>Причина: </b>{reason}</blockquote>"
+            );
         } else {
             text.push_str("<br>")
         }
@@ -152,9 +155,20 @@ pub async fn info(
         .unwrap_or_default();
 
         if removed == 0 {
-            let _ = write!(text, "<br><b>❗️ Забанен <tg-button type='url' style='danger' url='https://t.me/c/{0}/{1}'>навсегда", chat_ids.some(), sms_ids);
+            let _ = write!(
+                text,
+                "<br><b>❗️ Забанен <tg-button type='url' style='danger' url='https://t.me/c/{0}/{1}'>навсегда",
+                chat_ids.some(),
+                sms_ids,
+            );
         } else {
-            let _ = write!(text, "<br><b>❗️ Забанен на <tg-button type='url' style='danger' url='https://t.me/c/{0}/{1}'>{2}", chat_ids.some(), sms_ids, TimeFormatted::until(removed, added));
+            let _ = write!(
+                text,
+                "<br><b>❗️ Забанен на <tg-button type='url' style='danger' url='https://t.me/c/{0}/{1}'>{2}",
+                chat_ids.some(),
+                sms_ids,
+                TimeFormatted::until(removed, added),
+            );
         }
 
         unsafe {
@@ -336,10 +350,10 @@ pub async fn scam(
         .one(&db)
         .await
     else {
-        bot.send(
-            JuzoAnswer::message(&message)
-                .text(format!("{0} Пользователь не находится в базе скама.", smail_pensil(true))),
-        )
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Пользователь не находится в базе скама.",
+            smail_pensil(true)
+        )))
         .await?;
         return Ok(());
     };
@@ -359,7 +373,11 @@ pub async fn scam(
             added.format("%d.%m.%Y")
         );
     } else {
-        let _ = write!(text, "<b>Добавлен:</b> {0}</blockquote>", added.format("%d.%m.%Y"));
+        let _ = write!(
+            text,
+            "<b>Добавлен:</b> {0}</blockquote>",
+            added.format("%d.%m.%Y")
+        );
     }
 
     bot.send(JuzoAnswer::message(&message).text(text))

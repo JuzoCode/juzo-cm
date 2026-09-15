@@ -64,10 +64,10 @@ async fn add_core(
     };
 
     if module_ids <= 0 {
-        bot.send(
-            JuzoAnswer::message(&message)
-                .text(format!("{0} Такого модуля не будет существовать.", smail_pensil(true))),
-        )
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Такого модуля не будет существовать.",
+            smail_pensil(true)
+        )))
         .await?;
         return Ok(());
     }
@@ -133,10 +133,10 @@ async fn add_core(
         .unwrap_or(false);
 
     if !inserted {
-        bot.send(
-            JuzoAnswer::message(&message)
-                .text(format!("{0} Нашёлся конфликтный модуль.", smail_pensil(true))),
-        )
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Нашёлся конфликтный модуль.",
+            smail_pensil(true)
+        )))
         .await?;
         return Ok(());
     }

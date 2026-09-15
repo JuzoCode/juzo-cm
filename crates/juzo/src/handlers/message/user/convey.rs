@@ -115,10 +115,10 @@ pub async fn sweets(
         .nth(128)
         .is_some()
     {
-        bot.send(
-            JuzoAnswer::message(&message)
-                .text(format!("{0} Длина текста превышает 128 символов.", smail_pensil(true))),
-        )
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Длина текста превышает 128 символов.",
+            smail_pensil(true)
+        )))
         .await?;
         return Ok(());
     }
@@ -196,10 +196,10 @@ pub async fn sweets(
         .unwrap_or(false);
 
     if !affected {
-        bot.send(
-            JuzoAnswer::message(&message)
-                .text(format!("{0} Ваш мешок не согласен с таким переводом.", smail_pensil(true))),
-        )
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Ваш мешок не согласен с таким переводом.",
+            smail_pensil(true)
+        )))
         .await?;
         return Ok(());
     }
@@ -334,12 +334,10 @@ pub async fn gold(
     }
 
     if !user.is_user {
-        bot.send(
-            JuzoAnswer::message(&message).text(format!(
-                "{0} Золотые леденцы передаются только избранным.",
-                smail_pensil(true),
-            )),
-        )
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Золотые леденцы передаются только избранным.",
+            smail_pensil(true),
+        )))
         .await?;
         return Ok(());
     } else if value == 0 {
@@ -354,10 +352,10 @@ pub async fn gold(
         .nth(128)
         .is_some()
     {
-        bot.send(
-            JuzoAnswer::message(&message)
-                .text(format!("{0} Длина текста превышает 128 символов.", smail_pensil(true))),
-        )
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Длина текста превышает 128 символов.",
+            smail_pensil(true)
+        )))
         .await?;
         return Ok(());
     }
@@ -435,10 +433,10 @@ pub async fn gold(
         .unwrap_or(false);
 
     if !affected {
-        bot.send(
-            JuzoAnswer::message(&message)
-                .text(format!("{0} Ваш мешок не согласен с таким переводом.", smail_pensil(true))),
-        )
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Ваш мешок не согласен с таким переводом.",
+            smail_pensil(true)
+        )))
         .await?;
         return Ok(());
     }
@@ -573,10 +571,10 @@ pub async fn score(
     }
 
     if !user.is_user {
-        bot.send(
-            JuzoAnswer::message(&message)
-                .text(format!("{0} Очки доната передаются только избранным.", smail_pensil(true),)),
-        )
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Очки доната передаются только избранным.",
+            smail_pensil(true),
+        )))
         .await?;
         return Ok(());
     } else if value == 0 {
@@ -591,10 +589,10 @@ pub async fn score(
         .nth(128)
         .is_some()
     {
-        bot.send(
-            JuzoAnswer::message(&message)
-                .text(format!("{0} Длина текста превышает 128 символов.", smail_pensil(true))),
-        )
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Длина текста превышает 128 символов.",
+            smail_pensil(true)
+        )))
         .await?;
         return Ok(());
     }
@@ -672,10 +670,10 @@ pub async fn score(
         .unwrap_or(false);
 
     if !affected {
-        bot.send(
-            JuzoAnswer::message(&message)
-                .text(format!("{0} Ваш мешок не согласен с таким переводом.", smail_pensil(true))),
-        )
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Ваш мешок не согласен с таким переводом.",
+            smail_pensil(true)
+        )))
         .await?;
         return Ok(());
     }
