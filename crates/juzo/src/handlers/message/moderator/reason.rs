@@ -75,11 +75,7 @@ pub async fn info(
             c8.sms_ids,
             c8.reason AS ban_reason,
             c8.moder_ids,
-            u.full_name,
-            COALESCE(
-                'https://t.me/' || u.username,
-                'tg://openmessage/user_id=' || c8.moder_ids::text
-            ) AS link,
+ 
             a3.reason AS spam_reason
         FROM c8
         FULL JOIN a3

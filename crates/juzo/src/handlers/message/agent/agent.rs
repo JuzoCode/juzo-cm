@@ -2,6 +2,8 @@ use juzo_core::{
     application::{UserIds, UserIndex, UserModel},
     common::emojis::{smail_cross, smail_tick},
     db::agent::{agent, prelude::Agent},
+    domain::UserModelExt,
+    gender,
 };
 use sea_orm::{EntityTrait, QuerySelect, Set, sea_query::OnConflict};
 use telers::types::ReplyParameters;
@@ -56,14 +58,17 @@ pub async fn add(
         // SAFETY: TBA will never return None in message.from().
         ArgsResult::None => unsafe {
             if let Some(r) = message.reply_to_message() {
-                r.from()
-                    .unwrap_unchecked()
-                    .into()
+                UserModel::new(
+                    &db,
+                    r.from()
+                        .unwrap_unchecked(),
+                )
+                .await
             } else if message
                 .business_connection_id()
                 .is_some()
             {
-                message.chat().into()
+                UserModel::new(&db, message.chat()).await
             } else {
                 return Ok(());
             }
@@ -86,8 +91,10 @@ pub async fn add(
         .exec(&db)
         .await;
 
+    let (g1, g2, g3) = gender!(user.gender => [("ка", "а", "кой"), ("", "", "том")]);
+
     bot.send(JuzoAnswer::message(&message).text(format!(
-        "{0} Агент <a href='{1}'>{2}</a> назначен",
+        "{0} Агент{g1} <a href='{1}'>{2}</a> назначен{g2}",
         smail_tick(true),
         user.link(),
         user.full_name(),
@@ -98,7 +105,7 @@ pub async fn add(
         .send(
             JuzoAnswer::message(&message)
                 .text(format!(
-                    "👨‍💻 Вы были назначены агентом поддержки «Juzo | Чат-Менеджер»"
+                    "👨‍💻 Вы были назначены агент{g3} поддержки «Juzo | Чат-Менеджер»"
                 ))
                 .chat_id(user.ids.0)
                 .business_connection_id_option::<&str>(None)
@@ -199,9 +206,7 @@ pub async fn add_spam(
     let _ = bot
         .send(
             JuzoAnswer::message(&message)
-                .text(format!(
-                    "👨‍💻 Вы были назначены агентом антиспама «Juzo | Чат-Менеджер»"
-                ))
+                .text("👨‍💻 Вы были назначены агентом антиспама «Juzo | Чат-Менеджер»")
                 .chat_id(user.ids.0)
                 .business_connection_id_option::<&str>(None)
                 .reply_parameters_option::<ReplyParameters>(None),
@@ -295,9 +300,7 @@ pub async fn add_main(
     let _ = bot
         .send(
             JuzoAnswer::message(&message)
-                .text(format!(
-                    "👨‍💻 Вы были назначены главный агентом поддержки «Juzo | Чат-Менеджер»"
-                ))
+                .text("👨‍💻 Вы были назначены главный агентом поддержки «Juzo | Чат-Менеджер»")
                 .chat_id(user.ids.0)
                 .business_connection_id_option::<&str>(None)
                 .reply_parameters_option::<ReplyParameters>(None),

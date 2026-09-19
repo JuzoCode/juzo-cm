@@ -19,6 +19,7 @@ pub fn routers() -> Router {
     Router::new("router AGENT connect")
         .on_message(|observer| {
             observer.registers([
+                Handler::new(bans_user::show).filter(Command::one("баны").no_prefix()),
                 Handler::new(agent::edit_show_false)
                     .filter(Command::one("-моя видимость").no_prefix()),
                 Handler::new(agent::edit_show_true)

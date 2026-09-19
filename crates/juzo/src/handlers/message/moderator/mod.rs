@@ -11,6 +11,7 @@ mod mute;
 mod pin;
 mod rank;
 mod reason;
+mod spam;
 mod tag;
 mod tg_admin;
 mod topic_close;
@@ -23,6 +24,16 @@ pub fn routers() -> Router {
     Router::new("router MODER connect")
         .on_message(|observer| {
             observer.registers([
+                Handler::new(spam::no)
+                    .filter(
+                        Command::many(&["+джузо спам", "+джузо ас", "+джузо антиспам"]).no_prefix(),
+                    )
+                    .filter(ChatType::one(enums::ChatType::Private).invert()),
+                Handler::new(spam::yes)
+                    .filter(
+                        Command::many(&["-джузо спам", "-джузо ас", "-джузо антиспам"]).no_prefix(),
+                    )
+                    .filter(ChatType::one(enums::ChatType::Private).invert()),
                 Handler::new(module_access::edit_show_false)
                     .filter(Command::many(&["-дм"]).no_prefix())
                     .filter(Attach),
@@ -66,10 +77,10 @@ pub fn routers() -> Router {
                 Handler::new(tg_admin::delete)
                     .filter(Command::one("-тг админ").no_prefix())
                     .filter(ChatType::one(enums::ChatType::Private).invert()),
-                Handler::new(pin::add)
+                Handler::new(pin::yes)
                     .filter(Command::many(&["пин", "закреп"]))
                     .filter(ChatType::one(enums::ChatType::Private).invert()),
-                Handler::new(pin::delete)
+                Handler::new(pin::no)
                     .filter(Command::many(&["анпин", "открепить"]))
                     .filter(ChatType::one(enums::ChatType::Private).invert()),
                 #[cfg(debug_assertions)]
@@ -104,8 +115,8 @@ pub fn routers() -> Router {
         })
         .on_business_message(|observer| {
             observer.registers([
-                Handler::new(pin::add).filter(Command::many(&["пин", "закреп"])),
-                Handler::new(pin::delete).filter(Command::many(&["анпин", "открепить"])),
+                Handler::new(pin::yes).filter(Command::many(&["пин", "закреп"])),
+                Handler::new(pin::no).filter(Command::many(&["анпин", "открепить"])),
                 Handler::new(reason::scam).filter(Command::one("скам причина")),
             ])
         })

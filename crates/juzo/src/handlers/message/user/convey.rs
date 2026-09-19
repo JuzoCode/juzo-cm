@@ -5,6 +5,8 @@ use juzo_core::{
         inflection::{plur_gold, plur_score, plur_sweets},
         tools::time::holiday_choice,
     },
+    domain::UserModelExt,
+    gender,
 };
 use sea_orm::{ConnectionTrait, raw_sql};
 use telers::types::ReplyParameters;
@@ -34,9 +36,12 @@ pub async fn sweets(
         // SAFETY: TBA will never return None in message.from().
         ArgsResult::Some([a1, _], 1) => unsafe {
             let found_user = if let Some(r) = message.reply_to_message() {
-                r.from()
-                    .unwrap_unchecked()
-                    .into()
+                UserModel::new(
+                    &db,
+                    r.from()
+                        .unwrap_unchecked(),
+                )
+                .await
             } else {
                 return Ok(());
             };
@@ -78,12 +83,15 @@ pub async fn sweets(
     }
 
     // SAFETY: TBA will never return None in message.from().
-    let iam: UserModel = unsafe {
-        message
-            .from()
-            .unwrap_unchecked()
-    }
-    .into();
+    let iam = unsafe {
+        UserModel::new(
+            &db,
+            message
+                .from()
+                .unwrap_unchecked(),
+        )
+        .await
+    };
 
     if user.ids == iam.ids {
         bot.send(JuzoAnswer::message(&message).text(format!(
@@ -207,8 +215,11 @@ pub async fn sweets(
     let smail_sweets = smail_sweets(true);
     let sweets_name = plur_sweets(value);
 
+    let g1 = gender!(user.gender => ["a", ""]);
+    let g2 = gender!(iam.gender => ["ница", ""]);
+
     let mut text = format!(
-        "{smail_sweets} <a href='{0}'>{1}</a> получил {sweets_name}",
+        "{smail_sweets} <a href='{0}'>{1}</a> получил{g1} {sweets_name}",
         user.link(),
         user.full_name(),
     );
@@ -220,8 +231,8 @@ pub async fn sweets(
     }
 
     let mut text_send = format!(
-        "{smail_sweets} Вам перевели {sweets_name}.<blockquote expandable><b>👤 Отправитель:</b> \
-         <a href='{0}'>{1}</a>",
+        "{smail_sweets} Вам перевели {sweets_name}.<blockquote expandable><b>👤 \
+         Отправитель{g2}:</b> <a href='{0}'>{1}</a>",
         iam.link(),
         iam.full_name(),
     );
@@ -272,9 +283,12 @@ pub async fn gold(
         // SAFETY: TBA will never return None in message.from().
         ArgsResult::Some([a1, _], 1) => unsafe {
             let found_user = if let Some(r) = message.reply_to_message() {
-                r.from()
-                    .unwrap_unchecked()
-                    .into()
+                UserModel::new(
+                    &db,
+                    r.from()
+                        .unwrap_unchecked(),
+                )
+                .await
             } else {
                 return Ok(());
             };
@@ -316,12 +330,15 @@ pub async fn gold(
     }
 
     // SAFETY: TBA will never return None in message.from().
-    let iam: UserModel = unsafe {
-        message
-            .from()
-            .unwrap_unchecked()
-    }
-    .into();
+    let iam = unsafe {
+        UserModel::new(
+            &db,
+            message
+                .from()
+                .unwrap_unchecked(),
+        )
+        .await
+    };
 
     if user.ids == iam.ids {
         bot.send(JuzoAnswer::message(&message).text(format!(
@@ -509,9 +526,12 @@ pub async fn score(
         // SAFETY: TBA will never return None in message.from().
         ArgsResult::Some([a1, _], 1) => unsafe {
             let found_user = if let Some(r) = message.reply_to_message() {
-                r.from()
-                    .unwrap_unchecked()
-                    .into()
+                UserModel::new(
+                    &db,
+                    r.from()
+                        .unwrap_unchecked(),
+                )
+                .await
             } else {
                 return Ok(());
             };
@@ -553,12 +573,15 @@ pub async fn score(
     }
 
     // SAFETY: TBA will never return None in message.from().
-    let iam: UserModel = unsafe {
-        message
-            .from()
-            .unwrap_unchecked()
-    }
-    .into();
+    let iam = unsafe {
+        UserModel::new(
+            &db,
+            message
+                .from()
+                .unwrap_unchecked(),
+        )
+        .await
+    };
 
     if user.ids == iam.ids {
         bot.send(JuzoAnswer::message(&message).text(format!(
@@ -678,8 +701,11 @@ pub async fn score(
         return Ok(());
     }
 
+    let g1 = gender!(user.gender => ["a", ""]);
+    let g2 = gender!(iam.gender => ["ница", ""]);
+
     let mut text = format!(
-        "{0} <a href='{1}'>{2}</a> получил {3}",
+        "{0} <a href='{1}'>{2}</a> получил{g1} {3}",
         smail_score(true),
         user.link(),
         user.full_name(),
@@ -693,7 +719,8 @@ pub async fn score(
     }
 
     let mut text_send = format!(
-        "{0} Вам перевели {1}.<blockquote expandable><b>👤 Отправитель:</b> <a href='{2}'>{3}</a>",
+        "{0} Вам перевели {1}.<blockquote expandable><b>👤 Отправитель{g2}:</b> <a \
+         href='{2}'>{3}</a>",
         smail_score(true),
         plur_score(value),
         iam.link(),

@@ -3,7 +3,7 @@ use telers::methods::{PinChatMessage, UnpinChatMessage};
 
 use super::super::*;
 
-pub async fn add(
+pub async fn yes(
     bot: Bot,
     message: Message,
     Extension(db): Extension<DbConn>,
@@ -53,7 +53,7 @@ pub async fn add(
     Ok(())
 }
 
-pub async fn delete(
+pub async fn no(
     bot: Bot,
     message: Message,
     Extension(db): Extension<DbConn>,

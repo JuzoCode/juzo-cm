@@ -1,6 +1,5 @@
 [workspace]
 members = [
-    "crates/juzo-macros",
     "crates/juzo-core",
     "crates/juzo",
 ]
@@ -12,7 +11,6 @@ publish = false
 
 [patch.crates-io]
 juzo-core = { path = "crates/juzo-core" }
-juzo-macros = { path = "crates/juzo-macros" }
 
 [workspace.dependencies]
 tokio = { version = "1.52.1", features = ["full"] }

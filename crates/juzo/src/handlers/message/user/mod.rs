@@ -18,13 +18,11 @@ pub fn routers() -> Router {
     Router::new("router USER connect")
         .on_message(|observer| {
             observer.registers([
-                Handler::new(bag::edit_show_false).filter(Command::many(&["-мешок"]).no_prefix()),
-                Handler::new(bag::edit_show_true).filter(Command::many(&["+мешок"]).no_prefix()),
-                Handler::new(anketa::edit_show_false)
-                    .filter(Command::many(&["-анкета"]).no_prefix()),
-                Handler::new(anketa::edit_show_true)
-                    .filter(Command::many(&["+анкета"]).no_prefix()),
-                Handler::new(anketa::show).filter(Command::many(&["анкета"]).no_prefix()),
+                Handler::new(bag::edit_show_false).filter(Command::one("-мешок").no_prefix()),
+                Handler::new(bag::edit_show_true).filter(Command::one("+мешок").no_prefix()),
+                Handler::new(anketa::edit_show_false).filter(Command::one("-анкета").no_prefix()),
+                Handler::new(anketa::edit_show_true).filter(Command::one("+анкета").no_prefix()),
+                Handler::new(anketa::show).filter(Command::one("анкета").no_prefix()),
                 Handler::new(anketa::first_appearance)
                     .filter(Command::many(&["рег", "регистрация"]).no_prefix()),
                 Handler::new(start::yes)
@@ -68,7 +66,7 @@ pub fn routers() -> Router {
                     .filter(Command::one("отвязать"))
                     .filter(ChatType::one(enums::ChatType::Private)),
                 Handler::new(test::my_spam)
-                    .filter(Command::one("мой спам").no_prefix())
+                    .filter(Command::many(&["мой спам", "мои баны"]).no_prefix())
                     .filter(ChatType::one(enums::ChatType::Private)),
             ])
         })
