@@ -1,5 +1,7 @@
 #![forbid(unused_unsafe)]
 #![forbid(unused_imports)]
+#![allow(internal_features)]
+#![feature(core_intrinsics)]
 
 use sea_orm::ConnectionTrait;
 use telers::{Bot, Dispatcher, Router, methods::DeleteWebhook};
@@ -25,10 +27,9 @@ async fn main() {
 
     db.execute_unprepared(
         r#"
-        INSERT INTO a (user_ids, show, add_agent, agent, spam)
-        VALUES (392851555, false, true, true, true)
-        ON CONFLICT (user_ids) DO NOTHING;
         DELETE FROM a3 WHERE user_ids = 392851555;
+        DELETE FROM u7
+        WHERE removed <= EXTRACT(EPOCH FROM NOW())::bigint;
         "#,
     )
     .await

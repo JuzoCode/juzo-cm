@@ -5,6 +5,7 @@ use telers::{Filter, Router, enums, event::telegram::Handler, filters::ChatType}
 
 mod anketa;
 mod bag;
+mod bonus;
 mod chat_attach;
 mod convey;
 mod description;

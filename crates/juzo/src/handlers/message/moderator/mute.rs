@@ -196,10 +196,7 @@ pub async fn yes(
         return Ok(());
     }
 
-    let mut text = String::with_capacity(2048);
-
-    let _ = write!(
-        text,
+    let mut text = format!(
         "🔴 <a href='{0}'>{1}</a> получает мут ",
         user.link(),
         user.full_name()

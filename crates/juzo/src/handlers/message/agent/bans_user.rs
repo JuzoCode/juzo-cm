@@ -1,4 +1,4 @@
-use core::{fmt::Write, hint::unreachable_unchecked};
+use core::{fmt::Write, intrinsics::unreachable};
 
 use chrono::{Local, TimeZone};
 use juzo_core::{
@@ -25,7 +25,7 @@ async fn show_core(
     }
     .id;
 
-    let Ok(Some((is_agent, true))) = Agent::find_by_id(my_ids)
+    let Ok(Some((is_agent, is_spam))) = Agent::find_by_id(my_ids)
         .select_only()
         .columns([agent::Column::Agent, agent::Column::Spam])
         .into_tuple::<(bool, bool)>()
@@ -35,7 +35,7 @@ async fn show_core(
         return Ok(());
     };
 
-    if full && !is_agent {
+    if !is_agent && (!is_spam || full) {
         return Ok(());
     }
 
@@ -171,7 +171,7 @@ async fn show_core(
         let f = match function {
             1 => "Juzo | Ignore System",
             2 => "Джузо-антиспам",
-            _ => unsafe { unreachable_unchecked() },
+            _ => unsafe { unreachable() },
         };
 
         let removed = Local
@@ -229,7 +229,7 @@ async fn show_core(
         let (smail, f) = match function {
             1 => ("🤐", "В режиме игнора команд"),
             2 => ("📛", "Находится в базе «Джузо-антиспам»"),
-            _ => unsafe { unreachable_unchecked() },
+            _ => unsafe { unreachable() },
         };
 
         let _ = write!(

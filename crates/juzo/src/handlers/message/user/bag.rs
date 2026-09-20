@@ -1,15 +1,17 @@
-use core::fmt::Write;
+use core::{fmt::Write, intrinsics::unreachable};
 
 use juzo_core::{
-    application::{UserIndex, UserModel},
+    application::{BonusResult, JuzoBonus, UserIndex, UserModel},
     common::{
         emojis::{
             smail_asterisks, smail_bag, smail_cross, smail_gold, smail_pensil, smail_score,
-            smail_sweets, smail_tick,
+            smail_sweets, smail_tick, smail_vip,
         },
         inflection::{plur_asterisks, plur_gold, plur_score, plur_sweets},
     },
     db::user::{balance, prelude::UserBalance},
+    domain::{UserModelExt, enums::BonusLog},
+    gender,
 };
 use sea_orm::{
     EntityTrait, Set, raw_sql,
@@ -27,6 +29,7 @@ pub async fn show(
 ) -> HandlerResult<()> {
     let user_ind = UserIndex::new(&bot, &db);
     let module = ModuleChecker::new(&bot, &db);
+    let bonus = JuzoBonus::new(&db);
 
     // SAFETY: The Command filter will not allow processing of a "None" value.
     let text = unsafe {
@@ -50,19 +53,25 @@ pub async fn show(
         // SAFETY: TBA will never return None in message.from().
         ArgsResult::None => unsafe {
             if let Some(r) = message.reply_to_message() {
-                r.from()
-                    .unwrap_unchecked()
-                    .into()
+                UserModel::new(
+                    &db,
+                    r.from()
+                        .unwrap_unchecked(),
+                )
+                .await
             } else if message
                 .business_connection_id()
                 .is_some()
             {
-                message.chat().into()
+                UserModel::new(&db, message.chat()).await
             } else {
-                message
-                    .from()
-                    .unwrap_unchecked()
-                    .into()
+                UserModel::new(
+                    &db,
+                    message
+                        .from()
+                        .unwrap_unchecked(),
+                )
+                .await
             }
         },
         ArgsResult::Unk => return Ok(()),
@@ -129,9 +138,11 @@ pub async fn show(
         .unwrap_or_else(|| balance::Model::new(user.ids));
 
     if !balance.show {
+        let (g1, g2) = gender!(user.gender => [("a", "ё"), ("", "го")]);
+
         bot.send(JuzoAnswer::message(&message).text(format!(
-            "{0} <b><a href='{1}'>{2}</a></b> скрыл мешок.<blockquote>Заслужите его милость, и \
-             тогда <b>просите открыть его!</b> =)</blockquote>",
+            "{0} <b><a href='{1}'>{2}</a></b> скрыл{g1} мешок.<blockquote>Заслужите е{g2} \
+             милость, и тогда <b>просите открыть его!</b> =)</blockquote>",
             smail_pensil(true),
             user.link(),
             user.full_name(),
@@ -189,11 +200,40 @@ pub async fn show(
 
     text.push_str("</blockquote>");
 
-    // let _ = write!(
-    //     text,
-    //     "\n💬 Запасы {0} можно пополнить, введя команду <code>купить {{число}}</code>",
-    //     holiday_choice(&"леденцов", &"мандаринок", &"тыковок")
-    // );
+    if message
+        .chat()
+        .title()
+        .is_some()
+    {
+        let bonuses = bonus
+            .chat_ids(
+                message
+                    .chat()
+                    .id()
+                    .into(),
+            )
+            .user_ids(user.ids)
+            .all([BonusLog::Vip, BonusLog::Plus, BonusLog::Minus])
+            .await;
+
+        for (index, bonus) in bonuses
+            .into_iter()
+            .enumerate()
+        {
+            let BonusResult::Active(removed) = bonus else {
+                continue;
+            };
+
+            let (smail, name) = match index {
+                0 => (smail_vip(true), "VIP-статус"),
+                1 => ("✨", "Плюсопад"),
+                2 => ("➖", "Минусит"),
+                _ => unsafe { unreachable() },
+            };
+
+            let _ = writeln!(text, "{smail} <b>{name}</b> на {removed}");
+        }
+    }
 
     bot.send(JuzoAnswer::message(&message).text(text))
         .await?;

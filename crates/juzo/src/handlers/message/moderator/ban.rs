@@ -226,10 +226,7 @@ pub async fn yes(
             .unwrap_or_default()
     };
 
-    let mut text = String::with_capacity(2048);
-
-    let _ = write!(
-        text,
+    let mut text = format!(
         "🔴 <a href='{0}'>{1}</a> получает бан ",
         user.link(),
         user.full_name()
