@@ -1,7 +1,10 @@
+use core::fmt::Write;
+
 use chrono::{Timelike, Utc};
 use juzo_core::{
     application::{ParseTgLink, UserIndex, UserModel},
     common::{emojis::smail_pensil, tools::time::add_datetime},
+    domain::TimeFormatted,
 };
 use sea_orm::{ConnectionTrait, raw_sql};
 
@@ -197,6 +200,32 @@ pub async fn add(
         .await?;
         return Ok(());
     }
+
+    let mut text = format!(
+        "🔴 <a href='{0}'>{1}</a> получает бан \n<b>* ",
+        user.link(),
+        user.full_name()
+    );
+
+    if until == 0 {
+        text.push_str("Снимется никогда");
+    } else {
+        let _ = write!(text, "До снятия {0}", TimeFormatted::until(until, now));
+    }
+
+    let _ = writeln!(
+        text,
+        ".</b><blockquote expandable><b>Модератор: </b><a href='{0}'>{1}</a>",
+        iam.link(),
+        iam.full_name()
+    );
+
+    if !comment.is_empty() {
+        text.push_str("<b>Причина: </b>");
+        text.push_str(comment);
+    }
+
+    text.push_str("</blockquote>");
 
     bot.send(JuzoAnswer::message(&message).text("meow"))
         .await?;

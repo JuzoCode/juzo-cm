@@ -1,9 +1,9 @@
 use juzo_core::{
-    application::{UserIndex, UserModel},
+    application::{ParseTgLink, UserIndex, UserModel},
     common::{
         emojis::{smail_gold, smail_pensil, smail_score, smail_sweets, smail_warning},
         inflection::{plur_gold, plur_score, plur_sweets},
-        tools::time::holiday_choice,
+        tools::{parse::parse_amount, time::holiday_choice},
     },
     domain::UserModelExt,
     gender,
@@ -29,42 +29,45 @@ pub async fn sweets(
             .or_else(|| message.caption())
             .unwrap_unchecked()
     };
-    let args = result.args::<2>(text);
+    let args = result.args::<4>(text);
     let comment = &text[result.first_line];
 
-    let (user, value): (UserModel, u32) = match args {
-        // SAFETY: TBA will never return None in message.from().
-        ArgsResult::Some([a1, _], 1) => unsafe {
-            let found_user = if let Some(r) = message.reply_to_message() {
-                UserModel::new(
-                    &db,
-                    r.from()
-                        .unwrap_unchecked(),
-                )
-                .await
+    let (value, user): (u32, UserModel) = match args {
+        ArgsResult::Some(args, len) => {
+            let last = args[len - 1];
+
+            if let Some(link) = ParseTgLink::new(&text[last]) {
+                let Some(value) = parse_amount(&text[args[0].start..last.start]) else {
+                    return Ok(());
+                };
+
+                let Ok(found_user) = user_ind
+                    .fetch_user(link)
+                    .await
+                else {
+                    return Ok(());
+                };
+
+                (value, found_user)
             } else {
-                return Ok(());
-            };
+                let Some(reply) = message.reply_to_message() else {
+                    return Ok(());
+                };
 
-            let Ok(value) = text[a1].parse() else {
-                return Ok(());
-            };
+                let Some(value) = parse_amount(&text[args[0].start..last.end]) else {
+                    return Ok(());
+                };
 
-            (found_user, value)
-        },
-        ArgsResult::Some([a1, a2], _) => {
-            let Ok(found_user) = user_ind
-                .search_user(&text[a2])
-                .await
-            else {
-                return Ok(());
-            };
+                // SAFETY: TBA will never return None in message.from().
+                let found_user = unsafe {
+                    reply
+                        .from()
+                        .unwrap_unchecked()
+                }
+                .into();
 
-            let Ok(value) = text[a1].parse() else {
-                return Ok(());
-            };
-
-            (found_user, value)
+                (value, found_user)
+            }
         }
         _ => return Ok(()),
     };
@@ -93,7 +96,7 @@ pub async fn sweets(
         .await
     };
 
-    if user.ids == iam.ids {
+    if user.ids == iam.ids || value > 999_999_999 {
         bot.send(JuzoAnswer::message(&message).text(format!(
             "{0} <b>Перевод получился неудачным.</b> Не бойтесь, ваши {1} в безопасности =)",
             smail_warning(true),
@@ -206,7 +209,7 @@ pub async fn sweets(
     if !affected {
         bot.send(JuzoAnswer::message(&message).text(format!(
             "{0} Ваш мешок не согласен с таким переводом.",
-            smail_pensil(true)
+            smail_pensil(true),
         )))
         .await?;
         return Ok(());
@@ -276,42 +279,45 @@ pub async fn gold(
             .or_else(|| message.caption())
             .unwrap_unchecked()
     };
-    let args = result.args::<2>(text);
+    let args = result.args::<4>(text);
     let comment = &text[result.first_line];
 
-    let (user, value): (UserModel, u32) = match args {
-        // SAFETY: TBA will never return None in message.from().
-        ArgsResult::Some([a1, _], 1) => unsafe {
-            let found_user = if let Some(r) = message.reply_to_message() {
-                UserModel::new(
-                    &db,
-                    r.from()
-                        .unwrap_unchecked(),
-                )
-                .await
+    let (value, user): (u32, UserModel) = match args {
+        ArgsResult::Some(args, len) => {
+            let last = args[len - 1];
+
+            if let Some(link) = ParseTgLink::new(&text[last]) {
+                let Some(value) = parse_amount(&text[args[0].start..last.start]) else {
+                    return Ok(());
+                };
+
+                let Ok(found_user) = user_ind
+                    .fetch_user(link)
+                    .await
+                else {
+                    return Ok(());
+                };
+
+                (value, found_user)
             } else {
-                return Ok(());
-            };
+                let Some(reply) = message.reply_to_message() else {
+                    return Ok(());
+                };
 
-            let Ok(value) = text[a1].parse() else {
-                return Ok(());
-            };
+                let Some(value) = parse_amount(&text[args[0].start..last.end]) else {
+                    return Ok(());
+                };
 
-            (found_user, value)
-        },
-        ArgsResult::Some([a1, a2], _) => {
-            let Ok(found_user) = user_ind
-                .search_user(&text[a2])
-                .await
-            else {
-                return Ok(());
-            };
+                // SAFETY: TBA will never return None in message.from().
+                let found_user = unsafe {
+                    reply
+                        .from()
+                        .unwrap_unchecked()
+                }
+                .into();
 
-            let Ok(value) = text[a1].parse() else {
-                return Ok(());
-            };
-
-            (found_user, value)
+                (value, found_user)
+            }
         }
         _ => return Ok(()),
     };
@@ -452,20 +458,23 @@ pub async fn gold(
     if !affected {
         bot.send(JuzoAnswer::message(&message).text(format!(
             "{0} Ваш мешок не согласен с таким переводом.",
-            smail_pensil(true)
+            smail_pensil(true),
         )))
         .await?;
         return Ok(());
     }
 
+    let g1 = gender!(user.gender => ["a", ""]);
+    let g2 = gender!(iam.gender => ["ница", ""]);
+
     let mut text = format!(
-        "{0} <a href='{1}'>{2}</a> получил {3}",
+        "{0} <a href='{1}'>{2}</a> получил{g1} {3}",
         smail_gold(true),
         user.link(),
         user.full_name(),
         plur_gold(value)
     );
-
+    
     if !comment.is_empty() {
         text.push_str(".<blockquote expandable><b>💬 Подпись к переводу:</b> ");
         text.push_str(comment);
@@ -473,7 +482,8 @@ pub async fn gold(
     }
 
     let mut text_send = format!(
-        "{0} Вам перевели {1}.<blockquote expandable><b>👤 Отправитель:</b> <a href='{2}'>{3}</a>",
+        "{0} Вам перевели {1}.<blockquote expandable><b>👤 \
+         Отправитель{g2}:</b> <a href='{2}'>{3}</a>",
         smail_gold(true),
         plur_gold(value),
         iam.link(),
@@ -519,42 +529,45 @@ pub async fn score(
             .or_else(|| message.caption())
             .unwrap_unchecked()
     };
-    let args = result.args::<2>(text);
+    let args = result.args::<4>(text);
     let comment = &text[result.first_line];
 
-    let (user, value): (UserModel, u32) = match args {
-        // SAFETY: TBA will never return None in message.from().
-        ArgsResult::Some([a1, _], 1) => unsafe {
-            let found_user = if let Some(r) = message.reply_to_message() {
-                UserModel::new(
-                    &db,
-                    r.from()
-                        .unwrap_unchecked(),
-                )
-                .await
+    let (value, user): (u32, UserModel) = match args {
+        ArgsResult::Some(args, len) => {
+            let last = args[len - 1];
+
+            if let Some(link) = ParseTgLink::new(&text[last]) {
+                let Some(value) = parse_amount(&text[args[0].start..last.start]) else {
+                    return Ok(());
+                };
+
+                let Ok(found_user) = user_ind
+                    .fetch_user(link)
+                    .await
+                else {
+                    return Ok(());
+                };
+
+                (value, found_user)
             } else {
-                return Ok(());
-            };
+                let Some(reply) = message.reply_to_message() else {
+                    return Ok(());
+                };
 
-            let Ok(value) = text[a1].parse() else {
-                return Ok(());
-            };
+                let Some(value) = parse_amount(&text[args[0].start..last.end]) else {
+                    return Ok(());
+                };
 
-            (found_user, value)
-        },
-        ArgsResult::Some([a1, a2], _) => {
-            let Ok(found_user) = user_ind
-                .search_user(&text[a2])
-                .await
-            else {
-                return Ok(());
-            };
+                // SAFETY: TBA will never return None in message.from().
+                let found_user = unsafe {
+                    reply
+                        .from()
+                        .unwrap_unchecked()
+                }
+                .into();
 
-            let Ok(value) = text[a1].parse() else {
-                return Ok(());
-            };
-
-            (found_user, value)
+                (value, found_user)
+            }
         }
         _ => return Ok(()),
     };
@@ -695,7 +708,7 @@ pub async fn score(
     if !affected {
         bot.send(JuzoAnswer::message(&message).text(format!(
             "{0} Ваш мешок не согласен с таким переводом.",
-            smail_pensil(true)
+            smail_pensil(true),
         )))
         .await?;
         return Ok(());

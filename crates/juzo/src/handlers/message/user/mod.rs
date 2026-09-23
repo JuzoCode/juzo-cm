@@ -56,6 +56,9 @@ pub fn routers() -> Router {
                 Handler::new(test::time_sms).filter(Command::one("смс время").no_prefix()),
                 Handler::new(test::ping).filter(Command::one("пинг").no_prefix()),
                 Handler::new(user_id::show).filter(Command::one("ид")),
+                Handler::new(bag::my_ls_show)
+                    .filter(Command::many(&["мешок в лс", "мой мешок в лс"]).no_prefix()),
+                Handler::new(bag::my_show).filter(Command::one("мой мешок").no_prefix()),
                 Handler::new(bag::show).filter(Command::one("мешок").no_prefix()),
                 Handler::new(test::show_thread_link)
                     .filter(Command::one("ветка"))

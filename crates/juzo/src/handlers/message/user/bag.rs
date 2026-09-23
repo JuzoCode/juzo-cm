@@ -1,5 +1,6 @@
 use core::{fmt::Write, intrinsics::unreachable};
 
+use chrono::{Timelike, Utc};
 use juzo_core::{
     application::{BonusResult, JuzoBonus, UserIndex, UserModel},
     common::{
@@ -10,7 +11,7 @@ use juzo_core::{
         inflection::{plur_asterisks, plur_gold, plur_score, plur_sweets},
     },
     db::user::{balance, prelude::UserBalance},
-    domain::{UserModelExt, enums::BonusLog},
+    domain::{TimeFormatted, UserModelExt, enums::BonusLog},
     gender,
 };
 use sea_orm::{
@@ -21,67 +22,79 @@ use sea_orm::{
 use super::super::*;
 
 /// добавить в бизнес мод
-pub async fn show(
+async fn show_core(
     bot: Bot,
     message: Message,
     Extension(db): Extension<DbConn>,
     Extension(result): Extension<CommandResult>,
+    my: bool,
+    ls: bool,
 ) -> HandlerResult<()> {
     let user_ind = UserIndex::new(&bot, &db);
     let module = ModuleChecker::new(&bot, &db);
     let bonus = JuzoBonus::new(&db);
 
-    // SAFETY: The Command filter will not allow processing of a "None" value.
-    let text = unsafe {
-        message
-            .text()
-            .or_else(|| message.caption())
-            .unwrap_unchecked()
-    };
-    let args = result.args::<1>(text);
-
-    let user: UserModel = match args {
-        ArgsResult::Some([a1], _) => {
-            let Ok(found_user) = user_ind
-                .search_user(&text[a1])
-                .await
-            else {
-                return Ok(());
-            };
-            found_user
-        }
-        // SAFETY: TBA will never return None in message.from().
-        ArgsResult::None => unsafe {
-            if let Some(r) = message.reply_to_message() {
-                UserModel::new(
-                    &db,
-                    r.from()
-                        .unwrap_unchecked(),
-                )
-                .await
-            } else if message
-                .business_connection_id()
-                .is_some()
-            {
-                UserModel::new(&db, message.chat()).await
-            } else {
-                UserModel::new(
-                    &db,
-                    message
-                        .from()
-                        .unwrap_unchecked(),
-                )
-                .await
-            }
-        },
-        ArgsResult::Unk => return Ok(()),
-    };
-
-    if message
+    let user: UserModel;
+    let is_chat = message
         .chat()
         .title()
-        .is_some()
-    {
+        .is_some();
+
+    if my {
+        user = UserModel::new(
+            &db,
+            // SAFETY: TBA will never return None in message.from().
+            unsafe {
+                message
+                    .from()
+                    .unwrap_unchecked()
+            },
+        )
+        .await
+    } else {
+        // SAFETY: The Command filter will not allow processing of a "None" value.
+        let text = unsafe {
+            message
+                .text()
+                .or_else(|| message.caption())
+                .unwrap_unchecked()
+        };
+        let args = result.args::<1>(text);
+
+        user = match args {
+            ArgsResult::Some([a1], _) => {
+                let Ok(found_user) = user_ind
+                    .search_user(&text[a1])
+                    .await
+                else {
+                    return Ok(());
+                };
+                found_user
+            }
+            // SAFETY: TBA will never return None in message.from().
+            ArgsResult::None => unsafe {
+                if let Some(r) = message.reply_to_message() {
+                    UserModel::new(
+                        &db,
+                        r.from()
+                            .unwrap_unchecked(),
+                    )
+                    .await
+                } else {
+                    UserModel::new(
+                        &db,
+                        message
+                            .from()
+                            .unwrap_unchecked(),
+                    )
+                    .await
+                }
+            },
+            ArgsResult::Unk => return Ok(()),
+        };
+    }
+
+    if is_chat {
         let true = module
             .check::<31>(ModuleAccess::M(&message))
             .await
@@ -109,6 +122,19 @@ pub async fn show(
             .unwrap_unchecked()
     }
     .id;
+
+    let chat_ids = if ls && is_chat {
+        let _ = bot
+            .send(JuzoAnswer::message(&message).text(format!(
+                "{0} Мешок отправлен в <a href='https://t.me/juzo_cm_bot'>личные сообщения</a> \
+                 Джузо",
+                smail_bag(true)
+            )))
+            .await;
+        my_ids
+    } else {
+        message.chat().id()
+    };
 
     let balance = UserBalance::find()
         .from_raw_sql(raw_sql!(
@@ -151,60 +177,57 @@ pub async fn show(
         return Ok(());
     }
 
+    let mut text: String;
+
     if balance.is_empty() {
-        bot.send(JuzoAnswer::message(&message).text(format!(
-            "{0} <b>В мешке <a href='{1}'>{2}</a></b> пустеет так, что не осталось даже пыли",
+        text = format!(
+            "{0} <b>В мешке <a href='{1}'>{2}</a></b> пустеет так, что не осталось даже пыли\n",
             smail_bag(true),
             user.link(),
             user.full_name(),
-        )))
-        .await?;
-        return Ok(());
-    }
-
-    let mut text = format!(
-        "{0} <b>В мешке <a href='{1}'>{2}</a></b>.<blockquote expandable>",
-        smail_bag(true),
-        user.link(),
-        user.full_name(),
-    );
-
-    let _ = writeln!(
-        text,
-        "{0} {1} {2} {3}\n{4} {5}",
-        smail_sweets(true),
-        unsafe {
-            plur_sweets(
-                balance
-                    .sweets
-                    .to_u32()
-                    .unwrap_unchecked(),
-            )
-        },
-        smail_gold(true),
-        plur_gold(balance.gold),
-        // smail_jcoin(true),
-        // plur_jcoin(balance.coins),
-        smail_asterisks(true),
-        plur_asterisks(balance.asterisks)
-    );
-
-    if balance.score > 0 {
-        let _ = writeln!(
-            text,
-            "{0} {1}",
-            smail_score(true),
-            plur_score(balance.score)
         );
+    } else {
+        text = format!(
+            "{0} <b>В мешке <a href='{1}'>{2}</a></b>.<blockquote expandable>{3} {4} {5} {6}\n{7} \
+             {8}",
+            smail_bag(true),
+            user.link(),
+            user.full_name(),
+            smail_sweets(true),
+            unsafe {
+                plur_sweets(
+                    balance
+                        .sweets
+                        .to_u32()
+                        .unwrap_unchecked(),
+                )
+            },
+            smail_gold(true),
+            plur_gold(balance.gold),
+            smail_asterisks(true),
+            plur_asterisks(balance.asterisks),
+        );
+
+        if balance.score > 0 {
+            let _ = write!(
+                text,
+                "\n{0} {1}",
+                smail_score(true),
+                plur_score(balance.score)
+            );
+        }
+
+        text.push_str("</blockquote>");
     }
 
-    text.push_str("</blockquote>");
+    if is_chat {
+        // SAFETY: ¯\_(ツ)_/¯
+        let now = unsafe {
+            Utc::now()
+                .with_nanosecond(0)
+                .unwrap_unchecked()
+        };
 
-    if message
-        .chat()
-        .title()
-        .is_some()
-    {
         let bonuses = bonus
             .chat_ids(
                 message
@@ -231,14 +254,61 @@ pub async fn show(
                 _ => unsafe { unreachable() },
             };
 
-            let _ = writeln!(text, "{smail} <b>{name}</b> на {removed}");
+            let _ = write!(
+                text,
+                "\n{smail} <b>{name}</b> на {0}",
+                TimeFormatted::until(removed, now)
+            );
         }
     }
 
-    bot.send(JuzoAnswer::message(&message).text(text))
-        .await?;
+    bot.send(
+        JuzoAnswer::message(&message)
+            .text(text)
+            .chat_id(chat_ids),
+    )
+    .await?;
 
     Ok(())
+}
+
+pub async fn show(
+    bot: Bot,
+    message: Message,
+    db: Extension<DbConn>,
+    Extension(result): Extension<CommandResult>,
+) -> HandlerResult<()> {
+    if !result.args.is_empty() {
+        return Ok(());
+    }
+
+    show_core(bot, message, db, Extension(result), false, false).await
+}
+
+pub async fn my_show(
+    bot: Bot,
+    message: Message,
+    db: Extension<DbConn>,
+    Extension(result): Extension<CommandResult>,
+) -> HandlerResult<()> {
+    if !result.args.is_empty() {
+        return Ok(());
+    }
+
+    show_core(bot, message, db, Extension(result), true, false).await
+}
+
+pub async fn my_ls_show(
+    bot: Bot,
+    message: Message,
+    db: Extension<DbConn>,
+    Extension(result): Extension<CommandResult>,
+) -> HandlerResult<()> {
+    if !result.args.is_empty() {
+        return Ok(());
+    }
+
+    show_core(bot, message, db, Extension(result), true, true).await
 }
 
 async fn edit_show_core(
