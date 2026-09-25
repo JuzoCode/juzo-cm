@@ -1,8 +1,6 @@
 use sea_orm::{ConnectionTrait, raw_sql};
 use telers::{
-    enums::ParseMode,
-    methods::{GetChatAdministrators, SendMessage},
-    types::ChatMember,
+    enums::ParseMode, event::EventReturn, methods::{GetChatAdministrators, SendMessage}, types::{Chat, ChatMember},
 };
 
 use super::super::*;
@@ -11,7 +9,11 @@ pub async fn set(
     bot: Bot,
     member: ChatMemberUpdated,
     Extension(db): Extension<DbConn>,
-) -> HandlerResult<()> {
+) -> HandlerResult<EventReturn> {
+    if !matches!(member.chat.as_ref(), Chat::Supergroup(_)) {
+        return Ok(EventReturn::Skip);
+    }
+
     let chat_ids = member.chat.id();
     let full_name = unsafe {
         member
@@ -41,11 +43,11 @@ pub async fn set(
         ))
         .await
     else {
-        return Ok(());
+        return Ok(EventReturn::Finish);
     };
 
     if result.rows_affected() == 0 {
-        return Ok(());
+        return Ok(EventReturn::Finish);
     }
 
     let members = bot
@@ -104,5 +106,5 @@ pub async fn set(
     )
     .await?;
 
-    Ok(())
+    Ok(EventReturn::Finish)
 }

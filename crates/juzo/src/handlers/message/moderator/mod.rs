@@ -17,6 +17,7 @@ mod tg_admin;
 mod topic_close;
 mod topic_name;
 mod topic_reopen;
+#[cfg(debug_assertions)]
 mod warns;
 
 pub fn routers() -> Router {
@@ -82,6 +83,7 @@ pub fn routers() -> Router {
                 Handler::new(pin::no)
                     .filter(Command::many(&["анпин", "открепить"]))
                     .filter(ChatType::one(enums::ChatType::Private).invert()),
+                #[cfg(debug_assertions)]
                 Handler::new(warns::add)
                     .filter(Command::many(&["варн"]).no_prefix())
                     .filter(ChatType::one(enums::ChatType::Private).invert()),

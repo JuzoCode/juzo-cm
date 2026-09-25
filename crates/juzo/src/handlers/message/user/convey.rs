@@ -474,7 +474,7 @@ pub async fn gold(
         user.full_name(),
         plur_gold(value)
     );
-    
+
     if !comment.is_empty() {
         text.push_str(".<blockquote expandable><b>💬 Подпись к переводу:</b> ");
         text.push_str(comment);
@@ -482,8 +482,8 @@ pub async fn gold(
     }
 
     let mut text_send = format!(
-        "{0} Вам перевели {1}.<blockquote expandable><b>👤 \
-         Отправитель{g2}:</b> <a href='{2}'>{3}</a>",
+        "{0} Вам перевели {1}.<blockquote expandable><b>👤 Отправитель{g2}:</b> <a \
+         href='{2}'>{3}</a>",
         smail_gold(true),
         plur_gold(value),
         iam.link(),

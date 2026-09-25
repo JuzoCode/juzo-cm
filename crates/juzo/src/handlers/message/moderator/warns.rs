@@ -202,7 +202,7 @@ pub async fn add(
     }
 
     let mut text = format!(
-        "🔴 <a href='{0}'>{1}</a> получает бан \n<b>* ",
+        "🔴 <a href='{0}'>{1}</a> получает предупреждение \n<b>* ",
         user.link(),
         user.full_name()
     );
