@@ -1,6 +1,9 @@
 use sea_orm::{ConnectionTrait, raw_sql};
 use telers::{
-    enums::ParseMode, event::EventReturn, methods::{GetChatAdministrators, SendMessage}, types::{Chat, ChatMember},
+    enums::ParseMode,
+    event::EventReturn,
+    methods::{GetChatAdministrators, SendMessage},
+    types::{Chat, ChatMember},
 };
 
 use super::super::*;
