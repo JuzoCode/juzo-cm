@@ -14,7 +14,7 @@ juzo-core = { path = "crates/juzo-core" }
 
 [workspace.dependencies]
 tokio = { version = "1.52.1", features = ["full"] }
-telers = { git = "https://github.com/Desiders/telers", rev = "9995b9666a1e5001e0c7ad2535d0db7908c3a0bc" }
+telers = { git = "https://github.com/Desiders/telers", rev = "14207e5dad2a6337525be8ba310c847608f5a9d8" }
 
 # БД.
 sea-orm = { version = "2.0.0", features = [
