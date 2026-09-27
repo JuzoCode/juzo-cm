@@ -20,7 +20,7 @@ pub async fn yes(
                 FROM c
                 WHERE skip = false
                     AND bot_admin = true
-                OFFSET 19
+                OFFSET 29
                 LIMIT 1
             ) AS allowed
             "#,
