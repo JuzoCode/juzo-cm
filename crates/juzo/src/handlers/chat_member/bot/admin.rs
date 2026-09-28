@@ -3,20 +3,16 @@ use telers::{
     enums::ParseMode,
     event::EventReturn,
     methods::{GetChatAdministrators, SendMessage},
-    types::{Chat, ChatMember},
+    types::ChatMember,
 };
 
 use super::super::*;
 
-pub async fn set(
+pub async fn added(
     bot: Bot,
     member: ChatMemberUpdated,
     Extension(db): Extension<DbConn>,
 ) -> HandlerResult<EventReturn> {
-    if !matches!(member.chat.as_ref(), Chat::Supergroup(_)) {
-        return Ok(EventReturn::Skip);
-    }
-
     let chat_ids = member.chat.id();
     let full_name = unsafe {
         member

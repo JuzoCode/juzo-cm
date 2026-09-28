@@ -88,8 +88,10 @@ pub fn routers() -> Router {
                     .filter(Command::many(&["варн"]).no_prefix())
                     .filter(ChatType::one(enums::ChatType::Private).invert()),
                 Handler::new(creator::repair)
-                    .filter(Command::one("восстановить создателя").no_prefix())
                     .filter(Command::one("хв"))
+                    .filter(ChatType::one(enums::ChatType::Private).invert()),
+                Handler::new(creator::repair)
+                    .filter(Command::one("восстановить создателя").no_prefix())
                     .filter(ChatType::one(enums::ChatType::Private).invert()),
                 Handler::new(topic_name::set)
                     .filter(Command::one("топик название"))
