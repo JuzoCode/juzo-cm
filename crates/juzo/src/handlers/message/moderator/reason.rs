@@ -65,7 +65,7 @@ pub async fn info(
         return Ok(());
     };
 
-    let Ok(Some(info)) = BlockInfo::find_by_statement(raw_sql!(
+    let Some(info) = BlockInfo::find_by_statement(raw_sql!(
         Postgres,
         r#"
         SELECT
@@ -74,8 +74,11 @@ pub async fn info(
             c8.removed,
             c8.sms_ids,
             c8.reason AS ban_reason,
-            c8.moder_ids,
- 
+            u.full_name,
+            COALESCE(
+                'https://t.me/' || u.username,
+                'tg://openmessage/user_id=' || c8.moder_ids::text
+            ) AS link,
             a3.reason AS spam_reason
         FROM c8
         FULL JOIN a3
@@ -101,6 +104,7 @@ pub async fn info(
     ))
     .one(&db)
     .await
+    .unwrap()
     else {
         bot.send(JuzoAnswer::message(&message).text(format!(
             "{0} У <a href='{1}'>{2}</a> не найдено блокировок в Джузо.",
@@ -153,16 +157,14 @@ pub async fn info(
         if removed == 0 {
             let _ = write!(
                 text,
-                "<br><b>❗️ Забанен <tg-button type='url' style='danger' url='https://t.me/c/{0}/{1}'>навсегда",
+                "<br><b>❗️ Забанен <tg-button type='url' style='danger' url='https://t.me/c/{0}/{sms_ids}'>навсегда",
                 chat_ids.some(),
-                sms_ids,
             );
         } else {
             let _ = write!(
                 text,
-                "<br><b>❗️ Забанен на <tg-button type='url' style='danger' url='https://t.me/c/{0}/{1}'>{2}",
+                "<br><b>❗️ Забанен на <tg-button type='url' style='danger' url='https://t.me/c/{0}/{sms_ids}'>{1}",
                 chat_ids.some(),
-                sms_ids,
                 TimeFormatted::until(removed, added),
             );
         }

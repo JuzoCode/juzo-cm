@@ -27,7 +27,7 @@ pub fn routers_connect() -> Router {
                 .register_inner_middleware(Error)
         })
         .on_business_message(|observer| observer.filter(Business))
-        .on_message(|observer| observer.register_inner_middleware(RateLimit::new()))
+        .on_message(|observer| observer.register_inner_middleware(RateLimit))
         .include(message::routers())
         .include(callback::routers())
         .include(chat_member::routers())
