@@ -65,7 +65,7 @@ pub async fn info(
         return Ok(());
     };
 
-    let Some(info) = BlockInfo::find_by_statement(raw_sql!(
+    let Ok(Some(info)) = BlockInfo::find_by_statement(raw_sql!(
         Postgres,
         r#"
         SELECT
@@ -104,7 +104,6 @@ pub async fn info(
     ))
     .one(&db)
     .await
-    .unwrap()
     else {
         bot.send(JuzoAnswer::message(&message).text(format!(
             "{0} У <a href='{1}'>{2}</a> не найдено блокировок в Джузо.",
