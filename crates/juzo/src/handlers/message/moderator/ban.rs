@@ -157,7 +157,7 @@ pub async fn yes(
 
     let to_return = MemberEvent::state(&member) == 1;
 
-    let Ok(row) = db
+    let Ok(Some(_)) = db
         .query_one_raw(raw_sql!(
             Postgres,
             r#"
@@ -204,17 +204,13 @@ pub async fn yes(
         ))
         .await
     else {
-        return Ok(());
-    };
-
-    if row.is_none() {
         bot.send(JuzoAnswer::message(&message).text(format!(
             "{0} Ваш ранг либо недостаточен, либо его вовсе не хватает.",
             smail_pensil(true)
         )))
         .await?;
         return Ok(());
-    }
+    };
 
     let tg_ban = if user.ids.0 < 0 {
         bot.send(BanChatSenderChat::new(chat_ids, user.ids))

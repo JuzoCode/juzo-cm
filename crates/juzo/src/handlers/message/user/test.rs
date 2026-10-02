@@ -213,34 +213,69 @@ pub async fn time_sms(
     message: Message,
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
-    if !result.args.is_empty() {
-        return Ok(());
-    }
+    // SAFETY: The Command filter will not allow processing of a "None" value.
+    let text = unsafe {
+        message
+            .text()
+            .or_else(|| message.caption())
+            .unwrap_unchecked()
+    };
+    let args = result.args::<1>(text);
 
-    let Some(reply) = message.reply_to_message() else {
+    let (label, time, reply_to): (&str, i64, Option<&Message>) = match args {
+        ArgsResult::Some([a1], _) => {
+            let Ok(time) = text[a1].parse::<i64>() else {
+                return Ok(());
+            };
+
+            ("Входное UNIX-время", time, message.reply_to_message())
+        }
+        ArgsResult::None => {
+            let Some(reply) = message.reply_to_message() else {
+                bot.send(JuzoAnswer::message(&message).text(format!(
+                    "{0} Для показа времени, ответьте на любое сообщение.",
+                    smail_pensil(true)
+                )))
+                .await?;
+                return Ok(());
+            };
+
+            let (label, time) = reply
+                .forward_origin()
+                .map_or(
+                    ("Время отправления сообщения", reply.date()),
+                    |f| {
+                        (
+                            "Исходное время отправления пересланного сообщения",
+                            f.date(),
+                        )
+                    },
+                );
+
+            (label, time, Some(reply))
+        }
+        ArgsResult::Unk => return Ok(()),
+    };
+
+    if time <= 0 {
         bot.send(JuzoAnswer::message(&message).text(format!(
-            "{0} Для показа времени, ответьте на любое сообщение.",
+            "{0} Время должно начинаться после нуля.",
             smail_pensil(true)
         )))
         .await?;
         return Ok(());
-    };
+    }
 
-    let (label, time) = reply
-        .forward_origin()
-        .map_or(("сообщения", reply.date()), |f| {
-            ("пересланного сообщения", f.date())
-        });
+    let mut answer = JuzoAnswer::message(&message).text(format!(
+        "<tg-emoji emoji-id='5255971360965930740'>🕓</tg-emoji> {label}: <tg-time unix='{time}' \
+         format='T'>juzo</tg-time>"
+    ));
 
-    bot.send(
-        JuzoAnswer::message(&message)
-            .text(format!(
-                "<tg-emoji emoji-id='5255971360965930740'>🕓</tg-emoji> Время отправления \
-                 {label}: <tg-time unix='{time}' format='T'>juzo</tg-time>"
-            ))
-            .reply_parameters(ReplyParameters::new().message_id(reply.message_id())),
-    )
-    .await?;
+    if let Some(reply) = reply_to {
+        answer = answer.reply_parameters(ReplyParameters::new().message_id(reply.message_id()));
+    }
+
+    bot.send(answer).await?;
 
     Ok(())
 }

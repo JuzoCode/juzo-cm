@@ -139,7 +139,7 @@ pub async fn yes(
         return Ok(());
     }
 
-    let Ok(row) = db
+    let Ok(Some(_)) = db
         .query_one_raw(raw_sql!(
             Postgres,
             r#"
@@ -184,17 +184,13 @@ pub async fn yes(
         ))
         .await
     else {
-        return Ok(());
-    };
-
-    if row.is_none() {
         bot.send(JuzoAnswer::message(&message).text(format!(
             "{0} Ваш ранг либо недостаточен, либо его вовсе не хватает.",
             smail_pensil(true)
         )))
         .await?;
         return Ok(());
-    }
+    };
 
     let mut text = format!(
         "🔴 <a href='{0}'>{1}</a> получает мут ",

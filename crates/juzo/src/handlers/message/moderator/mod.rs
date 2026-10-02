@@ -114,6 +114,7 @@ pub fn routers() -> Router {
                 Handler::new(reason::info)
                     .filter(Command::one("причина").no_prefix())
                     .filter(Attach),
+                Handler::new(rank::down).filter(Command::one("понизить").no_prefix()),
             ])
         })
         .on_business_message(|observer| {
