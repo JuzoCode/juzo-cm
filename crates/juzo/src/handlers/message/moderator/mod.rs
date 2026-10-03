@@ -114,7 +114,24 @@ pub fn routers() -> Router {
                 Handler::new(reason::info)
                     .filter(Command::one("причина").no_prefix())
                     .filter(Attach),
-                Handler::new(rank::down).filter(Command::one("понизить").no_prefix()),
+                Handler::new(rank::down)
+                    .filter(Command::one("понизить").no_prefix())
+                    .filter(Attach),
+                Handler::new(rank::up)
+                    .filter(Command::one("повысить").no_prefix())
+                    .filter(Attach),
+                Handler::new(rank::up_1)
+                    .filter(Command::one("модер"))
+                    .filter(Attach),
+                Handler::new(rank::up_2)
+                    .filter(Command::one("!модер"))
+                    .filter(Attach),
+                Handler::new(rank::up_3)
+                    .filter(Command::one("!!модер"))
+                    .filter(Attach),
+                Handler::new(rank::up_4)
+                    .filter(Command::one("!!!модер"))
+                    .filter(Attach),
             ])
         })
         .on_business_message(|observer| {

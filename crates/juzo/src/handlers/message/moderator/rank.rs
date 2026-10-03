@@ -1,18 +1,19 @@
 use juzo_core::{
     application::{ParseTgLink, UserIndex, UserModel},
-    common::emojis::smail_pensil,
+    common::emojis::{smail_pensil, smail_tick},
     domain::UserModelExt,
+    gender,
 };
 use sea_orm::{ConnectionTrait, raw_sql};
 
 use super::super::*;
 
-async fn _up_core(
+async fn up_core(
     bot: Bot,
     message: Message,
     Extension(db): Extension<DbConn>,
     Extension(result): Extension<CommandResult>,
-    new_rank: u8,
+    rank_default: u8,
 ) -> HandlerResult<()> {
     let user_ind = UserIndex::new(&bot, &db);
 
@@ -27,6 +28,10 @@ async fn _up_core(
 
     let (_rank, _user): (u8, UserModel) = match args {
         ArgsResult::Some([a1, a2], 2) => {
+            if rank_default > 1 {
+                return Ok(());
+            }
+
             let Ok(found_user) = user_ind
                 .search_user(&text[a2])
                 .await
@@ -49,7 +54,7 @@ async fn _up_core(
                     return Ok(());
                 };
 
-                (new_rank, found_user)
+                (rank_default, found_user)
             } else {
                 let found_user = if let Some(r) = message.reply_to_message() {
                     // SAFETY: TBA will never return None in message.from().
@@ -63,7 +68,7 @@ async fn _up_core(
                     return Ok(());
                 };
 
-                (new_rank, found_user)
+                (rank_default, found_user)
             }
         },
         // SAFETY: TBA will never return None in message.from().
@@ -79,12 +84,57 @@ async fn _up_core(
                 return Ok(());
             };
 
-            (new_rank, found_user)
+            (rank_default, found_user)
         },
         _ => return Ok(()),
     };
 
     Ok(())
+}
+
+pub async fn up(
+    bot: Bot,
+    message: Message,
+    db: Extension<DbConn>,
+    result: Extension<CommandResult>,
+) -> HandlerResult<()> {
+    up_core(bot, message, db, result, 0).await
+}
+
+pub async fn up_1(
+    bot: Bot,
+    message: Message,
+    db: Extension<DbConn>,
+    result: Extension<CommandResult>,
+) -> HandlerResult<()> {
+    up_core(bot, message, db, result, 1).await
+}
+
+pub async fn up_2(
+    bot: Bot,
+    message: Message,
+    db: Extension<DbConn>,
+    result: Extension<CommandResult>,
+) -> HandlerResult<()> {
+    up_core(bot, message, db, result, 2).await
+}
+
+pub async fn up_3(
+    bot: Bot,
+    message: Message,
+    db: Extension<DbConn>,
+    result: Extension<CommandResult>,
+) -> HandlerResult<()> {
+    up_core(bot, message, db, result, 3).await
+}
+
+pub async fn up_4(
+    bot: Bot,
+    message: Message,
+    db: Extension<DbConn>,
+    result: Extension<CommandResult>,
+) -> HandlerResult<()> {
+    up_core(bot, message, db, result, 4).await
 }
 
 pub async fn down(
@@ -202,11 +252,25 @@ pub async fn down(
             user.link()
         )))
         .await?;
-        return Ok(());
-    }
+    } else if affected == 0 {
+        let g1 = gender!(user.gender => ["", "а"]);
 
-    bot.send(JuzoAnswer::message(&message).text(format!("{affected}")))
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Модератор <a href='{1}'>{2}</a> разжалован{g1}",
+            smail_tick(true),
+            user.full_name(),
+            user.link()
+        )))
         .await?;
+    } else {
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Модератору <a href='{1}'>{2}</a> понижен ранг",
+            smail_tick(true),
+            user.full_name(),
+            user.link()
+        )))
+        .await?;
+    }
 
     Ok(())
 }
