@@ -41,29 +41,26 @@ async fn add_core(
         return Ok(());
     }
 
-    let (module_ids, rank): (i16, u8) = match args {
+    let (value, rank): (i16, u8) = match args {
         ArgsResult::Some([a1, a2], 2) => {
-            let Ok(module_ids) = text[a1].parse::<i16>() else {
+            let Ok(value) = text[a1].parse() else {
                 return Ok(());
             };
-
-            let Ok(rank) = text[a2].parse::<u8>() else {
+            let Ok(rank) = text[a2].parse() else {
                 return Ok(());
             };
-
-            (module_ids, rank)
+            (value, rank)
         }
         ArgsResult::Some([a1, _], 1) => {
-            let Ok(module_ids) = text[a1].parse::<i16>() else {
+            let Ok(value) = text[a1].parse() else {
                 return Ok(());
             };
-
-            (module_ids, 0)
+            (value, 0)
         }
         _ => return Ok(()),
     };
 
-    if module_ids <= 0 {
+    if value <= 0 {
         bot.send(JuzoAnswer::message(&message).text(format!(
             "{0} Такого модуля не будет существовать.",
             smail_pensil(true)
@@ -84,7 +81,7 @@ async fn add_core(
                 rank
             )
             SELECT
-                {module_ids},
+                {value},
                 {comment},
                 {is_parent},
                 true,
@@ -92,7 +89,7 @@ async fn add_core(
             WHERE NOT EXISTS (
                 SELECT 1
                 FROM b2
-                WHERE module_ids = {module_ids}
+                WHERE module_ids = {value}
                    OR name = {comment}
             )
             RETURNING true AS result
@@ -112,7 +109,7 @@ async fn add_core(
                 rank
             )
             VALUES (
-                {module_ids},
+                {value},
                 {comment},
                 {is_parent},
                 false,
@@ -148,8 +145,8 @@ async fn add_core(
     };
 
     bot.send(JuzoAnswer::message(&message).text(format!(
-        "{0} {status} «<code>{comment}</code>» (<code>{module_ids}</code>; {show}) теперь \
-         доступен с {rank} ранга",
+        "{0} {status} «<code>{comment}</code>» (<code>{value}</code>; {show}) теперь доступен с \
+         {rank} ранга",
         smail_tick(true)
     )))
     .await?;

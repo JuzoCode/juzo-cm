@@ -47,22 +47,20 @@ async fn delete_core(
     };
     let args = result.args::<2>(text);
 
-    let (count, user): (u16, UserModel) = match args {
+    let (value, user): (u16, UserModel) = match args {
         ArgsResult::Some([a1, a2], 2) => {
-            let Ok(count) = text[a1].parse::<u16>() else {
+            let Ok(value) = text[a1].parse() else {
                 return Ok(());
             };
-
             let Ok(found_user) = user_ind
                 .search_user(&text[a2])
                 .await
             else {
                 return Ok(());
             };
-
-            (count, found_user)
+            (value, found_user)
         }
-        ArgsResult::Some([a1, _], _) => unsafe {
+        ArgsResult::Some([a1, _], 1) => unsafe {
             if let Some(link) = ParseTgLink::new(&text[a1]) {
                 let Ok(found_user) = user_ind
                     .fetch_user(link)
@@ -70,9 +68,12 @@ async fn delete_core(
                 else {
                     return Ok(());
                 };
-
                 (1, found_user)
             } else {
+                if !a1.is_empty() {
+                    return Ok(());
+                }
+
                 let found_user = if let Some(r) = message.reply_to_message() {
                     // SAFETY: TBA will never return None in message.from().
                     r.from()
@@ -122,7 +123,7 @@ async fn delete_core(
                     AND removed >= EXTRACT(EPOCH FROM NOW()) - 172800
                     AND function = {function}
                 ORDER BY removed DESC
-                LIMIT NULLIF({count}, 0)
+                LIMIT NULLIF({value}, 0)
             );
             "#
         ))

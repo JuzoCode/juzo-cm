@@ -40,7 +40,6 @@ pub async fn add(
                 else {
                     return Ok(());
                 };
-
                 (&text[args[0].start..last.start], found_user)
             } else {
                 let Some(reply) = message.reply_to_message() else {
@@ -247,20 +246,18 @@ pub async fn delete(
     };
     let args = result.args::<2>(text);
 
-    let (count, user): (u8, UserModel) = match args {
+    let (value, user): (u8, UserModel) = match args {
         ArgsResult::Some([a1, a2], 2) => {
-            let Ok(count) = text[a1].parse::<u8>() else {
+            let Ok(value) = text[a1].parse() else {
                 return Ok(());
             };
-
             let Ok(found_user) = user_ind
                 .search_user(&text[a2])
                 .await
             else {
                 return Ok(());
             };
-
-            (count, found_user)
+            (value, found_user)
         }
         ArgsResult::Some([a1, _], 1) => unsafe {
             if let Some(link) = ParseTgLink::new(&text[a1]) {
@@ -270,9 +267,8 @@ pub async fn delete(
                 else {
                     return Ok(());
                 };
-
                 (1, found_user)
-            } else {
+            } else if !a1.is_empty() {
                 let found_user = if let Some(r) = message.reply_to_message() {
                     // SAFETY: TBA will never return None in message.from().
                     r.from()
@@ -288,6 +284,8 @@ pub async fn delete(
                 };
 
                 (1, found_user)
+            } else {
+                return Ok(())
             }
         },
         // SAFETY: TBA will never return None in message.from().
@@ -304,7 +302,7 @@ pub async fn delete(
             } else {
                 return Ok(());
             };
-
+            
             (1, found_user)
         },
         _ => return Ok(()),
@@ -353,7 +351,7 @@ pub async fn delete(
                     FROM target
                     WHERE my_rank >= rank
                     ORDER BY ctid
-                    LIMIT NULLIF({count}, 1)
+                    LIMIT NULLIF({value}, 1)
                 )
                 RETURNING 1
             )

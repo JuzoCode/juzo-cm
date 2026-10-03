@@ -53,7 +53,6 @@ pub async fn yes(
                 else {
                     return Ok(());
                 };
-
                 (&text[args[0].start..last.start], found_user)
             } else {
                 let Some(reply) = message.reply_to_message() else {

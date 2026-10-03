@@ -200,7 +200,7 @@ pub async fn info_mute(
     bot: Bot,
     message: Message,
     Extension(db): Extension<DbConn>,
-    Extension(_arch): Extension<AttachResult>,
+    Extension(arch): Extension<AttachResult>,
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
     let user_ind = UserIndex::new(&bot, &db);
@@ -214,6 +214,7 @@ pub async fn info_mute(
             .unwrap_unchecked()
     };
     let args = result.args::<1>(text);
+    let chat_ids = arch.chat_ids;
 
     let user: UserModel = match args {
         ArgsResult::Some([a1], _) => {
@@ -239,13 +240,11 @@ pub async fn info_mute(
     };
 
     let true = module
-        .check::<43>(ModuleAccess::M(&message))
+        .check::<43>(ModuleAccess::CustomM(&message, chat_ids.0))
         .await
     else {
         return Ok(());
     };
-
-    let chat_ids = message.chat().id();
 
     let Ok(Some(_info)) = BlockInfo::find_by_statement(raw_sql!(
         Postgres,

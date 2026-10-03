@@ -40,31 +40,31 @@ pub async fn sweets(
                 let Some(value) = parse_amount(&text[args[0].start..last.start]) else {
                     return Ok(());
                 };
-
                 let Ok(found_user) = user_ind
                     .fetch_user(link)
                     .await
                 else {
                     return Ok(());
                 };
-
                 (value, found_user)
             } else {
                 let Some(reply) = message.reply_to_message() else {
                     return Ok(());
                 };
-
                 let Some(value) = parse_amount(&text[args[0].start..last.end]) else {
                     return Ok(());
                 };
 
                 // SAFETY: TBA will never return None in message.from().
                 let found_user = unsafe {
-                    reply
-                        .from()
-                        .unwrap_unchecked()
-                }
-                .into();
+                    UserModel::new(
+                        &db,
+                        reply
+                            .from()
+                            .unwrap_unchecked(),
+                    )
+                    .await
+                };
 
                 (value, found_user)
             }
@@ -290,31 +290,31 @@ pub async fn gold(
                 let Some(value) = parse_amount(&text[args[0].start..last.start]) else {
                     return Ok(());
                 };
-
                 let Ok(found_user) = user_ind
                     .fetch_user(link)
                     .await
                 else {
                     return Ok(());
                 };
-
                 (value, found_user)
             } else {
                 let Some(reply) = message.reply_to_message() else {
                     return Ok(());
                 };
-
                 let Some(value) = parse_amount(&text[args[0].start..last.end]) else {
                     return Ok(());
                 };
 
                 // SAFETY: TBA will never return None in message.from().
                 let found_user = unsafe {
-                    reply
-                        .from()
-                        .unwrap_unchecked()
-                }
-                .into();
+                    UserModel::new(
+                        &db,
+                        reply
+                            .from()
+                            .unwrap_unchecked(),
+                    )
+                    .await
+                };
 
                 (value, found_user)
             }
@@ -540,31 +540,31 @@ pub async fn score(
                 let Some(value) = parse_amount(&text[args[0].start..last.start]) else {
                     return Ok(());
                 };
-
                 let Ok(found_user) = user_ind
                     .fetch_user(link)
                     .await
                 else {
                     return Ok(());
                 };
-
                 (value, found_user)
             } else {
                 let Some(reply) = message.reply_to_message() else {
                     return Ok(());
                 };
-
                 let Some(value) = parse_amount(&text[args[0].start..last.end]) else {
                     return Ok(());
                 };
 
                 // SAFETY: TBA will never return None in message.from().
                 let found_user = unsafe {
-                    reply
-                        .from()
-                        .unwrap_unchecked()
-                }
-                .into();
+                    UserModel::new(
+                        &db,
+                        reply
+                            .from()
+                            .unwrap_unchecked(),
+                    )
+                    .await
+                };
 
                 (value, found_user)
             }

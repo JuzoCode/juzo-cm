@@ -57,7 +57,6 @@ pub async fn add(
                 else {
                     return Ok(());
                 };
-
                 (&text[args[0].start..last.start], found_user)
             } else {
                 let found_user = if let Some(r) = message.reply_to_message() {
@@ -93,7 +92,7 @@ pub async fn add(
             } else {
                 return Ok(());
             };
-
+            
             ("", found_user)
         },
         ArgsResult::Unk => return Ok(()),

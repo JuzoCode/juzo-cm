@@ -357,7 +357,7 @@ pub async fn _changing_creator(
             };
             found_user
         }
-        ArgsResult::Some([a1, _], _) => {
+        ArgsResult::Some([a1, _], 1) => {
             let Ok(found_user) = user_ind
                 .search_user(&text[a1])
                 .await

@@ -20,12 +20,12 @@ pub async fn yes(
     };
     let args = result.args::<1>(text);
 
-    let message_id: i64 = match args {
+    let value: i64 = match args {
         ArgsResult::Some([a1], _) => {
-            let Ok(id) = text[a1].parse::<i64>() else {
+            let Ok(value) = text[a1].parse() else {
                 return Ok(());
             };
-            id
+            value
         }
         ArgsResult::None => {
             if let Some(r) = message.reply_to_message() {
@@ -45,7 +45,7 @@ pub async fn yes(
     };
 
     bot.send(
-        PinChatMessage::new(message.chat().id(), message_id)
+        PinChatMessage::new(message.chat().id(), value)
             .business_connection_id_option(message.business_connection_id()),
     )
     .await?;
@@ -70,12 +70,12 @@ pub async fn no(
     };
     let args = result.args::<1>(text);
 
-    let message_id: i64 = match args {
+    let value: i64 = match args {
         ArgsResult::Some([a1], _) => {
-            let Ok(id) = text[a1].parse::<i64>() else {
+            let Ok(value) = text[a1].parse() else {
                 return Ok(());
             };
-            id
+            value
         }
         ArgsResult::None => {
             if let Some(r) = message.reply_to_message() {
@@ -96,7 +96,7 @@ pub async fn no(
 
     bot.send(
         UnpinChatMessage::new(message.chat().id())
-            .message_id(message_id)
+            .message_id(value)
             .business_connection_id_option(message.business_connection_id()),
     )
     .await?;

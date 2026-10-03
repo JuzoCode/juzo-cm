@@ -222,13 +222,12 @@ pub async fn time_sms(
     };
     let args = result.args::<1>(text);
 
-    let (label, time, reply_to): (&str, i64, Option<&Message>) = match args {
+    let (label, value, reply_to): (&str, i64, Option<&Message>) = match args {
         ArgsResult::Some([a1], _) => {
-            let Ok(time) = text[a1].parse::<i64>() else {
+            let Ok(value) = text[a1].parse() else {
                 return Ok(());
             };
-
-            ("Входное UNIX-время", time, message.reply_to_message())
+            ("Входное UNIX-время", value, message.reply_to_message())
         }
         ArgsResult::None => {
             let Some(reply) = message.reply_to_message() else {
@@ -240,7 +239,7 @@ pub async fn time_sms(
                 return Ok(());
             };
 
-            let (label, time) = reply
+            let (label, value) = reply
                 .forward_origin()
                 .map_or(
                     ("Время отправления сообщения", reply.date()),
@@ -252,12 +251,12 @@ pub async fn time_sms(
                     },
                 );
 
-            (label, time, Some(reply))
+            (label, value, Some(reply))
         }
         ArgsResult::Unk => return Ok(()),
     };
 
-    if time <= 0 {
+    if value <= 0 {
         bot.send(JuzoAnswer::message(&message).text(format!(
             "{0} Время должно начинаться после нуля.",
             smail_pensil(true)
@@ -267,7 +266,7 @@ pub async fn time_sms(
     }
 
     let mut answer = JuzoAnswer::message(&message).text(format!(
-        "<tg-emoji emoji-id='5255971360965930740'>🕓</tg-emoji> {label}: <tg-time unix='{time}' \
+        "<tg-emoji emoji-id='5255971360965930740'>🕓</tg-emoji> {label}: <tg-time unix='{value}' \
          format='T'>juzo</tg-time>"
     ));
 

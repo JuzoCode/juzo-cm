@@ -19,6 +19,7 @@ pub async fn repair(
     }
 
     let chat_ids = message.chat().id();
+    let sms_ids = message.message_id();
     let my_ids = unsafe {
         message
             .from()
@@ -139,9 +140,14 @@ pub async fn repair(
                 {chat_ids},
                 {user_ids},
                 6,
-                0
+                {sms_ids}
             )
-            ON CONFLICT DO NOTHING
+            ON CONFLICT (user_ids, chat_ids)
+            DO UPDATE SET
+                rank = EXCLUDED.rank,
+                peer_ids = EXCLUDED.peer_ids,
+                sms_ids = EXCLUDED.sms_ids,
+                added = EXTRACT(EPOCH FROM NOW())::bigint
             "#
         ))
         .await;

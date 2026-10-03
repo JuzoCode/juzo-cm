@@ -1,7 +1,7 @@
 use juzo_core::{
     application::{ParseTgLink, UserIndex, UserModel},
     common::emojis::{smail_pensil, smail_tick},
-    domain::UserModelExt,
+    domain::{UserModelExt, AttachResult},
     gender,
 };
 use sea_orm::{ConnectionTrait, raw_sql};
@@ -12,10 +12,12 @@ async fn up_core(
     bot: Bot,
     message: Message,
     Extension(db): Extension<DbConn>,
+    Extension(arch): Extension<AttachResult>,
     Extension(result): Extension<CommandResult>,
-    rank_default: u8,
+    default_value: u8,
 ) -> HandlerResult<()> {
     let user_ind = UserIndex::new(&bot, &db);
+    let module = ModuleChecker::new(&bot, &db);
 
     // SAFETY: The Command filter will not allow processing of a "None" value.
     let text = unsafe {
@@ -25,26 +27,9 @@ async fn up_core(
             .unwrap_unchecked()
     };
     let args = result.args::<2>(text);
+    let chat_ids = arch.chat_ids;
 
-    let (_rank, _user): (u8, UserModel) = match args {
-        ArgsResult::Some([a1, a2], 2) => {
-            if rank_default > 1 {
-                return Ok(());
-            }
-
-            let Ok(found_user) = user_ind
-                .search_user(&text[a2])
-                .await
-            else {
-                return Ok(());
-            };
-
-            let Ok(rank) = text[a1].parse::<u8>() else {
-                return Ok(());
-            };
-
-            (rank, found_user)
-        }
+    let (value, user): (u8, UserModel) = match args {
         ArgsResult::Some([a1, _], 1) => unsafe {
             if let Some(link) = ParseTgLink::new(&text[a1]) {
                 let Ok(found_user) = user_ind
@@ -53,41 +38,175 @@ async fn up_core(
                 else {
                     return Ok(());
                 };
-
-                (rank_default, found_user)
-            } else {
+                (default_value, found_user)
+            }  else if a1.is_empty() {
                 let found_user = if let Some(r) = message.reply_to_message() {
                     // SAFETY: TBA will never return None in message.from().
-                    UserModel::new(
-                        &db,
-                        r.from()
-                            .unwrap_unchecked(),
-                    )
-                    .await
+                    r.from()
+                        .unwrap_unchecked()
+                        .into()
                 } else {
                     return Ok(());
                 };
 
-                (rank_default, found_user)
+                (default_value, found_user)
+            } else {
+                return Ok(())
             }
         },
+        ArgsResult::Some(args, len) => {
+            if default_value > 1 {
+                return Ok(())
+            }
+
+            let last = args[len - 1];
+
+            if let Some(link) = ParseTgLink::new(&text[last]) {
+                let Ok(value) = text[args[0].start..last.start].parse() else {
+                    return Ok(());
+                };
+                let Ok(found_user) = user_ind
+                    .fetch_user(link)
+                    .await
+                else {
+                    return Ok(());
+                };
+                (value, found_user)
+            } else {
+                let Some(reply) = message.reply_to_message() else {
+                    return Ok(());
+                };
+                let Ok(value) = text[args[0].start..last.end].parse() else {
+                    return Ok(());
+                };
+                
+                // SAFETY: TBA will never return None in message.from().
+                let found_user = unsafe {
+                        reply
+                            .from()
+                            .unwrap_unchecked()
+                }.into();
+
+                (value, found_user)
+            }
+        }
         // SAFETY: TBA will never return None in message.from().
         ArgsResult::None => unsafe {
             let found_user = if let Some(r) = message.reply_to_message() {
-                UserModel::new(
-                    &db,
-                    r.from()
-                        .unwrap_unchecked(),
-                )
-                .await
+                r.from()
+                    .unwrap_unchecked()
+                    .into()
             } else {
                 return Ok(());
             };
-
-            (rank_default, found_user)
+            (default_value, found_user)
         },
         _ => return Ok(()),
     };
+
+    let true = module
+        .check::<8>(ModuleAccess::CustomM(&message, chat_ids.0))
+        .await
+    else {
+        return Ok(());
+    };
+
+    // SAFETY: TBA will never return None in message.from().
+    let my_ids = unsafe {
+        message
+            .from()
+            .unwrap_unchecked()
+    }
+    .id;
+    let sms_ids = message.message_id();
+
+    let Ok(Some(row)) = db
+        .query_one_raw(raw_sql!(
+            Postgres,
+            r#"
+            WITH data AS (
+                SELECT
+                    COALESCE(
+                        (SELECT rank FROM c4
+                        WHERE user_ids = {my_ids}
+                            AND chat_ids = {chat_ids}),
+                        0
+                    ) AS my_rank,
+                    t.target_rank,
+                    CASE
+                        WHEN {value} = 0 THEN t.target_rank + 1
+                        ELSE {value}::smallint
+                    END AS rank
+                FROM (
+                    SELECT COALESCE(
+                        (SELECT rank FROM c4
+                        WHERE user_ids = {user.ids}
+                            AND chat_ids = {chat_ids}),
+                        0
+                    ) AS target_rank
+                ) AS t
+            ),
+            result AS (
+                INSERT INTO c4 (
+                    user_ids,
+                    chat_ids,
+                    peer_ids,
+                    rank,
+                    sms_ids
+                )
+                SELECT
+                    {user.ids},
+                    {chat_ids},
+                    {my_ids},
+                    data.rank,
+                    {sms_ids}
+                FROM data
+                WHERE data.rank > data.target_rank
+                    AND data.rank <= data.my_rank
+                ON CONFLICT (user_ids, chat_ids)
+                DO UPDATE SET
+                    rank = EXCLUDED.rank,
+                    peer_ids = EXCLUDED.peer_ids,
+                    sms_ids = EXCLUDED.sms_ids,
+                    added = EXTRACT(EPOCH FROM NOW())::bigint
+                RETURNING rank
+            )
+            SELECT COALESCE((SELECT rank FROM result), 0)::smallint AS affected
+            FROM data
+            WHERE EXISTS (SELECT 1 FROM result)
+                OR data.rank <= data.my_rank;
+            "#
+        ))
+        .await
+    else {
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Выдавать ранг выше своего... Амбициям вашим я поражаюсь.",
+            smail_pensil(true)
+        )))
+        .await?;
+        return Ok(());
+    };
+
+    let affected = unsafe {
+        row.try_get::<i16>("", "affected")
+            .unwrap_unchecked()
+    };
+
+    if affected == 0 {
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Повысить до того, что уже есть? Он и так не ниже, расслабься.",
+            smail_pensil(true)
+        )))
+        .await?;
+    } else {
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} <a href='{1}'>{2}</a> назначен на {affected} ранг",
+            smail_tick(true),
+            user.link(),
+            user.full_name()
+        )))
+        .await?;
+    }
 
     Ok(())
 }
@@ -96,54 +215,61 @@ pub async fn up(
     bot: Bot,
     message: Message,
     db: Extension<DbConn>,
+    arch: Extension<AttachResult>,
     result: Extension<CommandResult>,
 ) -> HandlerResult<()> {
-    up_core(bot, message, db, result, 0).await
+    up_core(bot, message, db, arch, result, 0).await
 }
 
 pub async fn up_1(
     bot: Bot,
     message: Message,
     db: Extension<DbConn>,
+    arch: Extension<AttachResult>,
     result: Extension<CommandResult>,
 ) -> HandlerResult<()> {
-    up_core(bot, message, db, result, 1).await
+    up_core(bot, message, db, arch, result, 1).await
 }
 
 pub async fn up_2(
     bot: Bot,
     message: Message,
     db: Extension<DbConn>,
+    arch: Extension<AttachResult>,
     result: Extension<CommandResult>,
 ) -> HandlerResult<()> {
-    up_core(bot, message, db, result, 2).await
+    up_core(bot, message, db, arch, result, 2).await
 }
 
 pub async fn up_3(
     bot: Bot,
     message: Message,
     db: Extension<DbConn>,
+    arch: Extension<AttachResult>,
     result: Extension<CommandResult>,
 ) -> HandlerResult<()> {
-    up_core(bot, message, db, result, 3).await
+    up_core(bot, message, db, arch, result, 3).await
 }
 
 pub async fn up_4(
     bot: Bot,
     message: Message,
     db: Extension<DbConn>,
+    arch: Extension<AttachResult>,
     result: Extension<CommandResult>,
 ) -> HandlerResult<()> {
-    up_core(bot, message, db, result, 4).await
+    up_core(bot, message, db, arch, result, 4).await
 }
 
 pub async fn down(
     bot: Bot,
     message: Message,
     Extension(db): Extension<DbConn>,
+    Extension(arch): Extension<AttachResult>,
     Extension(result): Extension<CommandResult>,
 ) -> HandlerResult<()> {
     let user_ind = UserIndex::new(&bot, &db);
+    let module = ModuleChecker::new(&bot, &db);
 
     // SAFETY: The Command filter will not allow processing of a "None" value.
     let text = unsafe {
@@ -153,6 +279,7 @@ pub async fn down(
             .unwrap_unchecked()
     };
     let args = result.args::<1>(text);
+    let chat_ids = arch.chat_ids;
 
     let user: UserModel = match args {
         ArgsResult::Some([a1], _) => {
@@ -180,6 +307,13 @@ pub async fn down(
         _ => return Ok(()),
     };
 
+    let true = module
+        .check::<8>(ModuleAccess::CustomM(&message, chat_ids.0))
+        .await
+    else {
+        return Ok(());
+    };
+
     // SAFETY: TBA will never return None in message.from().
     let my_ids = unsafe {
         message
@@ -188,7 +322,6 @@ pub async fn down(
     }
     .id;
     let sms_ids = message.message_id();
-    let chat_ids = message.chat().id();
 
     let Ok(Some(row)) = db
         .query_one_raw(raw_sql!(
@@ -239,17 +372,17 @@ pub async fn down(
         return Ok(());
     };
 
-    let affected = {
+    let affected = unsafe {
         row.try_get::<i16>("", "affected")
-            .unwrap()
+            .unwrap_unchecked()
     };
 
     if affected == -1 {
         bot.send(JuzoAnswer::message(&message).text(format!(
             "{0} <a href='{1}'>{2}</a> не является модератором.",
             smail_pensil(true),
-            user.full_name(),
-            user.link()
+            user.link(),
+            user.full_name()
         )))
         .await?;
     } else if affected == 0 {
@@ -258,16 +391,16 @@ pub async fn down(
         bot.send(JuzoAnswer::message(&message).text(format!(
             "{0} Модератор <a href='{1}'>{2}</a> разжалован{g1}",
             smail_tick(true),
-            user.full_name(),
-            user.link()
+            user.link(),
+            user.full_name()
         )))
         .await?;
     } else {
         bot.send(JuzoAnswer::message(&message).text(format!(
             "{0} Модератору <a href='{1}'>{2}</a> понижен ранг",
             smail_tick(true),
-            user.full_name(),
-            user.link()
+            user.link(),
+            user.full_name()
         )))
         .await?;
     }

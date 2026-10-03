@@ -35,7 +35,6 @@ pub async fn _add(
     let Ok(rank) = text[a2].parse::<u8>() else {
         return Ok(());
     };
-
     let Ok(ids) = text[a1].parse::<i16>() else {
         return Ok(());
     };
