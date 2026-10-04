@@ -74,7 +74,6 @@ pub async fn add(
                 } else {
                     return Ok(());
                 };
-
                 (&text[args[0].start..last.end], found_user)
             }
         }
@@ -92,7 +91,7 @@ pub async fn add(
             } else {
                 return Ok(());
             };
-            
+
             ("", found_user)
         },
         ArgsResult::Unk => return Ok(()),

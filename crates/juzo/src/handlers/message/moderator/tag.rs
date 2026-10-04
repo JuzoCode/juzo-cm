@@ -45,7 +45,7 @@ pub async fn add(
                 else {
                     return Ok(());
                 };
-                
+
                 (tag, found_user)
             } else {
                 let tag = &text[args[0].start..last.end];

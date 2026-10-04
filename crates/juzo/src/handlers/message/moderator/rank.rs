@@ -1,7 +1,7 @@
 use juzo_core::{
     application::{ParseTgLink, UserIndex, UserModel},
     common::emojis::{smail_pensil, smail_tick},
-    domain::{UserModelExt, AttachResult},
+    domain::{AttachResult, UserModelExt},
     gender,
 };
 use sea_orm::{ConnectionTrait, raw_sql};
@@ -39,7 +39,7 @@ async fn up_core(
                     return Ok(());
                 };
                 (default_value, found_user)
-            }  else if a1.is_empty() {
+            } else if a1.is_empty() {
                 let found_user = if let Some(r) = message.reply_to_message() {
                     // SAFETY: TBA will never return None in message.from().
                     r.from()
@@ -48,15 +48,14 @@ async fn up_core(
                 } else {
                     return Ok(());
                 };
-
                 (default_value, found_user)
             } else {
-                return Ok(())
+                return Ok(());
             }
         },
         ArgsResult::Some(args, len) => {
             if default_value > 1 {
-                return Ok(())
+                return Ok(());
             }
 
             let last = args[len - 1];
@@ -79,13 +78,14 @@ async fn up_core(
                 let Ok(value) = text[args[0].start..last.end].parse() else {
                     return Ok(());
                 };
-                
+
                 // SAFETY: TBA will never return None in message.from().
                 let found_user = unsafe {
-                        reply
-                            .from()
-                            .unwrap_unchecked()
-                }.into();
+                    reply
+                        .from()
+                        .unwrap_unchecked()
+                }
+                .into();
 
                 (value, found_user)
             }
@@ -110,6 +110,15 @@ async fn up_core(
     else {
         return Ok(());
     };
+
+    if value > 6 {
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Выдавать ранг выше своего... Амбициям вашим я поражаюсь.",
+            smail_pensil(true)
+        )))
+        .await?;
+        return Ok(());
+    }
 
     // SAFETY: TBA will never return None in message.from().
     let my_ids = unsafe {

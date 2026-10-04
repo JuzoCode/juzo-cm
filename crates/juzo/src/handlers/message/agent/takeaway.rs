@@ -87,7 +87,6 @@ async fn delete_core(
                 } else {
                     return Ok(());
                 };
-
                 (1, found_user)
             }
         },

@@ -282,10 +282,9 @@ pub async fn delete(
                 } else {
                     return Ok(());
                 };
-
                 (1, found_user)
             } else {
-                return Ok(())
+                return Ok(());
             }
         },
         // SAFETY: TBA will never return None in message.from().
@@ -302,7 +301,7 @@ pub async fn delete(
             } else {
                 return Ok(());
             };
-            
+
             (1, found_user)
         },
         _ => return Ok(()),
