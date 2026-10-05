@@ -46,10 +46,13 @@ async fn up_core(
                 // SAFETY: TBA will never return None in message.from().
                 (
                     default_value,
-                    reply
-                        .from()
-                        .unwrap_unchecked()
-                        .into(),
+                    UserModel::new(
+                        &db,
+                        reply
+                            .from()
+                            .unwrap_unchecked(),
+                    )
+                    .await,
                 )
             } else if default_value <= 1 {
                 let Some(reply) = message.reply_to_message() else {
@@ -61,10 +64,13 @@ async fn up_core(
                 // SAFETY: TBA will never return None in message.from().
                 (
                     value,
-                    reply
-                        .from()
-                        .unwrap_unchecked()
-                        .into(),
+                    UserModel::new(
+                        &db,
+                        reply
+                            .from()
+                            .unwrap_unchecked(),
+                    )
+                    .await,
                 )
             } else {
                 return Ok(());
@@ -89,22 +95,29 @@ async fn up_core(
                 };
                 // SAFETY: TBA will never return None in message.from().
                 (value, unsafe {
-                    reply
-                        .from()
-                        .unwrap_unchecked()
-                        .into()
+                    UserModel::new(
+                        &db,
+                        reply
+                            .from()
+                            .unwrap_unchecked(),
+                    )
+                    .await
                 })
             }
         }
         // SAFETY: TBA will never return None in message.from().
         ArgsResult::None => {
-            let Some(r) = message.reply_to_message() else {
+            let Some(reply) = message.reply_to_message() else {
                 return Ok(());
             };
             (default_value, unsafe {
-                r.from()
-                    .unwrap_unchecked()
-                    .into()
+                UserModel::new(
+                    &db,
+                    reply
+                        .from()
+                        .unwrap_unchecked(),
+                )
+                .await
             })
         }
         _ => return Ok(()),
@@ -215,8 +228,10 @@ async fn up_core(
         )))
         .await?;
     } else {
+        let g1 = gender!(user.gender => ["а", ""]);
+
         bot.send(JuzoAnswer::message(&message).text(format!(
-            "{0} <a href='{1}'>{2}</a> назначен на {affected} ранг",
+            "{0} <a href='{1}'>{2}</a> назначен{g1} на {affected} ранг",
             smail_tick(true),
             user.link(),
             user.full_name()
@@ -402,7 +417,7 @@ pub async fn down(
         )))
         .await?;
     } else if affected == 0 {
-        let g1 = gender!(user.gender => ["", "а"]);
+        let g1 = gender!(user.gender => ["а", ""]);
 
         bot.send(JuzoAnswer::message(&message).text(format!(
             "{0} Модератор <a href='{1}'>{2}</a> разжалован{g1}",
@@ -534,7 +549,7 @@ pub async fn remove(
     };
 
     if affected {
-        let g1 = gender!(user.gender => ["", "а"]);
+        let g1 = gender!(user.gender => ["а", ""]);
 
         bot.send(JuzoAnswer::message(&message).text(format!(
             "{0} Модератор <a href='{1}'>{2}</a> разжалован{g1}",
