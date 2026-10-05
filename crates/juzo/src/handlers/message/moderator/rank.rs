@@ -1,6 +1,6 @@
 use juzo_core::{
     application::{ParseTgLink, UserIndex, UserModel},
-    common::emojis::{smail_pensil, smail_tick},
+    common::emojis::{smail_cross, smail_pensil, smail_tick},
     domain::{AttachResult, UserModelExt},
     gender,
 };
@@ -40,30 +40,42 @@ async fn up_core(
                 };
                 (default_value, found_user)
             } else if a1.is_empty() {
-                let found_user = if let Some(r) = message.reply_to_message() {
-                    // SAFETY: TBA will never return None in message.from().
-                    r.from()
-                        .unwrap_unchecked()
-                        .into()
-                } else {
+                let Some(reply) = message.reply_to_message() else {
                     return Ok(());
                 };
-                (default_value, found_user)
+                // SAFETY: TBA will never return None in message.from().
+                (
+                    default_value,
+                    reply
+                        .from()
+                        .unwrap_unchecked()
+                        .into(),
+                )
+            } else if default_value <= 1 {
+                let Some(reply) = message.reply_to_message() else {
+                    return Ok(());
+                };
+                let Ok(value) = text[a1].parse() else {
+                    return Ok(());
+                };
+                // SAFETY: TBA will never return None in message.from().
+                (
+                    value,
+                    reply
+                        .from()
+                        .unwrap_unchecked()
+                        .into(),
+                )
             } else {
                 return Ok(());
             }
         },
-        ArgsResult::Some(args, len) => {
-            if default_value > 1 {
+        ArgsResult::Some([a1, a2], 2) if default_value <= 1 => {
+            let Ok(value) = text[a1].parse() else {
                 return Ok(());
-            }
+            };
 
-            let last = args[len - 1];
-
-            if let Some(link) = ParseTgLink::new(&text[last]) {
-                let Ok(value) = text[args[0].start..last.start].parse() else {
-                    return Ok(());
-                };
+            if let Some(link) = ParseTgLink::new(&text[a2]) {
                 let Ok(found_user) = user_ind
                     .fetch_user(link)
                     .await
@@ -75,32 +87,26 @@ async fn up_core(
                 let Some(reply) = message.reply_to_message() else {
                     return Ok(());
                 };
-                let Ok(value) = text[args[0].start..last.end].parse() else {
-                    return Ok(());
-                };
-
                 // SAFETY: TBA will never return None in message.from().
-                let found_user = unsafe {
+                (value, unsafe {
                     reply
                         .from()
                         .unwrap_unchecked()
-                }
-                .into();
-
-                (value, found_user)
+                        .into()
+                })
             }
         }
         // SAFETY: TBA will never return None in message.from().
-        ArgsResult::None => unsafe {
-            let found_user = if let Some(r) = message.reply_to_message() {
+        ArgsResult::None => {
+            let Some(r) = message.reply_to_message() else {
+                return Ok(());
+            };
+            (default_value, unsafe {
                 r.from()
                     .unwrap_unchecked()
                     .into()
-            } else {
-                return Ok(());
-            };
-            (default_value, found_user)
-        },
+            })
+        }
         _ => return Ok(()),
     };
 
@@ -203,7 +209,8 @@ async fn up_core(
 
     if affected == 0 {
         bot.send(JuzoAnswer::message(&message).text(format!(
-            "{0} Повысить до того, что уже есть? Он и так не ниже, расслабься.",
+            "{0} Повысить до того, что уже есть? Просто прекрасно. А дальше что — выдать тот же \
+             ранг ещё раз?",
             smail_pensil(true)
         )))
         .await?;
@@ -399,7 +406,7 @@ pub async fn down(
 
         bot.send(JuzoAnswer::message(&message).text(format!(
             "{0} Модератор <a href='{1}'>{2}</a> разжалован{g1}",
-            smail_tick(true),
+            smail_cross(true),
             user.link(),
             user.full_name()
         )))
@@ -408,6 +415,138 @@ pub async fn down(
         bot.send(JuzoAnswer::message(&message).text(format!(
             "{0} Модератору <a href='{1}'>{2}</a> понижен ранг",
             smail_tick(true),
+            user.link(),
+            user.full_name()
+        )))
+        .await?;
+    }
+
+    Ok(())
+}
+
+pub async fn remove(
+    bot: Bot,
+    message: Message,
+    Extension(db): Extension<DbConn>,
+    Extension(arch): Extension<AttachResult>,
+    Extension(result): Extension<CommandResult>,
+) -> HandlerResult<()> {
+    let user_ind = UserIndex::new(&bot, &db);
+    let module = ModuleChecker::new(&bot, &db);
+
+    // SAFETY: The Command filter will not allow processing of a "None" value.
+    let text = unsafe {
+        message
+            .text()
+            .or_else(|| message.caption())
+            .unwrap_unchecked()
+    };
+    let args = result.args::<1>(text);
+    let chat_ids = arch.chat_ids;
+
+    let user: UserModel = match args {
+        ArgsResult::Some([a1], _) => {
+            let Ok(found_user) = user_ind
+                .search_user(&text[a1])
+                .await
+            else {
+                return Ok(());
+            };
+            found_user
+        }
+        // SAFETY: TBA will never return None in message.from().
+        ArgsResult::None => unsafe {
+            if let Some(r) = message.reply_to_message() {
+                UserModel::new(
+                    &db,
+                    r.from()
+                        .unwrap_unchecked(),
+                )
+                .await
+            } else {
+                return Ok(());
+            }
+        },
+        _ => return Ok(()),
+    };
+
+    let true = module
+        .check::<8>(ModuleAccess::CustomM(&message, chat_ids.0))
+        .await
+    else {
+        return Ok(());
+    };
+
+    // SAFETY: TBA will never return None in message.from().
+    let my_ids = unsafe {
+        message
+            .from()
+            .unwrap_unchecked()
+    }
+    .id;
+
+    let Ok(Some(row)) = db
+        .query_one_raw(raw_sql!(
+            Postgres,
+            r#"
+            WITH result AS (
+                DELETE FROM c4
+                WHERE user_ids = {user.ids}
+                    AND chat_ids = {chat_ids}
+                    AND (
+                        rank < COALESCE(
+                            (SELECT rank FROM c4
+                            WHERE user_ids = {my_ids}
+                                AND chat_ids = {chat_ids}),
+                            0
+                        )
+                        OR EXISTS (
+                            SELECT 1 FROM c
+                            WHERE chat_ids = {chat_ids}
+                                AND owner_ids = {my_ids}
+                        )
+                    )
+                RETURNING 1
+            )
+            SELECT EXISTS (SELECT 1 FROM result) AS affected
+            WHERE EXISTS (SELECT 1 FROM result)
+                OR NOT EXISTS (
+                    SELECT 1 FROM c4
+                    WHERE user_ids = {user.ids}
+                        AND chat_ids = {chat_ids}
+                );
+            "#
+        ))
+        .await
+    else {
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Вы не можете разжаловать равного или выше себя рангом — одного желания для этого \
+             маловато.",
+            smail_pensil(true)
+        )))
+        .await?;
+        return Ok(());
+    };
+
+    let affected = unsafe {
+        row.try_get::<bool>("", "affected")
+            .unwrap_unchecked()
+    };
+
+    if affected {
+        let g1 = gender!(user.gender => ["", "а"]);
+
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Модератор <a href='{1}'>{2}</a> разжалован{g1}",
+            smail_cross(true),
+            user.link(),
+            user.full_name()
+        )))
+        .await?;
+    } else {
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} <a href='{1}'>{2}</a> не является модератором.",
+            smail_pensil(true),
             user.link(),
             user.full_name()
         )))

@@ -390,7 +390,7 @@ pub async fn delete(
 
     bot.send(JuzoAnswer::message(&message).text(format!(
         "{0} Агент <a href='{1}'>{2}</a> разжалован",
-        smail_tick(true),
+        smail_cross(true),
         user.link(),
         user.full_name(),
     )))
@@ -479,7 +479,7 @@ pub async fn delete_spam(
 
     bot.send(JuzoAnswer::message(&message).text(format!(
         "{0} Агент антиспама <a href='{1}'>{2}</a> разжалован",
-        smail_tick(true),
+        smail_cross(true),
         user.link(),
         user.full_name(),
     )))
@@ -563,7 +563,7 @@ pub async fn delete_main(
 
     bot.send(JuzoAnswer::message(&message).text(format!(
         "{0} Гл. агент <a href='{1}'>{2}</a> разжалован",
-        smail_tick(true),
+        smail_cross(true),
         user.link(),
         user.full_name(),
     )))

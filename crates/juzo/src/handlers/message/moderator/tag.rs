@@ -1,6 +1,6 @@
 use juzo_core::{
     application::{ParseTgLink, UserIndex, UserModel},
-    common::emojis::smail_tick,
+    common::emojis::{smail_cross, smail_tick},
 };
 use telers::methods::SetChatMemberTag;
 
@@ -28,49 +28,39 @@ pub async fn add(
         ArgsResult::Some(args, len) => {
             let last = args[len - 1];
 
-            if let Some(link) = ParseTgLink::new(&text[last]) {
-                let tag = &text[args[0].start..last.start];
-                if tag.is_empty()
-                    || tag
-                        .chars()
-                        .nth(16)
-                        .is_some()
-                {
-                    return Ok(());
-                }
+            let (tag, link) = if let Some(link) = ParseTgLink::new(&text[last]) {
+                (&text[args[0].start..last.start], Some(link))
+            } else {
+                (&text[args[0].start..last.end], None)
+            };
+            if tag.is_empty()
+                || tag
+                    .chars()
+                    .nth(16)
+                    .is_some()
+            {
+                return Ok(());
+            }
 
+            if let Some(link) = link {
                 let Ok(found_user) = user_ind
                     .fetch_user(link)
                     .await
                 else {
                     return Ok(());
                 };
-
                 (tag, found_user)
             } else {
-                let tag = &text[args[0].start..last.end];
-                if tag.is_empty()
-                    || tag
-                        .chars()
-                        .nth(16)
-                        .is_some()
-                {
-                    return Ok(());
-                }
-
                 let Some(reply) = message.reply_to_message() else {
                     return Ok(());
                 };
-
                 // SAFETY: TBA will never return None in message.from().
-                let found_user = unsafe {
+                (tag, unsafe {
                     reply
                         .from()
                         .unwrap_unchecked()
-                }
-                .into();
-
-                (tag, found_user)
+                        .into()
+                })
             }
         }
         _ => return Ok(()),
@@ -150,7 +140,7 @@ pub async fn delete(
 
     bot.send(JuzoAnswer::message(&message).text(format!(
         "{0} Тег <a href='{1}'>{2}</a> удалён",
-        smail_tick(true),
+        smail_cross(true),
         user.link(),
         user.full_name(),
     )))

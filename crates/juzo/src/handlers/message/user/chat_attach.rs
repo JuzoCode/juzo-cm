@@ -1,5 +1,5 @@
 use juzo_core::{
-    common::emojis::smail_tick,
+    common::emojis::{smail_cross, smail_tick},
     db::user::{prelude::UserSetting, setting},
     domain::UserModel,
 };
@@ -98,7 +98,7 @@ pub async fn no(
         .exec(&db)
         .await;
 
-    bot.send(JuzoAnswer::message(&message).text(format!("{0} Чат был отвязан", smail_tick(true))))
+    bot.send(JuzoAnswer::message(&message).text(format!("{0} Чат был отвязан", smail_cross(true))))
         .await?;
 
     Ok(())

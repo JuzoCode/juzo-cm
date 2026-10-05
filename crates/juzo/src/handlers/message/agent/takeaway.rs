@@ -69,11 +69,7 @@ async fn delete_core(
                     return Ok(());
                 };
                 (1, found_user)
-            } else {
-                if !a1.is_empty() {
-                    return Ok(());
-                }
-
+            } else if !a1.is_empty() {
                 let found_user = if let Some(r) = message.reply_to_message() {
                     // SAFETY: TBA will never return None in message.from().
                     r.from()
@@ -88,6 +84,8 @@ async fn delete_core(
                     return Ok(());
                 };
                 (1, found_user)
+            } else {
+                return Ok(());
             }
         },
         // SAFETY: TBA will never return None in message.from().

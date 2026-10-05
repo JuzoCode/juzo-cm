@@ -1,4 +1,4 @@
-use juzo_core::common::emojis::{smail_pensil, smail_tick};
+use juzo_core::common::emojis::{smail_cross, smail_pensil, smail_tick};
 use telers::methods::SetChatDescription;
 
 use super::super::*;
@@ -86,7 +86,7 @@ pub async fn delete(
 
     bot.send(
         JuzoAnswer::message(&message)
-            .text(format!("{0} Описание успешно удалено", smail_tick(true))),
+            .text(format!("{0} Описание успешно удалено", smail_cross(true))),
     )
     .await?;
 

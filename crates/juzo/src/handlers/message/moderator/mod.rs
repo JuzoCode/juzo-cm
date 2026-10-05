@@ -114,11 +114,17 @@ pub fn routers() -> Router {
                 Handler::new(reason::info)
                     .filter(Command::one("причина").no_prefix())
                     .filter(Attach),
+                Handler::new(rank::remove)
+                    .filter(Command::many(&["разжаловать", "снять"]).no_prefix())
+                    .filter(Attach),
                 Handler::new(rank::down)
                     .filter(Command::one("понизить").no_prefix())
                     .filter(Attach),
                 Handler::new(rank::up)
                     .filter(Command::one("повысить").no_prefix())
+                    .filter(Attach),
+                Handler::new(rank::up_1)
+                    .filter(Command::many(&["+модер", "+админ"]).no_prefix())
                     .filter(Attach),
                 Handler::new(rank::up_1)
                     .filter(Command::one("модер"))

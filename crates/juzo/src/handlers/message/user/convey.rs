@@ -54,9 +54,8 @@ pub async fn sweets(
                 let Some(value) = parse_amount(&text[args[0].start..last.end]) else {
                     return Ok(());
                 };
-
                 // SAFETY: TBA will never return None in message.from().
-                let found_user = unsafe {
+                (value, unsafe {
                     UserModel::new(
                         &db,
                         reply
@@ -64,9 +63,7 @@ pub async fn sweets(
                             .unwrap_unchecked(),
                     )
                     .await
-                };
-
-                (value, found_user)
+                })
             }
         }
         _ => return Ok(()),
@@ -304,9 +301,8 @@ pub async fn gold(
                 let Some(value) = parse_amount(&text[args[0].start..last.end]) else {
                     return Ok(());
                 };
-
                 // SAFETY: TBA will never return None in message.from().
-                let found_user = unsafe {
+                (value, unsafe {
                     UserModel::new(
                         &db,
                         reply
@@ -314,14 +310,11 @@ pub async fn gold(
                             .unwrap_unchecked(),
                     )
                     .await
-                };
-
-                (value, found_user)
+                })
             }
         }
         _ => return Ok(()),
     };
-
     if message
         .chat()
         .title()
@@ -554,9 +547,8 @@ pub async fn score(
                 let Some(value) = parse_amount(&text[args[0].start..last.end]) else {
                     return Ok(());
                 };
-
                 // SAFETY: TBA will never return None in message.from().
-                let found_user = unsafe {
+                (value, unsafe {
                     UserModel::new(
                         &db,
                         reply
@@ -564,9 +556,7 @@ pub async fn score(
                             .unwrap_unchecked(),
                     )
                     .await
-                };
-
-                (value, found_user)
+                })
             }
         }
         _ => return Ok(()),

@@ -45,32 +45,26 @@ pub async fn add(
                 let Some(reply) = message.reply_to_message() else {
                     return Ok(());
                 };
-
                 // SAFETY: TBA will never return None in message.from().
-                let found_user = unsafe {
+                (&text[args[0].start..last.end], unsafe {
                     reply
                         .from()
                         .unwrap_unchecked()
-                }
-                .into();
-
-                (&text[args[0].start..last.end], found_user)
+                        .into()
+                })
             }
         }
         ArgsResult::None => {
             let Some(reply) = message.reply_to_message() else {
                 return Ok(());
             };
-
             // SAFETY: TBA will never return None in message.from().
-            let found_user = unsafe {
+            ("навсегда", unsafe {
                 reply
                     .from()
                     .unwrap_unchecked()
-            }
-            .into();
-
-            ("навсегда", found_user)
+                    .into()
+            })
         }
         ArgsResult::Unk => return Ok(()),
     };
@@ -301,7 +295,6 @@ pub async fn delete(
             } else {
                 return Ok(());
             };
-
             (1, found_user)
         },
         _ => return Ok(()),
