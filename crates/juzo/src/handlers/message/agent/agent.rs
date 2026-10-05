@@ -1,6 +1,6 @@
 use juzo_core::{
     application::{UserIds, UserIndex, UserModel},
-    common::emojis::{smail_cross, smail_tick},
+    common::emojis::smail_tick,
     db::agent::{agent, prelude::Agent},
     domain::UserModelExt,
     gender,
@@ -390,7 +390,7 @@ pub async fn delete(
 
     bot.send(JuzoAnswer::message(&message).text(format!(
         "{0} Агент <a href='{1}'>{2}</a> разжалован",
-        smail_cross(true),
+        smail_tick(true),
         user.link(),
         user.full_name(),
     )))
@@ -479,7 +479,7 @@ pub async fn delete_spam(
 
     bot.send(JuzoAnswer::message(&message).text(format!(
         "{0} Агент антиспама <a href='{1}'>{2}</a> разжалован",
-        smail_cross(true),
+        smail_tick(true),
         user.link(),
         user.full_name(),
     )))
@@ -563,7 +563,7 @@ pub async fn delete_main(
 
     bot.send(JuzoAnswer::message(&message).text(format!(
         "{0} Гл. агент <a href='{1}'>{2}</a> разжалован",
-        smail_cross(true),
+        smail_tick(true),
         user.link(),
         user.full_name(),
     )))
@@ -629,7 +629,7 @@ async fn edit_show_core(
     } else {
         bot.send(JuzoAnswer::message(&message).text(format!(
             "{0} <a href='{1}'>Вы</a> выключили свою видимость",
-            smail_cross(true),
+            smail_tick(true),
             iam.link()
         )))
         .await?;

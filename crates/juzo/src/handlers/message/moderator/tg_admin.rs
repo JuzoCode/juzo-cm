@@ -1,6 +1,6 @@
 use juzo_core::{
     application::{ParseTgLink, UserIndex, UserModel},
-    common::emojis::{smail_cross, smail_tick},
+    common::emojis::smail_tick,
 };
 use telers::methods::PromoteChatMember;
 
@@ -161,7 +161,7 @@ pub async fn delete(
 
     bot.send(JuzoAnswer::message(&message).text(format!(
         "{0} <a href='{1}'>{2}</a> исключён из тг-администраторов",
-        smail_cross(true),
+        smail_tick(true),
         user.link(),
         user.full_name(),
     )))
