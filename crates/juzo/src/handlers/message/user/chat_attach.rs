@@ -37,12 +37,10 @@ pub async fn yes(
         return Ok(());
     }
 
+    let chat: UserModel = message.chat().into();
     let model = setting::ActiveModel {
         user_ids: Set(iam.ids.into()),
-        contact_chat: Set(message
-            .chat()
-            .id()
-            .into()),
+        contact_chat: Set(chat.ids.into()),
     };
 
     let _ = UserSetting::insert(model)
@@ -57,7 +55,12 @@ pub async fn yes(
     let _ = bot
         .send(
             JuzoAnswer::message(&message)
-                .text(format!("{0} Чат был привязан", smail_tick(true)))
+                .text(format!(
+                    "{0} Чат был привязан к «<a href='{1}'>{2}</a>»",
+                    smail_tick(true),
+                    chat.link(),
+                    chat.full_name(),
+                ))
                 .chat_id(iam.ids.0)
                 .business_connection_id_option::<&str>(None)
                 .reply_parameters_option::<ReplyParameters>(None),
@@ -103,16 +106,3 @@ pub async fn no(
 
     Ok(())
 }
-
-// pub async fn no(
-//     bot: Bot,
-//     message: Message,
-//     Extension(db): Extension<DbConn>,
-//     Extension(result): Extension<CommandResult>,
-// ) -> HandlerResult<()> {
-//     if !result.args.is_empty() {
-//         return Ok(());
-//     }
-
-//     Ok(())
-// }

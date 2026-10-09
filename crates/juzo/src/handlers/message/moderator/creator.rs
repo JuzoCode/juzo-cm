@@ -97,7 +97,7 @@ pub async fn repair(
         (
             owner.ids.0,
             owner.full_name(),
-            owner.link().into(),
+            owner.link().to_owned(),
             owner.gender,
         )
     };

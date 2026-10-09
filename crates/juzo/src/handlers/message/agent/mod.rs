@@ -6,6 +6,7 @@ use telers::{
 };
 
 mod agent;
+mod bag;
 mod bans_user;
 mod chat_domen;
 mod ignore;
@@ -50,6 +51,7 @@ pub fn routers() -> Router {
                 ),
                 Handler::new(takeaway::delete_ignore)
                     .filter(Command::one("-вынос игнор").no_prefix()),
+                Handler::new(bag::yes).filter(Command::one("обнулить")),
                 Handler::new(module::show_add_parent)
                     .filter(Command::one("+!модуль раздел").no_prefix()),
                 Handler::new(module::add_parent).filter(Command::one("+модуль раздел")),
