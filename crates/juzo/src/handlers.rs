@@ -17,7 +17,7 @@ mod message;
 
 pub fn routers_connect() -> Router {
     Router::new("router connect")
-        .on_all(|observer| {
+        .on_update(|observer| {
             observer
                 // Outer-middleware
                 .register_outer_middleware(UserSync)
