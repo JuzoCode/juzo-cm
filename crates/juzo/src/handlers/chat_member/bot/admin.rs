@@ -16,9 +16,11 @@ pub async fn added(
     Extension(db): Extension<DbConn>,
 ) -> HandlerResult<EventReturn> {
     let Chat::Supergroup(chat) = *member.chat else {
+        // SAFETY: The ChatType filter allows processing only of "Supergroup".
         unsafe { unreachable() }
     };
 
+    // SAFETY: The "None" value only occurs for users.
     let full_name = unsafe {
         chat.title
             .as_deref()
