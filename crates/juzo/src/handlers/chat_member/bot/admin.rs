@@ -1,9 +1,11 @@
+use core::intrinsics::unreachable;
+
 use sea_orm::{ConnectionTrait, raw_sql};
 use telers::{
     enums::ParseMode,
     event::EventReturn,
     methods::{GetChatAdministrators, SendMessage},
-    types::ChatMember,
+    types::{Chat, ChatMember},
 };
 
 use super::super::*;
@@ -13,11 +15,13 @@ pub async fn added(
     member: ChatMemberUpdated,
     Extension(db): Extension<DbConn>,
 ) -> HandlerResult<EventReturn> {
-    let chat_ids = member.chat.id();
+    let Chat::Supergroup(chat) = *member.chat else {
+        unsafe { unreachable() }
+    };
+
     let full_name = unsafe {
-        member
-            .chat
-            .title()
+        chat.title
+            .as_deref()
             .unwrap_unchecked()
     };
 
@@ -31,7 +35,7 @@ pub async fn added(
                 full_name
             )
             VALUES (
-                {chat_ids},
+                {chat.id},
                 true,
                 {full_name}
             )
@@ -50,7 +54,7 @@ pub async fn added(
     }
 
     let members = bot
-        .send(GetChatAdministrators::new(chat_ids))
+        .send(GetChatAdministrators::new(chat.id))
         .await?;
 
     if let Some(owner_ids) = members
@@ -65,7 +69,7 @@ pub async fn added(
                 Postgres,
                 r#"
                 UPDATE c SET owner_ids = {owner_ids}
-                    WHERE chat_ids = {chat_ids};
+                    WHERE chat_ids = {chat.id};
                 "#
             ))
             .await;
@@ -83,7 +87,7 @@ pub async fn added(
                 )
                 VALUES (
                     {owner_ids},
-                    {chat_ids},
+                    {chat.id},
                     {owner_ids},
                     6,
                     0
@@ -95,7 +99,7 @@ pub async fn added(
 
     bot.send(
         SendMessage::new(
-            chat_ids,
+            chat.id,
             "🗓 <b>Я так рад</b>, что меня добавили в статус администрации!\n\nТеперь у меня \
              <b>много возможностей</b>. Какие именно? Можно посмотреть в <a \
              href='https://teletype.in/@juzo_cm/commands'>нашей статье</a>.\nЕсли вам непонятны какие-то \

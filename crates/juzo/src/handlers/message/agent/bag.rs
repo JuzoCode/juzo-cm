@@ -118,11 +118,11 @@ pub async fn yes(
             r#"
             WITH upd AS (
                 UPDATE u2 SET
-                    sweets    = CASE WHEN ({functions} & 1) != 0 THEN 0 ELSE sweets END,
+                    sweets = CASE WHEN ({functions} & 1) != 0 THEN 0 ELSE sweets END,
                     asterisks = CASE WHEN ({functions} & 2) != 0 THEN 0::oid ELSE asterisks END,
-                    coins     = CASE WHEN ({functions} & 4) != 0 THEN 0::oid ELSE coins END,
-                    gold      = CASE WHEN ({functions} & 8) != 0 THEN 0::oid ELSE gold END,
-                    score     = CASE WHEN ({functions} & 16) != 0 THEN 0::oid ELSE score END
+                    coins = CASE WHEN ({functions} & 4) != 0 THEN 0::oid ELSE coins END,
+                    gold = CASE WHEN ({functions} & 8) != 0 THEN 0::oid ELSE gold END,
+                    score = CASE WHEN ({functions} & 16) != 0 THEN 0::oid ELSE score END
                 WHERE user_ids = {user.ids}
                 RETURNING 1
             )
