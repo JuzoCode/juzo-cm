@@ -22,11 +22,13 @@ pub fn routers_connect() -> Router {
                 // Outer-middleware
                 .register_outer_middleware(UserSync)
                 .register_outer_middleware(IgnoreSystem)
-                // Inner-middleware
-                .register_inner_middleware(Error)
         })
         .on_business_message(|observer| observer.filter(Business))
-        .on_message(|observer| observer.register_inner_middleware(RateLimit))
+        .on_message(|observer| {
+            observer
+                .register_inner_middleware(RateLimit)
+                .register_inner_middleware(Error)
+        })
         .include(message::routers())
         .include(callback::routers())
         .include(chat_member::routers())
