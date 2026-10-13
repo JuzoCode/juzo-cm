@@ -1,4 +1,4 @@
-use core::fmt::Write;
+use core::{fmt::Write, intrinsics::unreachable};
 
 use juzo_core::{common::emojis::smail_pensil, domain::UserModel};
 use sea_orm::{ConnectionTrait, raw_sql};
@@ -6,7 +6,7 @@ use telers::{
     enums::ParseMode,
     event::EventReturn,
     methods::{BanChatMember, SendMessage},
-    types::LinkPreviewOptions,
+    types::{Chat, ChatMember, ChatMemberMember, LinkPreviewOptions},
 };
 
 use super::super::*;
@@ -16,7 +16,11 @@ pub async fn yes(
     member: ChatMemberUpdated,
     Extension(db): Extension<DbConn>,
 ) -> HandlerResult {
-    let chat_ids = member.chat.id();
+    let Chat::Supergroup(chat) = *member.chat else {
+        // SAFETY: The ChatType filter allows processing only of "Supergroup".
+        unsafe { unreachable() }
+    };
+
     let user: UserModel = member
         .new_chat_member
         .user()
@@ -37,14 +41,14 @@ pub async fn yes(
             FROM c8
             LEFT JOIN c4
                 ON c4.user_ids = {iam.ids}
-                AND c4.chat_ids = {chat_ids}
+                AND c4.chat_ids = {chat.id}
             WHERE c8.user_ids = {user.ids}
-              AND c8.chat_ids = {chat_ids}
-              AND c8.is_ban
-              AND (
-                  c8.removed = 0
-                  OR c8.removed > EXTRACT(EPOCH FROM NOW())
-              )
+                AND c8.chat_ids = {chat.id}
+                AND c8.is_ban
+                AND (
+                    c8.removed = 0
+                    OR c8.removed > EXTRACT(EPOCH FROM NOW())
+                )
             "#
         ))
         .await
@@ -72,7 +76,7 @@ pub async fn yes(
                 r#"
                 DELETE FROM c8
                 WHERE user_ids = {user.ids}
-                    AND chat_ids = {chat_ids}
+                    AND chat_ids = {chat.id}
                     AND is_ban
                 "#
             ))
@@ -84,15 +88,15 @@ pub async fn yes(
     let status = if my_rank > 0 {
         format!(
             "Модератор <a href='{0}'>{1}</a> ({my_rank})",
-            user.link(),
+            iam.link(),
             iam.full_name()
         )
     } else {
-        format!("<a href='{0}'>{1}</a>", user.link(), iam.full_name())
+        format!("<a href='{0}'>{1}</a>", iam.link(), iam.full_name())
     };
 
     if iam.ids == user.ids {
-        text = format!("🗓 <b>{status} был исключён</b>: имеется действующий <b>бан",);
+        text = format!("🗓 <b>{status} был исключён</b>: имеется действующий <b>бан");
     } else if !can_unban {
         text = format!(
             "{0} <b>{status} добавил <a href='{1}'>{2}</a></b>, у которого имеется <b>бан",
@@ -140,7 +144,7 @@ pub async fn yes(
     }
 
     bot.send(
-        SendMessage::new(chat_ids, text)
+        SendMessage::new(chat.id, text)
             .parse_mode(ParseMode::HTML)
             .link_preview_options(LinkPreviewOptions {
                 is_disabled: Some(true),
@@ -156,7 +160,7 @@ pub async fn yes(
                 r#"
                 DELETE FROM c8
                 WHERE user_ids = {user.ids}
-                    AND chat_ids = {chat_ids}
+                    AND chat_ids = {chat.id}
                     AND is_ban
                 "#
             ))
@@ -164,9 +168,83 @@ pub async fn yes(
 
         Ok(EventReturn::Finish)
     } else {
-        bot.send(BanChatMember::new(chat_ids, user.ids))
+        bot.send(BanChatMember::new(chat.id, user.ids))
             .await?;
 
         Ok(EventReturn::Cancel)
     }
+}
+
+pub async fn no_tg(
+    bot: Bot,
+    member: ChatMemberUpdated,
+    Extension(db): Extension<DbConn>,
+) -> HandlerResult<()> {
+    let Chat::Supergroup(chat) = *member.chat else {
+        // SAFETY: The ChatType filter allows processing only of "Supergroup".
+        unsafe { unreachable() }
+    };
+
+    let user: UserModel = if let ChatMember::Member(ChatMemberMember {
+        user, ..
+    }) = member.new_chat_member
+    {
+        user.as_ref().into()
+    } else {
+        // SAFETY: The ChatMemberUpdated filter allows processing only of "Member".
+        unsafe { unreachable() }
+    };
+
+    let Ok(Some(row)) = db
+        .query_one_raw(raw_sql!(
+            Postgres,
+            r#"
+            SELECT reason
+            FROM c8
+            WHERE c8.user_ids = {user.ids}
+                AND c8.chat_ids = {chat.id}
+                AND c8.is_ban
+                AND (
+                    c8.removed = 0
+                    OR c8.removed > EXTRACT(EPOCH FROM NOW())
+                )
+            "#
+        ))
+        .await
+    else {
+        return Ok(());
+    };
+
+    let reason = unsafe {
+        row.try_get::<String>("", "reason")
+            .unwrap_unchecked()
+    };
+
+    let mut text = format!(
+        "🗓 Бывший администратор <b><a href='{0}'>{1}</a> был исключён</b>: имеется действующий \
+         <b>бан",
+        user.link(),
+        user.full_name()
+    );
+
+    if !reason.is_empty() {
+        let _ = write!(text, " по причине:</b> <i>{0}</i>", reason);
+    } else {
+        text.push_str("</b>");
+    }
+
+    bot.send(
+        SendMessage::new(chat.id, text)
+            .parse_mode(ParseMode::HTML)
+            .link_preview_options(LinkPreviewOptions {
+                is_disabled: Some(true),
+                ..Default::default()
+            }),
+    )
+    .await?;
+
+    bot.send(BanChatMember::new(chat.id, user.ids))
+        .await?;
+
+    Ok(())
 }

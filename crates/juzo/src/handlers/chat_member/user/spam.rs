@@ -1,4 +1,4 @@
-use core::fmt::Write;
+use core::{fmt::Write, intrinsics::unreachable};
 
 use juzo_core::domain::UserModel;
 use sea_orm::{ConnectionTrait, raw_sql};
@@ -6,7 +6,7 @@ use telers::{
     enums::ParseMode,
     event::EventReturn,
     methods::{BanChatMember, SendMessage},
-    types::LinkPreviewOptions,
+    types::{Chat, LinkPreviewOptions},
 };
 
 use super::super::*;
@@ -16,7 +16,11 @@ pub async fn yes(
     member: ChatMemberUpdated,
     Extension(db): Extension<DbConn>,
 ) -> HandlerResult {
-    let chat_ids = member.chat.id();
+    let Chat::Supergroup(chat) = *member.chat else {
+        // SAFETY: The ChatType filter allows processing only of "Supergroup".
+        unsafe { unreachable() }
+    };
+
     let user: UserModel = member
         .new_chat_member
         .user()
@@ -35,11 +39,11 @@ pub async fn yes(
                 a3.reason
             FROM a3
             INNER JOIN c
-                ON c.chat_ids = {chat_ids}
+                ON c.chat_ids = {chat.id}
                 AND NOT c.spam
             LEFT JOIN c4
                 ON c4.user_ids = {iam.ids}
-                AND c4.chat_ids = {chat_ids}
+                AND c4.chat_ids = {chat.id}
             WHERE a3.user_ids = {user.ids}
                 AND a3.function = 2
             "#
@@ -94,7 +98,7 @@ pub async fn yes(
     }
 
     bot.send(
-        SendMessage::new(chat_ids, text)
+        SendMessage::new(chat.id, text)
             .parse_mode(ParseMode::HTML)
             .link_preview_options(LinkPreviewOptions {
                 is_disabled: Some(true),
@@ -106,7 +110,7 @@ pub async fn yes(
     if is_moder {
         return Ok(EventReturn::Finish);
     } else {
-        bot.send(BanChatMember::new(chat_ids, user.ids))
+        bot.send(BanChatMember::new(chat.id, user.ids))
             .await?;
 
         Ok(EventReturn::Cancel)

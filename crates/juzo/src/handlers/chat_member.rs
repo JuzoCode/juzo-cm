@@ -29,6 +29,9 @@ pub fn routers() -> Router {
                 .registers([
                     Handler::new(user::ban::yes).filter(MemberEvent::new().join()),
                     Handler::new(user::spam::yes).filter(MemberEvent::new().join()),
+                    Handler::new(user::ban::no_tg).filter(
+                        MemberFilter::new(MemberStatus::Member).old(MemberStatus::Administrator),
+                    ),
                 ])
         })
 }
