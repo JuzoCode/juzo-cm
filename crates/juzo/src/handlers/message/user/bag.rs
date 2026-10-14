@@ -229,12 +229,7 @@ async fn show_core(
         };
 
         let bonuses = bonus
-            .chat_ids(
-                message
-                    .chat()
-                    .id()
-                    .into(),
-            )
+            .chat_ids(message.chat().id())
             .user_ids(user.ids)
             .all([BonusLog::Vip, BonusLog::Plus, BonusLog::Minus])
             .await;

@@ -1,9 +1,13 @@
 use juzo_core::{
-    common::{emojis::smail_sweets, inflection::plur_sweets},
+    application::JuzoBonus,
+    common::{
+        emojis::{smail_pensil, smail_sweets, smail_tick},
+        inflection::plur_sweets,
+    },
     db::user::prelude::UserBalance,
-    domain::AttachResult,
+    domain::{AttachResult, enums::BonusLog},
 };
-use sea_orm::{EntityTrait, QuerySelect, sea_query::Expr};
+use sea_orm::{ConnectionTrait, EntityTrait, QuerySelect, raw_sql, sea_query::Expr};
 
 use super::super::*;
 
@@ -72,6 +76,68 @@ pub async fn show_ids(
             .text(format!("🗓 ID чата: <code>{0}</code>", message.chat().id())),
     )
     .await?;
+
+    Ok(())
+}
+
+pub async fn update(
+    bot: Bot,
+    message: Message,
+    Extension(db): Extension<DbConn>,
+    Extension(result): Extension<CommandResult>,
+) -> HandlerResult<()> {
+    if !result.args.is_empty() {
+        return Ok(());
+    }
+
+    // SAFETY: The "None" value only occurs for users.
+    let full_name = unsafe {
+        message
+            .chat()
+            .title()
+            .unwrap_unchecked()
+    };
+    let chat_ids = message.chat().id();
+
+    let module = ModuleChecker::new(&bot, &db);
+    let bonus = JuzoBonus::new(&db).chat_ids(chat_ids);
+
+    let true = module
+        .check::<22>(ModuleAccess::M(&message))
+        .await
+    else {
+        return Ok(());
+    };
+
+    bonus.delete(BonusLog::Premium);
+
+    let Ok(_) = db
+        .execute_raw(raw_sql!(
+            Postgres,
+            r#"
+            INSERT INTO c (
+                chat_ids,
+                full_name
+            )
+            VALUES ({chat_ids}, {full_name})
+            ON CONFLICT (chat_ids) DO UPDATE SET
+                full_name = EXCLUDED.full_name
+            WHERE
+                c.full_name IS DISTINCT FROM EXCLUDED.full_name
+            "#
+        ))
+        .await
+    else {
+        bot.send(JuzoAnswer::message(&message).text(format!(
+            "{0} Чат не был обновлён, но некоторые данные будут перекэшированы.",
+            smail_pensil(true)
+        )))
+        .await?;
+        return Ok(());
+    };
+
+    bot.send(JuzoAnswer::message(&message).text(format!("{0} Чат обновлён", smail_tick(true))))
+        .await?;
 
     Ok(())
 }

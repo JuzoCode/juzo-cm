@@ -1,4 +1,4 @@
-use juzo_core::filters::{Attach, Command};
+use juzo_core::filters::{Attach, Command, FloodKind, FloodType, FloodWait};
 use telers::{Filter, Router, enums, event::telegram::Handler, filters::ChatType};
 
 mod ban;
@@ -24,6 +24,13 @@ pub fn routers() -> Router {
     Router::new("router MODER connect")
         .on_message(|observer| {
             observer.registers([
+                Handler::new(chat::update)
+                    .filter(Command::one("обновить чат").no_prefix())
+                    .filter(
+                        FloodWait::new(FloodKind::UpdateChat, FloodType::Chat)
+                            .limit(1)
+                            .second(900),
+                    ),
                 Handler::new(spam::no)
                     .filter(
                         Command::many(&["+джузо спам", "+джузо ас", "+джузо антиспам"]).no_prefix(),
