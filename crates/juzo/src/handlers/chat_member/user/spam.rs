@@ -97,21 +97,30 @@ pub async fn yes(
         }
     }
 
-    bot.send(
-        SendMessage::new(chat.id, text)
-            .parse_mode(ParseMode::HTML)
-            .link_preview_options(LinkPreviewOptions {
-                is_disabled: Some(true),
-                ..Default::default()
-            }),
-    )
-    .await?;
-
     if is_moder {
+        bot.send(
+            SendMessage::new(chat.id, text)
+                .parse_mode(ParseMode::HTML)
+                .link_preview_options(LinkPreviewOptions {
+                    is_disabled: Some(true),
+                    ..Default::default()
+                }),
+        )
+        .await?;
         return Ok(EventReturn::Finish);
     } else {
         bot.send(BanChatMember::new(chat.id, user.ids))
             .await?;
+
+        bot.send(
+            SendMessage::new(chat.id, text)
+                .parse_mode(ParseMode::HTML)
+                .link_preview_options(LinkPreviewOptions {
+                    is_disabled: Some(true),
+                    ..Default::default()
+                }),
+        )
+        .await?;
 
         Ok(EventReturn::Cancel)
     }
