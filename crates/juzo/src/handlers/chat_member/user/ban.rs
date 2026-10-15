@@ -143,16 +143,6 @@ pub async fn yes(
         }
     }
 
-    bot.send(
-        SendMessage::new(chat.id, text)
-            .parse_mode(ParseMode::HTML)
-            .link_preview_options(LinkPreviewOptions {
-                is_disabled: Some(true),
-                ..Default::default()
-            }),
-    )
-    .await?;
-
     if can_unban {
         let _ = db
             .execute_raw(raw_sql!(
@@ -166,10 +156,30 @@ pub async fn yes(
             ))
             .await;
 
+        bot.send(
+            SendMessage::new(chat.id, text)
+                .parse_mode(ParseMode::HTML)
+                .link_preview_options(LinkPreviewOptions {
+                    is_disabled: Some(true),
+                    ..Default::default()
+                }),
+        )
+        .await?;
+
         Ok(EventReturn::Finish)
     } else {
         bot.send(BanChatMember::new(chat.id, user.ids))
             .await?;
+
+        bot.send(
+            SendMessage::new(chat.id, text)
+                .parse_mode(ParseMode::HTML)
+                .link_preview_options(LinkPreviewOptions {
+                    is_disabled: Some(true),
+                    ..Default::default()
+                }),
+        )
+        .await?;
 
         Ok(EventReturn::Cancel)
     }
@@ -233,6 +243,9 @@ pub async fn no_tg(
         text.push_str("</b>");
     }
 
+    bot.send(BanChatMember::new(chat.id, user.ids))
+        .await?;
+
     bot.send(
         SendMessage::new(chat.id, text)
             .parse_mode(ParseMode::HTML)
@@ -242,9 +255,6 @@ pub async fn no_tg(
             }),
     )
     .await?;
-
-    bot.send(BanChatMember::new(chat.id, user.ids))
-        .await?;
 
     Ok(())
 }
