@@ -6,6 +6,7 @@ mod chat;
 mod chat_description;
 mod chat_name;
 mod creator;
+mod kick;
 mod module_access;
 mod mute;
 mod pin;
