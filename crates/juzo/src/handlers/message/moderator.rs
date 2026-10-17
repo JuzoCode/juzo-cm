@@ -27,6 +27,7 @@ pub fn routers() -> Router {
             observer.registers([
                 Handler::new(chat::update)
                     .filter(Command::one("обновить чат").no_prefix())
+                    .filter(ChatType::one(enums::ChatType::Supergroup))
                     .filter(
                         FloodWait::new(FloodKind::UpdateChat, FloodType::Chat)
                             .limit(1)

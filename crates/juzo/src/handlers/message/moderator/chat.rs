@@ -1,3 +1,5 @@
+use core::intrinsics::unreachable;
+
 use juzo_core::{
     application::JuzoBonus,
     common::{
@@ -8,6 +10,7 @@ use juzo_core::{
     domain::{AttachResult, enums::BonusLog},
 };
 use sea_orm::{ConnectionTrait, EntityTrait, QuerySelect, raw_sql, sea_query::Expr};
+use telers::types::Chat;
 
 use super::super::*;
 
@@ -90,17 +93,13 @@ pub async fn update(
         return Ok(());
     }
 
-    // SAFETY: The "None" value only occurs for users.
-    let full_name = unsafe {
-        message
-            .chat()
-            .title()
-            .unwrap_unchecked()
+    let Chat::Supergroup(chat) = message.chat() else {
+        // SAFETY: The ChatType filter allows processing only of "Supergroup".
+        unsafe { unreachable() }
     };
-    let chat_ids = message.chat().id();
 
     let module = ModuleChecker::new(&bot, &db);
-    let bonus = JuzoBonus::new(&db).chat_ids(chat_ids);
+    let bonus = JuzoBonus::new(&db).chat_ids(chat.id);
 
     let true = module
         .check::<22>(ModuleAccess::M(&message))
@@ -111,6 +110,13 @@ pub async fn update(
 
     bonus.delete(BonusLog::Premium);
 
+    // SAFETY: The "None" value only occurs for users.
+    let full_name = unsafe {
+        chat.title
+            .as_deref()
+            .unwrap_unchecked()
+    };
+
     let Ok(_) = db
         .execute_raw(raw_sql!(
             Postgres,
@@ -119,7 +125,7 @@ pub async fn update(
                 chat_ids,
                 full_name
             )
-            VALUES ({chat_ids}, {full_name})
+            VALUES ({chat.id}, {full_name})
             ON CONFLICT (chat_ids) DO UPDATE SET
                 full_name = EXCLUDED.full_name
             WHERE
