@@ -1,11 +1,14 @@
+use core::fmt::Write;
+
 use chrono::Utc;
 use juzo_core::{
     application::{UserIndex, UserModel},
     common::emojis::{smail_cross, smail_pensil, smail_tick},
     db::user::{anketa, prelude::UserAnketa},
     domain::TimeFormatted,
+    gender,
 };
-use sea_orm::{EntityTrait, QuerySelect, Set, raw_sql, sea_query::OnConflict};
+use sea_orm::{ConnectionTrait, EntityTrait, QuerySelect, Set, raw_sql, sea_query::OnConflict};
 
 use super::super::*;
 
@@ -80,26 +83,21 @@ pub async fn show(
     }
     .id;
 
-    let Ok(Some(anketa)) = UserAnketa::find()
-        .from_raw_sql(raw_sql!(
+    let Ok(Some(row)) = db
+        .query_one_raw(raw_sql!(
             Postgres,
             r#"
             SELECT
-                user_ids,
-                CASE
-                    WHEN user_ids = {my_ids} THEN true
-                    ELSE show
-                END AS show,
-                is_user,
-                gender,
-                username,
-                full_name,
-                added
+                (u.user_ids = {my_ids} OR u.show) AS show,
+                u.gender,
+                u.added,
+                COALESCE(u1.brith, '') AS brith
             FROM u
-            WHERE user_ids = {user.ids};
+            LEFT JOIN u1
+                ON u1.user_ids = u.user_ids
+            WHERE u.user_ids = {user.ids}
             "#
         ))
-        .one(&db)
         .await
     else {
         bot.send(JuzoAnswer::message(&message).text(format!(
@@ -110,7 +108,20 @@ pub async fn show(
         return Ok(());
     };
 
-    if !anketa.show {
+    let (show, gender, added, _) = unsafe {
+        (
+            row.try_get::<bool>("", "show")
+                .unwrap_unchecked(),
+            row.try_get::<i16>("", "gender")
+                .unwrap_unchecked(),
+            row.try_get::<i64>("", "added")
+                .unwrap_unchecked(),
+            row.try_get::<String>("", "brith")
+                .unwrap_unchecked(),
+        )
+    };
+
+    if !show {
         bot.send(JuzoAnswer::message(&message).text(format!(
             "{0} Анкета же скрыта от незрелых глазок.",
             smail_pensil(true)
@@ -119,7 +130,45 @@ pub async fn show(
         return Ok(());
     }
 
-    bot.send(JuzoAnswer::message(&message).text("Анкета есть"))
+    let mut text = if user.ids.0 < 0 {
+        format!(
+            "<b>Это <a href='{0}'>{1}</a></b>\n🆔 <code>@_{2}</code>\n\n",
+            user.link(),
+            user.full_name(),
+            user.ids
+        )
+    } else {
+        format!(
+            "<b>Это <a href='{0}'>{1}</a></b>\n🆔 <code>@{2}</code>\n\n",
+            user.link(),
+            user.full_name(),
+            user.ids
+        )
+    };
+
+    if added <= 0 {
+        text.push_str("🗓 <b>Во вселенной Джузо</b> не существует");
+    } else {
+        let now = Utc::now();
+        let time = TimeFormatted::from(added, now);
+
+        let _ = write!(
+            text,
+            "🗓 <b>Во вселенной Джузо:</b> с {0} ({time})",
+            time.datetime
+                .format("%d.%m.%Y")
+        );
+    };
+
+    if gender == 3 {
+        text.push_str("\n👨 <b>Пол:</b> не указан")
+    } else {
+        let (g1, g2) = gender!(gender => [("👩", "женский"), ("👨", "мужской"), ("👨", "другой")]);
+
+        let _ = write!(text, "\n{g1} <b>Пол:</b> {g2}");
+    }
+
+    bot.send(JuzoAnswer::message(&message).text(text))
         .await?;
 
     Ok(())

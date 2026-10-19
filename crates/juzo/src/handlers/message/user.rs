@@ -23,7 +23,13 @@ pub fn routers() -> Router {
                 Handler::new(bag::edit_show_true).filter(Command::one("+мешок").no_prefix()),
                 Handler::new(anketa::edit_show_false).filter(Command::one("-анкета").no_prefix()),
                 Handler::new(anketa::edit_show_true).filter(Command::one("+анкета").no_prefix()),
-                Handler::new(anketa::show).filter(Command::one("анкета").no_prefix()),
+                Handler::new(anketa::show)
+                    .filter(Command::one("анкета").no_prefix())
+                    .filter(
+                        FloodWait::new(FloodKind::Anketa, FloodType::User)
+                            .limit(1)
+                            .second(30),
+                    ),
                 Handler::new(anketa::first_appearance)
                     .filter(Command::many(&["рег", "регистрация"]).no_prefix()),
                 Handler::new(start::yes)

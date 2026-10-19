@@ -10,7 +10,10 @@ use juzo_core::{
     domain::{AttachResult, enums::BonusLog},
 };
 use sea_orm::{ConnectionTrait, EntityTrait, QuerySelect, raw_sql, sea_query::Expr};
-use telers::types::Chat;
+use telers::{
+    methods::GetChat,
+    types::{Chat, ChatFullInfo, ChatFullInfoSupergroup},
+};
 
 use super::super::*;
 
@@ -117,15 +120,28 @@ pub async fn update(
             .unwrap_unchecked()
     };
 
+    let community_ids = match bot
+        .send(GetChat::new(chat.id))
+        .await?
+    {
+        ChatFullInfo::Supergroup(ChatFullInfoSupergroup {
+            community: Some(c),
+            ..
+        }) => c.id,
+        ChatFullInfo::Supergroup(_) => 0,
+        _ => unsafe { unreachable() },
+    };
+
     let Ok(_) = db
         .execute_raw(raw_sql!(
             Postgres,
             r#"
             INSERT INTO c (
                 chat_ids,
-                full_name
+                full_name,
+                community
             )
-            VALUES ({chat.id}, {full_name})
+            VALUES ({chat.id}, {full_name}, {community_ids})
             ON CONFLICT (chat_ids) DO UPDATE SET
                 full_name = EXCLUDED.full_name
             WHERE

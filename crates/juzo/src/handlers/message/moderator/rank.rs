@@ -152,58 +152,43 @@ async fn up_core(
         .query_one_raw(raw_sql!(
             Postgres,
             r#"
-            WITH data AS (
+        WITH data AS (
+            SELECT
+                r.my_rank,
+                r.target_rank,
+                COALESCE(NULLIF({value}::smallint, 0), r.target_rank + 1)::smallint AS rank
+            FROM (
                 SELECT
-                    COALESCE(
-                        (SELECT rank FROM c4
+                    COALESCE((
+                        SELECT rank FROM c4
                         WHERE user_ids = {my_ids}
-                            AND chat_ids = {chat_ids}),
-                        0
-                    ) AS my_rank,
-                    t.target_rank,
-                    CASE
-                        WHEN {value} = 0 THEN t.target_rank + 1
-                        ELSE {value}::smallint
-                    END AS rank
-                FROM (
-                    SELECT COALESCE(
-                        (SELECT rank FROM c4
+                            AND chat_ids = {chat_ids}
+                    ), 0) AS my_rank,
+                    COALESCE((
+                        SELECT rank FROM c4
                         WHERE user_ids = {user.ids}
-                            AND chat_ids = {chat_ids}),
-                        0
-                    ) AS target_rank
-                ) AS t
-            ),
-            result AS (
-                INSERT INTO c4 (
-                    user_ids,
-                    chat_ids,
-                    peer_ids,
-                    rank,
-                    sms_ids
-                )
-                SELECT
-                    {user.ids},
-                    {chat_ids},
-                    {my_ids},
-                    data.rank,
-                    {sms_ids}
-                FROM data
-                WHERE data.rank > data.target_rank
-                    AND data.rank <= data.my_rank
-                ON CONFLICT (user_ids, chat_ids)
-                DO UPDATE SET
-                    rank = EXCLUDED.rank,
-                    peer_ids = EXCLUDED.peer_ids,
-                    sms_ids = EXCLUDED.sms_ids,
-                    added = EXTRACT(EPOCH FROM NOW())::bigint
-                RETURNING rank
-            )
-            SELECT COALESCE((SELECT rank FROM result), 0)::smallint AS affected
+                            AND chat_ids = {chat_ids}
+                    ), 0) AS target_rank
+            ) AS r
+        ),
+        result AS (
+            INSERT INTO c4 (user_ids, chat_ids, peer_ids, rank, sms_ids)
+            SELECT {user.ids}, {chat_ids}, {my_ids}, rank, {sms_ids}
             FROM data
-            WHERE EXISTS (SELECT 1 FROM result)
-                OR data.rank <= data.my_rank;
-            "#
+            WHERE rank > target_rank
+                AND rank <= my_rank
+            ON CONFLICT (user_ids, chat_ids)
+            DO UPDATE SET
+                rank = EXCLUDED.rank,
+                peer_ids = EXCLUDED.peer_ids,
+                sms_ids = EXCLUDED.sms_ids,
+                added = EXTRACT(EPOCH FROM NOW())::bigint
+            RETURNING rank
+        )
+        SELECT COALESCE((SELECT rank FROM result), 0)::smallint AS affected
+        FROM data
+        WHERE rank <= my_rank
+        "#
         ))
         .await
     else {

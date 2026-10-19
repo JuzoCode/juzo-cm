@@ -322,36 +322,33 @@ pub async fn no(
             Postgres,
             r#"
             WITH target AS (
-                SELECT
-                    c8.rank,
-                    c8.moder_ids,
-                    coalesce(c4.rank, 0) AS my_rank
+                SELECT (
+                    moder_ids = {my_ids}
+                    OR rank <= COALESCE((
+                        SELECT rank FROM c4
+                        WHERE user_ids = {my_ids}
+                            AND chat_ids = {chat_ids}
+                    ), 0)
+                ) AS can
                 FROM c8
-                LEFT JOIN c4
-                ON c4.user_ids = {my_ids}
-                AND c4.chat_ids = {chat_ids}
-                WHERE c8.user_ids = {user.ids}
-                AND c8.chat_ids = {chat_ids}
-                AND c8.is_ban
+                WHERE user_ids = {user.ids}
+                    AND chat_ids = {chat_ids}
+                    AND is_ban
             ),
             deleted AS (
                 DELETE FROM c8
-                USING target
-                WHERE c8.user_ids = {user.ids}
-                AND c8.chat_ids = {chat_ids}
-                AND c8.is_ban
-                AND (
-                    target.moder_ids = {my_ids}
-                    OR target.rank <= target.my_rank
-                )
+                WHERE user_ids = {user.ids}
+                    AND chat_ids = {chat_ids}
+                    AND is_ban
+                    AND (SELECT can FROM target)
                 RETURNING 1
             )
             SELECT CASE
                 WHEN EXISTS (SELECT 1 FROM deleted) THEN 1
                 WHEN EXISTS (SELECT 1 FROM target) THEN 0
                 ELSE 2
-            END AS affected;
-            "#
+            END AS affected
+        "#
         ))
         .await
     else {

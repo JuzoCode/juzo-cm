@@ -41,6 +41,7 @@ pub async fn yes(
     let model = setting::ActiveModel {
         user_ids: Set(iam.ids.into()),
         contact_chat: Set(chat.ids.into()),
+        ..Default::default()
     };
 
     let _ = UserSetting::insert(model)
@@ -90,6 +91,7 @@ pub async fn no(
     let model = setting::ActiveModel {
         user_ids: Set(my_ids.into()),
         contact_chat: Set(0.into()),
+        ..Default::default()
     };
 
     let _ = UserSetting::insert(model)

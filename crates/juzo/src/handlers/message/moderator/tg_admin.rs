@@ -86,17 +86,8 @@ pub async fn add(
         return Ok(());
     };
 
-    // match juzo.add_tg_admin(user_id).await {
-    //     Ok(_) => {
-    //         let _ = juzo.bot.set_chat_administrator_custom_title(
-    //             juzo.message.chat.id, user_id, custom_title,
-    //         ).await?;
-    //     },
-    //     Err(_) => return
-    // }
-
     bot.send(JuzoAnswer::message(&message).text(format!(
-        "{0} <a href='{1}'>{2}</a> успешно назначен тг-администратором<a \
+        "{0} <a href='{1}'>{2}</a> успешно не назначен тг-администратором<a \
          href='tg://user?id={3}'>\u{2069}</a>",
         smail_tick(true),
         user.link(),

@@ -142,10 +142,7 @@ async fn show_core(
             r#"
             SELECT
                 user_ids,
-                CASE
-                    WHEN user_ids = {my_ids} THEN true
-                    ELSE show
-                END AS show,
+                (user_ids = {my_ids} OR show) AS show,
                 asterisks,
                 coins,
                 sweets,
@@ -155,12 +152,13 @@ async fn show_core(
                 END AS score,
                 gold
             FROM u2
-            WHERE user_ids = {user.ids};
+            WHERE user_ids = {user.ids}
             "#
         ))
         .one(&db)
         .await
-        .unwrap()
+        .ok()
+        .flatten()
         .unwrap_or_else(|| balance::Model::new(user.ids));
 
     if !balance.show {
