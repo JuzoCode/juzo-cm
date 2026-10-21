@@ -79,6 +79,17 @@ pub async fn edit(
         .iter()
         .find_map(|&(name, gender)| (name == &*out).then_some(gender))
     else {
+        bot.send(JuzoAnswer::<SendRichMessage>::to(&message).rich_message(
+            InputRichMessage::new().html(format!(
+                "{0} Увы, выбора всего два — <tg-button type='copy_text' text='.мой пол мужской' \
+                 style='primary'>мужской</tg-button> и <tg-button type='copy_text' text='.мой пол \
+                 женский' style='danger'>женский</tg-button>. Не определились? Берите <tg-button \
+                 type='copy_text' text='.мой пол другой' style='success'>другой</tg-button>, \
+                 почти как ламинат.",
+                smail_pensil(true),
+            )),
+        ))
+        .await?;
         return Ok(());
     };
 
