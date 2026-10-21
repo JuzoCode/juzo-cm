@@ -297,6 +297,7 @@ async fn edit_show_core(
         };
     }
 
+    // SAFETY: TBA will never return None in message.from().
     let iam: UserModel = unsafe {
         message
             .from()

@@ -18,6 +18,7 @@ pub fn routers() -> Router {
     Router::new("router USER connect")
         .on_message(|observer| {
             observer.registers([
+                Handler::new(gender::edit).filter(Command::many(&["мой пол", "+пол"]).no_prefix()),
                 Handler::new(bag::edit_show_false).filter(Command::one("-мешок").no_prefix()),
                 Handler::new(bag::edit_show_true).filter(Command::one("+мешок").no_prefix()),
                 Handler::new(anketa::edit_show_false).filter(Command::one("-анкета").no_prefix()),

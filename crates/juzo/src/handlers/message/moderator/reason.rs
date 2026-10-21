@@ -11,7 +11,10 @@ use juzo_core::{
     domain::{AttachResult, TimeFormatted},
 };
 use sea_orm::{EntityTrait, FromQueryResult, QuerySelect, raw_sql};
-use telers::{methods::{SendMessage, SendRichMessage}, types::InputRichMessage};
+use telers::{
+    methods::{SendMessage, SendRichMessage},
+    types::InputRichMessage,
+};
 
 use super::super::*;
 
