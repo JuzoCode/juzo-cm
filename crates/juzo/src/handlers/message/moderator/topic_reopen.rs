@@ -1,5 +1,5 @@
 use juzo_core::common::emojis::smail_pensil;
-use telers::methods::{ReopenForumTopic, ReopenGeneralForumTopic};
+use telers::methods::{ReopenForumTopic, ReopenGeneralForumTopic, SendMessage};
 
 use super::super::*;
 
@@ -22,7 +22,7 @@ pub async fn set(
     };
 
     let Some(true) = message.chat().is_forum() else {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Открывать тему можно только в чате с включенными темами.",
             smail_pensil(true)
         )))

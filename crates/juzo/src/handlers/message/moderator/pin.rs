@@ -1,5 +1,5 @@
 use juzo_core::common::emojis::smail_cross;
-use telers::methods::{PinChatMessage, UnpinChatMessage};
+use telers::methods::{PinChatMessage, SendMessage, UnpinChatMessage};
 
 use super::super::*;
 
@@ -102,7 +102,8 @@ pub async fn no(
     .await?;
 
     bot.send(
-        JuzoAnswer::message(&message).text(format!("{0} Сообщение открепленно", smail_cross(true))),
+        JuzoAnswer::<SendMessage>::to(&message)
+            .text(format!("{0} Сообщение открепленно", smail_cross(true))),
     )
     .await?;
 

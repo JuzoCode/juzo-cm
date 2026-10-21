@@ -7,7 +7,7 @@ use juzo_core::{
     },
 };
 use sea_orm::{ConnectionTrait, EntityTrait, QuerySelect, raw_sql};
-use telers::types::ReplyParameters;
+use telers::{methods::SendMessage, types::ReplyParameters};
 
 use super::super::*;
 
@@ -81,7 +81,7 @@ pub async fn add(
         .nth(128)
         .is_some()
     {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Длина текста превышает 128 символов.",
             smail_pensil(true)
         )))
@@ -112,7 +112,7 @@ pub async fn add(
         ))
         .await;
 
-    bot.send(JuzoAnswer::message(&message).text(format!(
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
         "{0} <a href='{1}'>{2}</a> занесён в «Juzo | Scam System»",
         smail_tick(true),
         user.link(),
@@ -192,7 +192,7 @@ pub async fn delete(
 
     match res {
         Ok(r) if r.rows_affected > 0 => {
-            bot.send(JuzoAnswer::message(&message).text(format!(
+            bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
                 "{0} <a href='{1}'>{2}</a> вынесен из «Juzo | Scam System»",
                 smail_tick(true),
                 user.link(),
@@ -202,7 +202,7 @@ pub async fn delete(
 
             let _ = bot
                 .send(
-                    JuzoAnswer::message(&message)
+                    JuzoAnswer::<SendMessage>::to(&message)
                         .text("🗓 Вас вынесли из «Juzo | Scam System».\n<b>Впредь больше не нарушайте</b>, лучше почитайте моё <a href='https://teletype.in/@juzo_cm/EULA'>пользовательское соглашение</a> =)")
                         .chat_id(user.ids.0)
                         .business_connection_id_option::<&str>(None)
@@ -211,7 +211,7 @@ pub async fn delete(
                 .await;
         }
         _ => {
-            bot.send(JuzoAnswer::message(&message).text(format!(
+            bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
                 "{0} <a href='{1}'>{2}</a> не находится в базе скама.",
                 smail_pensil(true),
                 user.link(),

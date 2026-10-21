@@ -2,6 +2,7 @@ use juzo_core::{
     application::{UserIndex, UserModel},
     common::emojis::smail_tick,
 };
+use telers::methods::SendMessage;
 
 use super::super::*;
 
@@ -70,7 +71,7 @@ pub async fn show(
     let bare_ids = user.ids.0;
 
     if bare_ids < 0 {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} <a href='{1}'>{2}</a>: <code>@_{3}</code>",
             smail_tick(true),
             user.link(),
@@ -79,7 +80,7 @@ pub async fn show(
         )))
         .await?;
     } else {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} <a href='{1}'>{2}</a>: <code>@{3}</code>",
             smail_tick(true),
             user.link(),

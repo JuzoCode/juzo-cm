@@ -3,7 +3,7 @@ use core::fmt::Write;
 use juzo_core::{application::FullName, common::validation::is_premium_id};
 use sea_orm::{ConnectionTrait, raw_sql};
 use telers::{
-    methods::GetMe,
+    methods::{GetMe, SendMessage},
     types::{Chat, InlineKeyboardButton, InlineKeyboardMarkup, User},
 };
 
@@ -98,7 +98,7 @@ pub async fn yes(
     )]]);
 
     bot.send(
-        JuzoAnswer::message(&message)
+        JuzoAnswer::<SendMessage>::to(&message)
             .text(text)
             .reply_markup(keyboard),
     )
@@ -192,7 +192,7 @@ pub async fn help(
     ]);
 
     bot.send(
-        JuzoAnswer::message(&message)
+        JuzoAnswer::<SendMessage>::to(&message)
             .text(text)
             .reply_markup(keyboard),
     )

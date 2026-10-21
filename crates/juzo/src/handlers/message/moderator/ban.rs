@@ -12,7 +12,7 @@ use juzo_core::{
 };
 use sea_orm::{ConnectionTrait, raw_sql};
 use telers::{
-    methods::{BanChatMember, BanChatSenderChat, GetChatMember, UnbanChatMember},
+    methods::{BanChatMember, BanChatSenderChat, GetChatMember, SendMessage, UnbanChatMember},
     types::{ChatMemberLeft, User},
 };
 
@@ -106,7 +106,7 @@ pub async fn yes(
         .nth(128)
         .is_some()
     {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Длина текста превышает 128 символов.",
             smail_pensil(true)
         )))
@@ -130,7 +130,7 @@ pub async fn yes(
     let until = delta.timestamp();
 
     if until == 1 {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Уберите дубликаты периода бана, тогда мы сможем исполнить мечту <a \
              href='{1}'>{2}</a>.",
             smail_pensil(true),
@@ -197,7 +197,7 @@ pub async fn yes(
         ))
         .await
     else {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Ваш ранг либо недостаточен, либо его вовсе не хватает.",
             smail_pensil(true)
         )))
@@ -245,7 +245,7 @@ pub async fn yes(
 
     text.push_str("</blockquote>");
 
-    bot.send(JuzoAnswer::message(&message).text(text))
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(text))
         .await?;
 
     Ok(())
@@ -360,7 +360,7 @@ pub async fn no(
         .unwrap_or(0);
 
     if affected == 0 {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Чтобы разбанить <a href='{1}'>{2}</a>, вашего ранга не хватает.",
             smail_pensil(true),
             user.link(),
@@ -375,7 +375,7 @@ pub async fn no(
             bot.send(UnbanChatMember::new(chat_ids, user.ids.0).only_if_banned(true))
                 .await?;
 
-            bot.send(JuzoAnswer::message(&message).text(format!(
+            bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
                 "{0} <a href='{1}'>{2}</a> разбанен. Теперь можно добавить его в чат или <b>снова \
                  забанить</b> =)",
                 smail_tick(true),
@@ -385,7 +385,7 @@ pub async fn no(
             .await?;
         }
         (1, true) => {
-            bot.send(JuzoAnswer::message(&message).text(format!(
+            bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
                 "🗓 <a href='{0}'>{1}</a> исключён из бан-листа, но уже находится в чате",
                 user.link(),
                 user.full_name(),
@@ -393,7 +393,7 @@ pub async fn no(
             .await?;
         }
         (_, true) => {
-            bot.send(JuzoAnswer::message(&message).text(format!(
+            bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
                 "{0} <a href='{1}'>{2}</a> не забанен и уже находится в чате.",
                 smail_pensil(true),
                 user.link(),
@@ -405,7 +405,7 @@ pub async fn no(
             bot.send(UnbanChatMember::new(chat_ids, user.ids.0).only_if_banned(true))
                 .await?;
 
-            bot.send(JuzoAnswer::message(&message).text(format!(
+            bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
                 "{0} <a href='{1}'>{2}</a> не забанен.\n<blockquote>Но было выполнено вынесение \
                  из черного списка в Телеграм</blockquote>",
                 smail_pensil(true),

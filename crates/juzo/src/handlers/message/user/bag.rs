@@ -18,6 +18,7 @@ use sea_orm::{
     EntityTrait, Set, raw_sql,
     sea_query::{OnConflict, prelude::rust_decimal::prelude::ToPrimitive},
 };
+use telers::methods::SendMessage;
 
 use super::super::*;
 
@@ -104,7 +105,7 @@ async fn show_core(
     }
 
     if !user.is_user {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} <b><a href='{1}'>{2}</a></b> скрыл мешок.<blockquote>Заслужите его милость, и \
              тогда <b>просите открыть его!</b> =)</blockquote>",
             smail_pensil(true),
@@ -125,7 +126,7 @@ async fn show_core(
 
     let chat_ids = if ls && is_chat {
         let _ = bot
-            .send(JuzoAnswer::message(&message).text(format!(
+            .send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
                 "{0} Мешок отправлен в <a href='https://t.me/juzo_cm_bot'>личные сообщения</a> \
                  Джузо",
                 smail_bag(true)
@@ -164,7 +165,7 @@ async fn show_core(
     if !balance.show {
         let (g1, g2) = gender!(user.gender => [("a", "ё"), ("", "го")]);
 
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} <b><a href='{1}'>{2}</a></b> скрыл{g1} мешок.<blockquote>Заслужите е{g2} \
              милость, и тогда <b>просите открыть его!</b> =)</blockquote>",
             smail_pensil(true),
@@ -256,7 +257,7 @@ async fn show_core(
     }
 
     bot.send(
-        JuzoAnswer::message(&message)
+        JuzoAnswer::<SendMessage>::to(&message)
             .text(text)
             .chat_id(chat_ids),
     )
@@ -356,14 +357,14 @@ async fn edit_show_core(
         .await;
 
     if show {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Теперь <a href='{1}'>ваш</a> мешок открыт",
             smail_tick(true),
             iam.link()
         )))
         .await?;
     } else {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Теперь <a href='{1}'>ваш</a> мешок закрыт",
             smail_cross(true),
             iam.link()

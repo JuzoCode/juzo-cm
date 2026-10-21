@@ -3,6 +3,7 @@ use juzo_core::{
     common::emojis::{smail_pensil, smail_tick},
 };
 use sea_orm::{ConnectionTrait, raw_sql};
+use telers::methods::SendMessage;
 
 use super::super::*;
 
@@ -61,7 +62,7 @@ async fn add_core(
     };
 
     if value <= 0 {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Такого модуля не будет существовать.",
             smail_pensil(true)
         )))
@@ -130,7 +131,7 @@ async fn add_core(
         .unwrap_or(false);
 
     if !inserted {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Нашёлся конфликтный модуль.",
             smail_pensil(true)
         )))
@@ -144,7 +145,7 @@ async fn add_core(
         "Модуль"
     };
 
-    bot.send(JuzoAnswer::message(&message).text(format!(
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
         "{0} {status} «<code>{comment}</code>» (<code>{value}</code>; {show}) теперь доступен с \
          {rank} ранга",
         smail_tick(true)

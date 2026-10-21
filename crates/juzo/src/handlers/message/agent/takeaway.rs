@@ -7,7 +7,7 @@ use juzo_core::{
     db::agent::{BlockFunc, agent, prelude::Agent},
 };
 use sea_orm::{ConnectionTrait, EntityTrait, QuerySelect, raw_sql};
-use telers::types::ReplyParameters;
+use telers::{methods::SendMessage, types::ReplyParameters};
 
 use super::super::*;
 
@@ -137,7 +137,7 @@ async fn delete_core(
     };
 
     if affected == 0 {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Нет ни одной пометки «{f}» для удаления.",
             smail_pensil(true)
         )))
@@ -145,7 +145,7 @@ async fn delete_core(
         return Ok(());
     }
 
-    bot.send(JuzoAnswer::message(&message).text(format!(
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
         "{0} У <a href='{1}'>{2}</a> {3} {4} «{f}»",
         smail_tick(true),
         user.link(),
@@ -157,7 +157,7 @@ async fn delete_core(
 
     let _ = bot
         .send(
-            JuzoAnswer::message(&message)
+            JuzoAnswer::<SendMessage>::to(&message)
                 .text(format!("🗓 Вам удалили {0} «{f}»", plur_mark_y(affected)))
                 .chat_id(user.ids.0)
                 .business_connection_id_option::<&str>(None)

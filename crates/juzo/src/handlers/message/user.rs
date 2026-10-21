@@ -7,6 +7,7 @@ mod bonus;
 mod chat_attach;
 mod convey;
 mod description;
+mod gender;
 mod start;
 mod test;
 #[cfg(debug_assertions)]

@@ -3,6 +3,7 @@ use juzo_core::{
     db::agent::{agent, prelude::Agent},
 };
 use sea_orm::{EntityTrait, QuerySelect};
+use telers::methods::SendMessage;
 
 use super::super::*;
 
@@ -48,8 +49,10 @@ pub async fn edit(
     let ru = &text[a1];
     let eng = &text[a2];
 
-    bot.send(JuzoAnswer::message(&message).text(format!("{0} {ru} {eng}", smail_tick(true))))
-        .await?;
+    bot.send(
+        JuzoAnswer::<SendMessage>::to(&message).text(format!("{0} {ru} {eng}", smail_tick(true))),
+    )
+    .await?;
 
     Ok(())
 }

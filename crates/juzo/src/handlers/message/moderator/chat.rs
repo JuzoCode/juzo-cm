@@ -11,7 +11,7 @@ use juzo_core::{
 };
 use sea_orm::{ConnectionTrait, EntityTrait, QuerySelect, raw_sql, sea_query::Expr};
 use telers::{
-    methods::GetChat,
+    methods::{GetChat, SendMessage},
     types::{Chat, ChatFullInfo, ChatFullInfoSupergroup},
 };
 
@@ -49,7 +49,7 @@ pub async fn bag(
         .flatten()
         .unwrap_or_default();
 
-    bot.send(JuzoAnswer::message(&message).text(format!(
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
         "{0} В кубышке чата сейчас лежит {1}",
         smail_sweets(true),
         plur_sweets(sweets)
@@ -78,7 +78,7 @@ pub async fn show_ids(
     };
 
     bot.send(
-        JuzoAnswer::message(&message)
+        JuzoAnswer::<SendMessage>::to(&message)
             .text(format!("🗓 ID чата: <code>{0}</code>", message.chat().id())),
     )
     .await?;
@@ -150,7 +150,7 @@ pub async fn update(
         ))
         .await
     else {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Чат не был обновлён, но некоторые данные будут перекэшированы.",
             smail_pensil(true)
         )))
@@ -158,8 +158,10 @@ pub async fn update(
         return Ok(());
     };
 
-    bot.send(JuzoAnswer::message(&message).text(format!("{0} Чат обновлён", smail_tick(true))))
-        .await?;
+    bot.send(
+        JuzoAnswer::<SendMessage>::to(&message).text(format!("{0} Чат обновлён", smail_tick(true))),
+    )
+    .await?;
 
     Ok(())
 }

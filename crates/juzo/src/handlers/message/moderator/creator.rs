@@ -4,7 +4,10 @@ use juzo_core::{
     gender,
 };
 use sea_orm::{ConnectionTrait, raw_sql};
-use telers::{methods::GetChatAdministrators, types::ChatMember};
+use telers::{
+    methods::{GetChatAdministrators, SendMessage},
+    types::ChatMember,
+};
 
 use super::super::*;
 
@@ -73,7 +76,7 @@ pub async fn repair(
                 _ => None,
             })
         else {
-            bot.send(JuzoAnswer::message(&message).text(format!(
+            bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
                 "{0} Трон стоит, царя не видно.",
                 smail_pensil(true)
             )))
@@ -113,7 +116,7 @@ pub async fn repair(
 
         let g1 = gender!(gender => ["ьницей", "ем"]);
 
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Ого, вижу, амбиции у вас что надо. Но увы, <b>создател{g1} чата является <a \
              href='{1}'>{2}</a></b>.",
             smail_pensil(true),
@@ -154,7 +157,7 @@ pub async fn repair(
 
     let g1 = gender!(gender => ["ьнице", "ю"]);
 
-    bot.send(JuzoAnswer::message(&message).text(format!(
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
         "{0} Основател{g1} чата возвращены права владения",
         smail_tick(true)
     )))

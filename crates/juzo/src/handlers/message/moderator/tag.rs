@@ -2,7 +2,7 @@ use juzo_core::{
     application::{ParseTgLink, UserIndex, UserModel},
     common::emojis::{smail_cross, smail_tick},
 };
-use telers::methods::SetChatMemberTag;
+use telers::methods::{SendMessage, SetChatMemberTag};
 
 use super::super::*;
 
@@ -76,7 +76,7 @@ pub async fn add(
     bot.send(SetChatMemberTag::new(message.chat().id(), user.ids).tag(tag))
         .await?;
 
-    bot.send(JuzoAnswer::message(&message).text(format!(
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
         "{0} Тег <a href='{1}'>{2}</a> изменён",
         smail_tick(true),
         user.link(),
@@ -138,7 +138,7 @@ pub async fn delete(
     bot.send(SetChatMemberTag::new(message.chat().id(), user.ids))
         .await?;
 
-    bot.send(JuzoAnswer::message(&message).text(format!(
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
         "{0} Тег <a href='{1}'>{2}</a> удалён",
         smail_cross(true),
         user.link(),

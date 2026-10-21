@@ -5,7 +5,7 @@ use juzo_core::{
     middlewares::outer::IgnoreSystem,
 };
 use sea_orm::{ConnectionTrait, EntityTrait, QuerySelect, raw_sql};
-use telers::types::ReplyParameters;
+use telers::{methods::SendMessage, types::ReplyParameters};
 
 use super::super::*;
 
@@ -79,7 +79,7 @@ pub async fn add(
         .nth(128)
         .is_some()
     {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Длина текста превышает 128 символов.",
             smail_pensil(true)
         )))
@@ -112,7 +112,7 @@ pub async fn add(
 
     IgnoreSystem::edit(user.ids, true);
 
-    bot.send(JuzoAnswer::message(&message).text(format!(
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
         "{0} <a href='{1}'>{2}</a> занесён в «Juzo | Ignore System»",
         smail_tick(true),
         user.link(),
@@ -224,7 +224,7 @@ async fn delete_core(
                 ))
                 .await;
 
-            bot.send(JuzoAnswer::message(&message).text(format!(
+            bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
                 "{0} <a href='{1}'>{2}</a> вынесен из «Juzo | Ignore System»",
                 smail_tick(true),
                 user.link(),
@@ -234,7 +234,7 @@ async fn delete_core(
 
             let _ = bot
                 .send(
-                    JuzoAnswer::message(&message)
+                    JuzoAnswer::<SendMessage>::to(&message)
                         .text("🗓 Вас вынесли из «Juzo | Ignore System».\n<b>Впредь больше не нарушайте</b>, лучше почитайте моё <a href='https://teletype.in/@juzo_cm/EULA'>пользовательское соглашение</a> =)")
                         .chat_id(user.ids.0)
                         .business_connection_id_option::<&str>(None)
@@ -245,7 +245,7 @@ async fn delete_core(
         Ok(Some(_)) => {
             IgnoreSystem::edit(user.ids, false);
 
-            bot.send(JuzoAnswer::message(&message).text(format!(
+            bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
                 "{0} <a href='{1}'>{2}</a> вынесен из «Juzo | Ignore System» без пометки о выносе",
                 smail_tick(true),
                 user.link(),
@@ -255,7 +255,7 @@ async fn delete_core(
 
             let _ = bot
                 .send(
-                    JuzoAnswer::message(&message)
+                    JuzoAnswer::<SendMessage>::to(&message)
                         .text("🗓 Вас вынесли из «Juzo | Ignore System» без пометки о выносе")
                         .chat_id(user.ids.0)
                         .business_connection_id_option::<&str>(None)
@@ -264,7 +264,7 @@ async fn delete_core(
                 .await;
         }
         _ => {
-            bot.send(JuzoAnswer::message(&message).text(format!(
+            bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
                 "{0} <a href='{1}'>{2}</a> не находится в базе игнора.",
                 smail_pensil(true),
                 user.link(),

@@ -1,5 +1,5 @@
 use juzo_core::common::emojis::smail_pensil;
-use telers::methods::SetChatTitle;
+use telers::methods::{SendMessage, SetChatTitle};
 
 use super::super::*;
 
@@ -34,7 +34,7 @@ pub async fn set(
         .nth(128)
         .is_some()
     {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Название чата превышает допустимый лимит в 128 символов.",
             smail_pensil(true)
         )))

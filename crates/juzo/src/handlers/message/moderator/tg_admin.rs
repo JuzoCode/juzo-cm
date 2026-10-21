@@ -2,7 +2,7 @@ use juzo_core::{
     application::{ParseTgLink, UserIndex, UserModel},
     common::emojis::smail_tick,
 };
-use telers::methods::PromoteChatMember;
+use telers::methods::{PromoteChatMember, SendMessage};
 
 use super::super::*;
 
@@ -86,7 +86,7 @@ pub async fn add(
         return Ok(());
     };
 
-    bot.send(JuzoAnswer::message(&message).text(format!(
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
         "{0} <a href='{1}'>{2}</a> успешно не назначен тг-администратором<a \
          href='tg://user?id={3}'>\u{2069}</a>",
         smail_tick(true),
@@ -150,7 +150,7 @@ pub async fn delete(
     bot.send(PromoteChatMember::new(message.chat().id(), user.ids).can_manage_chat(false))
         .await?;
 
-    bot.send(JuzoAnswer::message(&message).text(format!(
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
         "{0} <a href='{1}'>{2}</a> исключён из тг-администраторов",
         smail_tick(true),
         user.link(),

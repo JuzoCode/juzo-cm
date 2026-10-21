@@ -9,6 +9,7 @@ use juzo_core::{
     gender,
 };
 use sea_orm::{ConnectionTrait, EntityTrait, QuerySelect, Set, raw_sql, sea_query::OnConflict};
+use telers::methods::SendMessage;
 
 use super::super::*;
 
@@ -100,7 +101,7 @@ pub async fn show(
         ))
         .await
     else {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} О данном пользователе ни слуху, ни духу.",
             smail_pensil(true)
         )))
@@ -122,7 +123,7 @@ pub async fn show(
     };
 
     if !show {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Анкета же скрыта от незрелых глазок.",
             smail_pensil(true)
         )))
@@ -168,7 +169,7 @@ pub async fn show(
         let _ = write!(text, "\n{g1} <b>Пол:</b> {g2}");
     }
 
-    bot.send(JuzoAnswer::message(&message).text(text))
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(text))
         .await?;
 
     Ok(())
@@ -265,7 +266,7 @@ pub async fn first_appearance(
         )
     };
 
-    bot.send(JuzoAnswer::message(&message).text(text))
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(text))
         .await?;
 
     Ok(())
@@ -320,14 +321,14 @@ async fn edit_show_core(
         .await;
 
     if show {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Теперь <a href='{1}'>ваша</a> анкета видна",
             smail_tick(true),
             iam.link()
         )))
         .await?;
     } else {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Теперь <a href='{1}'>ваша</a> анкета скрыта",
             smail_cross(true),
             iam.link()

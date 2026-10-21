@@ -1,5 +1,5 @@
 use juzo_core::common::emojis::smail_pensil;
-use telers::methods::{CloseForumTopic, CloseGeneralForumTopic};
+use telers::methods::{CloseForumTopic, CloseGeneralForumTopic, SendMessage};
 
 use super::super::*;
 
@@ -22,7 +22,7 @@ pub async fn set(
     };
 
     let Some(true) = message.chat().is_forum() else {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Закрыть тему можно только в чате с включенными темами.",
             smail_pensil(true)
         )))

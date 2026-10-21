@@ -5,7 +5,7 @@ use juzo_core::{
     middlewares::outer::IgnoreSystem,
 };
 use sea_orm::{ConnectionTrait, EntityTrait, QuerySelect, raw_sql};
-use telers::types::ReplyParameters;
+use telers::{methods::SendMessage, types::ReplyParameters};
 
 use super::super::*;
 
@@ -102,7 +102,7 @@ pub async fn add(
         .nth(128)
         .is_some()
     {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Длина текста превышает 128 символов.",
             smail_pensil(true)
         )))
@@ -183,7 +183,7 @@ pub async fn add(
         text.push_str("<b>, а также в скам-базу</b>");
     }
 
-    bot.send(JuzoAnswer::message(&message).text(text))
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(text))
         .await?;
 
     Ok(())
@@ -288,7 +288,7 @@ async fn delete_core(
                 ))
                 .await;
 
-            bot.send(JuzoAnswer::message(&message).text(format!(
+            bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
                 "{0} <a href='{1}'>{2}</a> вынесен из «Juzo | Anti-Spam»",
                 smail_tick(true),
                 user.link(),
@@ -298,7 +298,7 @@ async fn delete_core(
 
             let _ = bot
                 .send(
-                    JuzoAnswer::message(&message)
+                    JuzoAnswer::<SendMessage>::to(&message)
                         .text("🗓 Вас вынесли из «Juzo | Anti-Spam».\n<b>Впредь больше не нарушайте</b>, лучше почитайте моё <a href='https://teletype.in/@juzo_cm/EULA'>пользовательское соглашение</a> =)")
                         .chat_id(user.ids.0)
                         .business_connection_id_option::<&str>(None)
@@ -307,7 +307,7 @@ async fn delete_core(
                 .await;
         }
         Ok(Some(_)) => {
-            bot.send(JuzoAnswer::message(&message).text(format!(
+            bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
                 "{0} <a href='{1}'>{2}</a> вынесен из «Juzo | Anti-Spam» без пометки о выносе",
                 smail_tick(true),
                 user.link(),
@@ -317,7 +317,7 @@ async fn delete_core(
 
             let _ = bot
                 .send(
-                    JuzoAnswer::message(&message)
+                    JuzoAnswer::<SendMessage>::to(&message)
                         .text("🗓 Вас вынесли из «Juzo | Anti-Spam» без пометки о выносе")
                         .chat_id(user.ids.0)
                         .business_connection_id_option::<&str>(None)
@@ -326,7 +326,7 @@ async fn delete_core(
                 .await;
         }
         _ => {
-            bot.send(JuzoAnswer::message(&message).text(format!(
+            bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
                 "{0} <a href='{1}'>{2}</a> не находится в базе спама.",
                 smail_pensil(true),
                 user.link(),

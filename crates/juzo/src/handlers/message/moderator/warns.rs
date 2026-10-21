@@ -7,6 +7,7 @@ use juzo_core::{
     domain::TimeFormatted,
 };
 use sea_orm::{ConnectionTrait, raw_sql};
+use telers::methods::SendMessage;
 
 use super::super::*;
 
@@ -93,7 +94,7 @@ pub async fn add(
         .nth(64)
         .is_some()
     {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Длина текста превышает 64 символов.",
             smail_pensil(true)
         )))
@@ -115,7 +116,7 @@ pub async fn add(
     let until = delta.timestamp();
 
     if until == 1 {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Уберите дубликаты периода варна, тогда мы сможем исполнить мечту <a \
              href='{1}'>{2}</a>.",
             smail_pensil(true),
@@ -182,7 +183,7 @@ pub async fn add(
         ))
         .await
     else {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Ваш ранг либо недостаточен, либо его вовсе не хватает.",
             smail_pensil(true)
         )))
@@ -216,7 +217,7 @@ pub async fn add(
 
     text.push_str("</blockquote>");
 
-    bot.send(JuzoAnswer::message(&message).text("meow"))
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text("meow"))
         .await?;
 
     Ok(())
@@ -360,7 +361,7 @@ pub async fn delete(
         .unwrap_or(0);
 
     if affected == 0 {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} У <a href='{1}'>{2}</a> нету предупреждений.",
             smail_pensil(true),
             user.link(),
@@ -370,7 +371,7 @@ pub async fn delete(
         return Ok(());
     }
 
-    // bot.send(JuzoAnswer::message(&message).text(format!("<a href='{1}'>{2}</a> ")))
+    // bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!("<a href='{1}'>{2}</a> ")))
     //     .await?;
 
     Ok(())

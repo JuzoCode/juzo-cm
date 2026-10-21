@@ -9,7 +9,7 @@ use juzo_core::{
     gender,
 };
 use sea_orm::{ConnectionTrait, raw_sql};
-use telers::types::ReplyParameters;
+use telers::{methods::SendMessage, types::ReplyParameters};
 
 use super::super::*;
 
@@ -94,7 +94,7 @@ pub async fn sweets(
     };
 
     if user.ids == iam.ids || value > 999_999_999 {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} <b>Перевод получился неудачным.</b> Не бойтесь, ваши {1} в безопасности =)",
             smail_warning(true),
             holiday_choice(&"леденцы", &"мандаринки", &"тыковки")
@@ -104,7 +104,7 @@ pub async fn sweets(
     }
 
     if !user.is_user {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} {1} передаются только избранным.",
             smail_pensil(true),
             holiday_choice(&"Леденцы", &"Мандаринки", &"Тыковки")
@@ -112,7 +112,7 @@ pub async fn sweets(
         .await?;
         return Ok(());
     } else if value == 0 {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Даже ваш мешок знает, что ноль — это не перевод.",
             smail_pensil(true)
         )))
@@ -123,7 +123,7 @@ pub async fn sweets(
         .nth(128)
         .is_some()
     {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Длина текста превышает 128 символов.",
             smail_pensil(true)
         )))
@@ -190,7 +190,7 @@ pub async fn sweets(
         ))
         .await
     else {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} <b>Перевод получился неудачным.</b> Не бойтесь, ваши {1} в безопасности =)",
             smail_warning(true),
             holiday_choice(&"леденцы", &"мандаринки", &"тыковки")
@@ -204,7 +204,7 @@ pub async fn sweets(
         .unwrap_or(false);
 
     if !affected {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Ваш мешок не согласен с таким переводом.",
             smail_pensil(true),
         )))
@@ -244,12 +244,12 @@ pub async fn sweets(
 
     text_send.push_str("</blockquote>");
 
-    bot.send(JuzoAnswer::message(&message).text(text))
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(text))
         .await?;
 
     let _ = bot
         .send(
-            JuzoAnswer::message(&message)
+            JuzoAnswer::<SendMessage>::to(&message)
                 .text(text_send)
                 .chat_id(user.ids.0)
                 .business_connection_id_option::<&str>(None)
@@ -340,7 +340,7 @@ pub async fn gold(
     };
 
     if user.ids == iam.ids {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} <b>Перевод получился неудачным.</b> Не бойтесь, ваши золотые леденцы в \
              безопасности =)",
             smail_warning(true)
@@ -350,14 +350,14 @@ pub async fn gold(
     }
 
     if !user.is_user {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Золотые леденцы передаются только избранным.",
             smail_pensil(true),
         )))
         .await?;
         return Ok(());
     } else if value == 0 {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Даже ваш мешок знает, что ноль — это не перевод.",
             smail_pensil(true),
         )))
@@ -368,7 +368,7 @@ pub async fn gold(
         .nth(128)
         .is_some()
     {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Длина текста превышает 128 символов.",
             smail_pensil(true)
         )))
@@ -435,7 +435,7 @@ pub async fn gold(
         ))
         .await
     else {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} <b>Перевод получился неудачным.</b> Не бойтесь, ваши золотые леденцы в \
              безопасности =)",
             smail_warning(true)
@@ -449,7 +449,7 @@ pub async fn gold(
         .unwrap_or(false);
 
     if !affected {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Ваш мешок не согласен с таким переводом.",
             smail_pensil(true),
         )))
@@ -490,12 +490,12 @@ pub async fn gold(
 
     text_send.push_str("</blockquote>");
 
-    bot.send(JuzoAnswer::message(&message).text(text))
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(text))
         .await?;
 
     let _ = bot
         .send(
-            JuzoAnswer::message(&message)
+            JuzoAnswer::<SendMessage>::to(&message)
                 .text(text_send)
                 .chat_id(user.ids.0)
                 .business_connection_id_option::<&str>(None)
@@ -587,7 +587,7 @@ pub async fn score(
     };
 
     if user.ids == iam.ids {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} <b>Перевод получился неудачным.</b> Не бойтесь, ваши очки доната в безопасности \
              =)",
             smail_warning(true)
@@ -597,14 +597,14 @@ pub async fn score(
     }
 
     if !user.is_user {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Очки доната передаются только избранным.",
             smail_pensil(true),
         )))
         .await?;
         return Ok(());
     } else if value == 0 {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Даже ваш мешок знает, что ноль — это не перевод.",
             smail_pensil(true),
         )))
@@ -615,7 +615,7 @@ pub async fn score(
         .nth(128)
         .is_some()
     {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Длина текста превышает 128 символов.",
             smail_pensil(true)
         )))
@@ -682,7 +682,7 @@ pub async fn score(
         ))
         .await
     else {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} <b>Перевод получился неудачным.</b> Не бойтесь, ваши очки доната в безопасности \
              =)",
             smail_warning(true)
@@ -696,7 +696,7 @@ pub async fn score(
         .unwrap_or(false);
 
     if !affected {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Ваш мешок не согласен с таким переводом.",
             smail_pensil(true),
         )))
@@ -737,12 +737,12 @@ pub async fn score(
 
     text_send.push_str("</blockquote>");
 
-    bot.send(JuzoAnswer::message(&message).text(text))
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(text))
         .await?;
 
     let _ = bot
         .send(
-            JuzoAnswer::message(&message)
+            JuzoAnswer::<SendMessage>::to(&message)
                 .text(text_send)
                 .chat_id(user.ids.0)
                 .business_connection_id_option::<&str>(None)

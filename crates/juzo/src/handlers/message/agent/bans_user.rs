@@ -7,6 +7,7 @@ use juzo_core::{
     db::agent::{agent, prelude::Agent},
 };
 use sea_orm::{ConnectionTrait, EntityTrait, QuerySelect, raw_sql};
+use telers::methods::SendMessage;
 
 use super::super::*;
 
@@ -134,7 +135,7 @@ async fn show_core(
         .unwrap_or_default();
 
     if blocks.is_empty() && rows.is_empty() {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "<b>Баны <a href='{0}'>{1}</a>.</b>\n\n🗓 Абсолютно чист и <b>не имеет выносов</b> в \
              базах Джузо",
             user.link(),
@@ -246,7 +247,7 @@ async fn show_core(
         text.push_str("</blockquote>\n");
     }
 
-    bot.send(JuzoAnswer::message(&message).text(text))
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(text))
         .await?;
 
     Ok(())

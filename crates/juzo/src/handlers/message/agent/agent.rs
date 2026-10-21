@@ -6,7 +6,7 @@ use juzo_core::{
     gender,
 };
 use sea_orm::{EntityTrait, QuerySelect, Set, sea_query::OnConflict};
-use telers::types::ReplyParameters;
+use telers::{methods::SendMessage, types::ReplyParameters};
 
 use super::super::*;
 
@@ -93,7 +93,7 @@ pub async fn add(
 
     let (g1, g2, g3) = gender!(user.gender => [("ка", "а", "кой"), ("", "", "том")]);
 
-    bot.send(JuzoAnswer::message(&message).text(format!(
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
         "{0} Агент{g1} <a href='{1}'>{2}</a> назначен{g2}",
         smail_tick(true),
         user.link(),
@@ -103,7 +103,7 @@ pub async fn add(
 
     let _ = bot
         .send(
-            JuzoAnswer::message(&message)
+            JuzoAnswer::<SendMessage>::to(&message)
                 .text(format!(
                     "👨‍💻 Вы были назначены агент{g3} поддержки «Juzo | Чат-Менеджер»"
                 ))
@@ -195,7 +195,7 @@ pub async fn add_spam(
         .exec(&db)
         .await;
 
-    bot.send(JuzoAnswer::message(&message).text(format!(
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
         "{0} Агент антиспама <a href='{1}'>{2}</a> назначен",
         smail_tick(true),
         user.link(),
@@ -205,7 +205,7 @@ pub async fn add_spam(
 
     let _ = bot
         .send(
-            JuzoAnswer::message(&message)
+            JuzoAnswer::<SendMessage>::to(&message)
                 .text("👨‍💻 Вы были назначены агентом антиспама «Juzo | Чат-Менеджер»")
                 .chat_id(user.ids.0)
                 .business_connection_id_option::<&str>(None)
@@ -289,7 +289,7 @@ pub async fn add_main(
         .exec(&db)
         .await;
 
-    bot.send(JuzoAnswer::message(&message).text(format!(
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
         "{0} Гл. агент <a href='{1}'>{2}</a> назначен",
         smail_tick(true),
         user.link(),
@@ -299,7 +299,7 @@ pub async fn add_main(
 
     let _ = bot
         .send(
-            JuzoAnswer::message(&message)
+            JuzoAnswer::<SendMessage>::to(&message)
                 .text("👨‍💻 Вы были назначены главный агентом поддержки «Juzo | Чат-Менеджер»")
                 .chat_id(user.ids.0)
                 .business_connection_id_option::<&str>(None)
@@ -388,7 +388,7 @@ pub async fn delete(
         .exec(&db)
         .await;
 
-    bot.send(JuzoAnswer::message(&message).text(format!(
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
         "{0} Агент <a href='{1}'>{2}</a> разжалован",
         smail_tick(true),
         user.link(),
@@ -477,7 +477,7 @@ pub async fn delete_spam(
         .exec(&db)
         .await;
 
-    bot.send(JuzoAnswer::message(&message).text(format!(
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
         "{0} Агент антиспама <a href='{1}'>{2}</a> разжалован",
         smail_tick(true),
         user.link(),
@@ -561,7 +561,7 @@ pub async fn delete_main(
         .exec(&db)
         .await;
 
-    bot.send(JuzoAnswer::message(&message).text(format!(
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
         "{0} Гл. агент <a href='{1}'>{2}</a> разжалован",
         smail_tick(true),
         user.link(),
@@ -620,14 +620,14 @@ async fn edit_show_core(
         .await;
 
     if show {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} <a href='{1}'>Вы</a> включили свою видимость",
             smail_tick(true),
             iam.link()
         )))
         .await?;
     } else {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} <a href='{1}'>Вы</a> выключили свою видимость",
             smail_tick(true),
             iam.link()

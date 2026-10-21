@@ -1,5 +1,5 @@
 use juzo_core::common::emojis::smail_pensil;
-use telers::methods::{EditForumTopic, EditGeneralForumTopic};
+use telers::methods::{EditForumTopic, EditGeneralForumTopic, SendMessage};
 
 use super::super::*;
 
@@ -22,7 +22,7 @@ pub async fn set(
     };
 
     let Some(true) = message.chat().is_forum() else {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Название темы можно устанавливать только в чате с включенными темами.",
             smail_pensil(true)
         )))
@@ -44,7 +44,7 @@ pub async fn set(
         .nth(128)
         .is_some()
     {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Название темы превышает допустимый лимит в 128 символов.",
             smail_pensil(true)
         )))

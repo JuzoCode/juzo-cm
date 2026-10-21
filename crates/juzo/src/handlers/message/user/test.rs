@@ -10,8 +10,9 @@ use juzo_core::{
     },
 };
 use sea_orm::{ConnectionTrait, raw_sql};
-use telers::types::{
-    InlineKeyboardButton, InlineKeyboardMarkup, InputRichMessage, ReplyParameters,
+use telers::{
+    methods::{SendMessage, SendRichMessage},
+    types::{InlineKeyboardButton, InlineKeyboardMarkup, InputRichMessage, ReplyParameters},
 };
 
 use super::super::*;
@@ -56,7 +57,7 @@ pub async fn ping(
         .style("primary")]]);
 
     bot.send(
-        JuzoAnswer::message(&message)
+        JuzoAnswer::<SendMessage>::to(&message)
             .text("ПОНГ")
             .reply_markup(keyboard),
     )
@@ -202,7 +203,7 @@ pub async fn my_spam(
         text.push_str(meow)
     }
 
-    bot.send(JuzoAnswer::message(&message).text(text))
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(text))
         .await?;
 
     Ok(())
@@ -231,7 +232,7 @@ pub async fn time_sms(
         }
         ArgsResult::None => {
             let Some(reply) = message.reply_to_message() else {
-                bot.send(JuzoAnswer::message(&message).text(format!(
+                bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
                     "{0} Для показа времени, ответьте на любое сообщение.",
                     smail_pensil(true)
                 )))
@@ -257,7 +258,7 @@ pub async fn time_sms(
     };
 
     if value <= 0 {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Время должно начинаться после нуля.",
             smail_pensil(true)
         )))
@@ -265,7 +266,7 @@ pub async fn time_sms(
         return Ok(());
     }
 
-    let mut answer = JuzoAnswer::message(&message).text(format!(
+    let mut answer = JuzoAnswer::<SendMessage>::to(&message).text(format!(
         "<tg-emoji emoji-id='5255971360965930740'>🕓</tg-emoji> {label}: <tg-time unix='{value}' \
          format='T'>juzo</tg-time>"
     ));
@@ -302,7 +303,8 @@ pub async fn sms_ids(
         .map_or(message.message_id(), |r| r.message_id());
 
     bot.send(
-        JuzoAnswer::message(&message).text(format!("🗓 ID данного сообщения: <code>{id}</code>")),
+        JuzoAnswer::<SendMessage>::to(&message)
+            .text(format!("🗓 ID данного сообщения: <code>{id}</code>")),
     )
     .await?;
 
@@ -328,7 +330,7 @@ pub async fn show_thread_link(
     };
 
     if let Some(true) = message.chat().is_forum() {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Ветка не сработает с включёнными темами.",
             smail_pensil(true)
         )))
@@ -337,7 +339,7 @@ pub async fn show_thread_link(
     };
 
     let Some(reply) = message.reply_to_message() else {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Вы не сделали ответ ни на какое сообщение.",
             smail_pensil(true)
         )))
@@ -355,7 +357,7 @@ pub async fn show_thread_link(
     let url = format!("https://t.me/c/{chat_ids}/{reply_ids}?thread={thread_ids}");
 
     bot.send(
-        JuzoAnswer::rich(&message)
+        JuzoAnswer::<SendRichMessage>::to(&message)
             .rich_message(InputRichMessage::new().html(format!(
                 "<tg-emoji emoji-id='5377753174369149827'>🧵</tg-emoji> Отдельная ветка \
                  <tg-button type='url' url='{url}'>этого</tg-button> \

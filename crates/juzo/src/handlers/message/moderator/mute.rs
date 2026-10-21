@@ -8,6 +8,7 @@ use juzo_core::{
     domain::{AttachResult, TimeFormatted},
 };
 use sea_orm::{ConnectionTrait, EntityTrait, raw_sql};
+use telers::methods::SendMessage;
 
 // use telers::methods::RestrictChatMember;
 use super::super::*;
@@ -97,7 +98,7 @@ pub async fn yes(
         .nth(128)
         .is_some()
     {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Длина текста превышает 128 символов.",
             smail_pensil(true)
         )))
@@ -121,7 +122,7 @@ pub async fn yes(
     let until = delta.timestamp();
 
     if until == 1 {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Уберите дубликаты периода мута, тогда мы сможем исполнить мечту <a \
              href='{1}'>{2}</a>.",
             smail_pensil(true),
@@ -177,7 +178,7 @@ pub async fn yes(
         ))
         .await
     else {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Ваш ранг либо недостаточен, либо его вовсе не хватает.",
             smail_pensil(true)
         )))
@@ -211,7 +212,7 @@ pub async fn yes(
 
     text.push_str("</blockquote>");
 
-    bot.send(JuzoAnswer::message(&message).text(text))
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(text))
         .await?;
 
     Ok(())

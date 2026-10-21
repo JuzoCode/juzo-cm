@@ -1,5 +1,5 @@
 use juzo_core::common::emojis::{smail_cross, smail_pensil, smail_tick};
-use telers::methods::SetChatDescription;
+use telers::methods::{SendMessage, SetChatDescription};
 
 use super::super::*;
 
@@ -23,7 +23,7 @@ pub async fn set(
 
     let first_line = result.first_line;
     if first_line.is_empty() {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Описание чата не указано. <blockquote>💬 Если Вы хотите удалить описание, \
              введите команду <code>-описание чата</code></blockquote>",
             smail_pensil(true)
@@ -43,7 +43,7 @@ pub async fn set(
         .nth(255)
         .is_some()
     {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Описание превышает допустимый лимит 255 символов.",
             smail_pensil(true)
         )))
@@ -55,7 +55,7 @@ pub async fn set(
         .await?;
 
     bot.send(
-        JuzoAnswer::message(&message)
+        JuzoAnswer::<SendMessage>::to(&message)
             .text(format!("{0} Описание успешно изменено", smail_tick(true))),
     )
     .await?;
@@ -85,7 +85,7 @@ pub async fn delete(
         .await?;
 
     bot.send(
-        JuzoAnswer::message(&message)
+        JuzoAnswer::<SendMessage>::to(&message)
             .text(format!("{0} Описание успешно удалено", smail_cross(true))),
     )
     .await?;

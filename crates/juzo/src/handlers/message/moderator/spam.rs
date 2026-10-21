@@ -3,6 +3,7 @@ use juzo_core::{
     db::chat::{chat, prelude::Chat},
 };
 use sea_orm::{EntityTrait, Set, sea_query::OnConflict};
+use telers::methods::SendMessage;
 
 use super::super::*;
 
@@ -52,13 +53,13 @@ async fn edit_core(
         .await;
 
     if !enabled {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Фильтр «Джузо-антиспам» включён",
             smail_tick(true)
         )))
         .await?;
     } else {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Фильтр «Джузо-антиспам» отключён",
             smail_cross(true)
         )))

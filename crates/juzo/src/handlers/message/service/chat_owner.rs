@@ -1,9 +1,9 @@
-use telers::types::MessageChatOwnerChanged;
+use telers::{methods::SendMessage, types::MessageChatOwnerChanged};
 
 use super::super::{Bot, HandlerResult, JuzoAnswer};
 
 pub async fn changed(bot: Bot, message: MessageChatOwnerChanged) -> HandlerResult<()> {
-    bot.send(JuzoAnswer::message(&message.into()).text("Meow"))
+    bot.send(JuzoAnswer::<SendMessage>::to(&message.into()).text("Meow"))
         .await?;
 
     Ok(())

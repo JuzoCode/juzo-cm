@@ -13,7 +13,7 @@ use sea_orm::{
     ColumnTrait, Condition, EntityTrait, FromQueryResult, QueryFilter, QuerySelect, Set, raw_sql,
     sea_query::OnConflict,
 };
-use telers::utils::token::extract_bot_id;
+use telers::{methods::SendMessage, utils::token::extract_bot_id};
 
 use super::super::*;
 
@@ -102,7 +102,7 @@ pub async fn info(
     .one(&db)
     .await
     else {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Данный бот не поддерживается Джузо.",
             smail_pensil(true)
         )))
@@ -127,7 +127,7 @@ pub async fn info(
         );
     }
 
-    bot.send(JuzoAnswer::message(&message).text(text))
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(text))
         .await?;
 
     Ok(())
@@ -169,7 +169,7 @@ pub async fn set_official(
 
     let token = &text[a1];
     let Some(bot_ids) = extract_bot_id(token) else {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Токен не является валидным.",
             smail_pensil(true)
         )))
@@ -204,7 +204,7 @@ pub async fn set_official(
     //         .secret_token(secret_token)
     // ).await?;
 
-    bot.send(JuzoAnswer::message(&message).text(format!(
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
         "{0} Был создан санкционированный клон Джузо",
         smail_tick(true)
     )))
@@ -287,7 +287,7 @@ pub async fn delete(
 
     match res {
         Ok(r) if r.rows_affected > 0 => {
-            bot.send(JuzoAnswer::message(&message).text(format!(
+            bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
                 "{0} Клон <a href='{1}'>{2}</a> удалён",
                 smail_tick(true),
                 user.link(),
@@ -296,7 +296,7 @@ pub async fn delete(
             .await?;
         }
         _ => {
-            bot.send(JuzoAnswer::message(&message).text(format!(
+            bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
                 "{0} <a href='{1}'>{2}</a> является санкционированным клоном или вовсе не \
                  является клоном.",
                 smail_pensil(true),
@@ -395,14 +395,14 @@ pub async fn _changing_creator(
     match res {
         Ok(_) => {
             bot.send(
-                JuzoAnswer::message(&message)
+                JuzoAnswer::<SendMessage>::to(&message)
                     .text(format!("{0} У {{}} сменился создатель", smail_tick(true))),
             )
             .await?;
         }
         _ => {
             bot.send(
-                JuzoAnswer::message(&message)
+                JuzoAnswer::<SendMessage>::to(&message)
                     .text(format!("{0} {{}} не является клоном.", smail_pensil(true))),
             )
             .await?;

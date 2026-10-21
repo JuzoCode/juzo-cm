@@ -11,7 +11,7 @@ use juzo_core::{
     domain::{AttachResult, TimeFormatted},
 };
 use sea_orm::{EntityTrait, FromQueryResult, QuerySelect, raw_sql};
-use telers::types::InputRichMessage;
+use telers::{methods::{SendMessage, SendRichMessage}, types::InputRichMessage};
 
 use super::super::*;
 
@@ -105,7 +105,7 @@ pub async fn info(
     .one(&db)
     .await
     else {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} У <a href='{1}'>{2}</a> не найдено блокировок в Джузо.",
             smail_pensil(true),
             user.link(),
@@ -190,8 +190,11 @@ pub async fn info(
         text.push_str("</blockquote>")
     }
 
-    bot.send(JuzoAnswer::rich(&message).rich_message(InputRichMessage::new().html(text)))
-        .await?;
+    bot.send(
+        JuzoAnswer::<SendRichMessage>::to(&message)
+            .rich_message(InputRichMessage::new().html(text)),
+    )
+    .await?;
 
     Ok(())
 }
@@ -272,7 +275,7 @@ pub async fn info_mute(
     .one(&db)
     .await
     else {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} У <a href='{1}'>{2}</a> не заглушён.",
             smail_pensil(true),
             user.link(),
@@ -346,7 +349,7 @@ pub async fn scam(
         .one(&db)
         .await
     else {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Пользователь не находится в базе скама.",
             smail_pensil(true)
         )))
@@ -376,7 +379,7 @@ pub async fn scam(
         );
     }
 
-    bot.send(JuzoAnswer::message(&message).text(text))
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(text))
         .await?;
 
     Ok(())
@@ -441,7 +444,7 @@ pub async fn _warn_list(
     .one(&db)
     .await
     else {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} ❕ <b>Предупреждения <a href='{1}'>{2}</a></b> пока отсутствуют",
             smail_pensil(true),
             user.link(),

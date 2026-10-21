@@ -5,6 +5,7 @@ use juzo_core::{
     gender,
 };
 use sea_orm::{ConnectionTrait, raw_sql};
+use telers::methods::SendMessage;
 
 use super::super::*;
 
@@ -131,7 +132,7 @@ async fn up_core(
     };
 
     if value > 6 {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Выдавать ранг выше своего... Амбициям вашим я поражаюсь.",
             smail_pensil(true)
         )))
@@ -192,7 +193,7 @@ async fn up_core(
         ))
         .await
     else {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Выдавать ранг выше своего... Амбициям вашим я поражаюсь.",
             smail_pensil(true)
         )))
@@ -206,7 +207,7 @@ async fn up_core(
     };
 
     if affected == 0 {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Повысить до того, что уже есть? Просто прекрасно. А дальше что — выдать тот же \
              ранг ещё раз?",
             smail_pensil(true)
@@ -215,7 +216,7 @@ async fn up_core(
     } else {
         let g1 = gender!(user.gender => ["а", ""]);
 
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} <a href='{1}'>{2}</a> назначен{g1} на {affected} ранг",
             smail_tick(true),
             user.link(),
@@ -379,7 +380,7 @@ pub async fn down(
         ))
         .await
     else {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Пытаться понизить должность тому, кто выше или равен вам? Смело, но корона не \
              жмёт?",
             smail_pensil(true)
@@ -394,7 +395,7 @@ pub async fn down(
     };
 
     if affected == -1 {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} <a href='{1}'>{2}</a> не является модератором.",
             smail_pensil(true),
             user.link(),
@@ -404,7 +405,7 @@ pub async fn down(
     } else if affected == 0 {
         let g1 = gender!(user.gender => ["а", ""]);
 
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Модератор <a href='{1}'>{2}</a> разжалован{g1}",
             smail_cross(true),
             user.link(),
@@ -412,7 +413,7 @@ pub async fn down(
         )))
         .await?;
     } else {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Модератору <a href='{1}'>{2}</a> понижен ранг",
             smail_tick(true),
             user.link(),
@@ -519,7 +520,7 @@ pub async fn remove(
         ))
         .await
     else {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Вы не можете разжаловать равного или выше себя рангом — одного желания для этого \
              маловато.",
             smail_pensil(true)
@@ -536,7 +537,7 @@ pub async fn remove(
     if affected {
         let g1 = gender!(user.gender => ["а", ""]);
 
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Модератор <a href='{1}'>{2}</a> разжалован{g1}",
             smail_cross(true),
             user.link(),
@@ -544,7 +545,7 @@ pub async fn remove(
         )))
         .await?;
     } else {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} <a href='{1}'>{2}</a> не является модератором.",
             smail_pensil(true),
             user.link(),

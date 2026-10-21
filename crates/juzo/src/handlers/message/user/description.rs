@@ -1,4 +1,5 @@
 use juzo_core::{application::UserIndex, common::emojis::smail_tick};
+use telers::methods::SendMessage;
 
 use super::super::*;
 
@@ -20,7 +21,7 @@ pub async fn _show(
     };
     let _args = result.args::<1>(text);
 
-    bot.send(JuzoAnswer::message(&message).text(format!(
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
         "{0} {{}} пока не заполнил описание о себе.",
         smail_tick(true)
     )))
@@ -47,7 +48,7 @@ pub async fn _edit(
     };
     let _args = result.args::<1>(text);
 
-    bot.send(JuzoAnswer::message(&message).text(format!(
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
         "{0} Описание пользователя обновлено",
         smail_tick(true)
     )))

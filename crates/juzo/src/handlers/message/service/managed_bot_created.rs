@@ -1,5 +1,5 @@
 use juzo_core::{application::FullName, common::emojis::smail_tick};
-use telers::types::MessageManagedBotCreated;
+use telers::{methods::SendMessage, types::MessageManagedBotCreated};
 
 use super::super::{Bot, HandlerResult, JuzoAnswer};
 
@@ -29,7 +29,7 @@ pub async fn send(bot: Bot, message: MessageManagedBotCreated) -> HandlerResult<
         full_name.as_str()
     );
 
-    bot.send(JuzoAnswer::message(&message.into()).text(text))
+    bot.send(JuzoAnswer::<SendMessage>::to(&message.into()).text(text))
         .await?;
 
     Ok(())

@@ -4,6 +4,7 @@ use juzo_core::{
     db::agent::{agent, prelude::Agent},
 };
 use sea_orm::{ConnectionTrait, EntityTrait, QuerySelect, raw_sql};
+use telers::methods::SendMessage;
 
 use super::super::*;
 
@@ -142,7 +143,7 @@ pub async fn yes(
         ))
         .await
     else {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Обнуление мешка <a href='{1}'>{2}</a> получилось <b>неудачным</b>.",
             smail_warning(true),
             user.link(),
@@ -152,7 +153,7 @@ pub async fn yes(
         return Ok(());
     };
 
-    bot.send(JuzoAnswer::message(&message).text(format!(
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
         "{0} Мешок <a href='{1}'>{2}</a> обнулен",
         smail_tick(true),
         user.link(),

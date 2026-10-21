@@ -8,6 +8,7 @@ use juzo_core::{
     domain::AttachResult,
 };
 use sea_orm::{EntityTrait, Set, sea_query::OnConflict};
+use telers::methods::SendMessage;
 
 use super::super::*;
 
@@ -147,13 +148,13 @@ async fn edit_show_core(
         .await;
 
     if show {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Оповещения о доступности модулей включены",
             smail_tick(true)
         )))
         .await?;
     } else {
-        bot.send(JuzoAnswer::message(&message).text(format!(
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Оповещения о доступности модулей отключены",
             smail_cross(true)
         )))
