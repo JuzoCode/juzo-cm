@@ -82,8 +82,8 @@ pub async fn edit(
         bot.send(JuzoAnswer::<SendRichMessage>::to(&message).rich_message(
             InputRichMessage::new().html(format!(
                 "{0} Увы, выбора всего два — <tg-button type='copy_text' text='.мой пол мужской' \
-                 style='primary'>мужской</tg-button> и <tg-button type='copy_text' text='.мой пол \
-                 женский' style='danger'>женский</tg-button>. Не определились? Берите <tg-button \
+                 >мужской</tg-button> и <tg-button type='copy_text' text='.мой пол женский' \
+                 style='danger'>женский</tg-button>. Не определились? Берите <tg-button \
                  type='copy_text' text='.мой пол другой' style='success'>другой</tg-button>, \
                  почти как ламинат.",
                 smail_pensil(true),
@@ -121,7 +121,7 @@ pub async fn edit(
 
     let g1 = gender!(g => [
         "женский' style='danger'>женский",
-        "мужской' style='primary'>мужской",
+        "мужской'>мужской",
         "другой' style='success'>другой"
     ]);
 
