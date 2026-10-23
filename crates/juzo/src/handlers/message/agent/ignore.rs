@@ -87,7 +87,9 @@ pub async fn add(
         return Ok(());
     }
 
-    let _ = db
+    IgnoreSystem::edit(user.ids, true);
+
+    let Ok(_) = db
         .execute_raw(raw_sql!(
             Postgres,
             r#"
@@ -108,9 +110,17 @@ pub async fn add(
                 added = EXTRACT(EPOCH FROM NOW())
             "#
         ))
-        .await;
-
-    IgnoreSystem::edit(user.ids, true);
+        .await
+    else {
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
+            "{0} <a href='{1}'>{2}</a> не был занесён в базу игнора, но данные перекэшированы.",
+            smail_pensil(true),
+            user.link(),
+            user.full_name(),
+        )))
+        .await?;
+        return Ok(());
+    };
 
     bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
         "{0} <a href='{1}'>{2}</a> занесён в «Juzo | Ignore System»",
@@ -204,11 +214,11 @@ async fn delete_core(
                 .map(Some),
             None => Ok(None),
         });
+        
+    IgnoreSystem::edit(user.ids, false);
 
     match res {
         Ok(Some(r)) if !takeaway => {
-            IgnoreSystem::edit(user.ids, false);
-
             let _ = db
                 .execute_raw(raw_sql!(
                     Postgres,
@@ -243,8 +253,6 @@ async fn delete_core(
                 .await;
         }
         Ok(Some(_)) => {
-            IgnoreSystem::edit(user.ids, false);
-
             bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
                 "{0} <a href='{1}'>{2}</a> вынесен из «Juzo | Ignore System» без пометки о выносе",
                 smail_tick(true),
