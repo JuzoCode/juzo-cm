@@ -214,7 +214,7 @@ async fn delete_core(
                 .map(Some),
             None => Ok(None),
         });
-        
+
     IgnoreSystem::edit(user.ids, false);
 
     match res {
