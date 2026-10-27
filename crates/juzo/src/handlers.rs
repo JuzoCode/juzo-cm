@@ -11,6 +11,7 @@ use telers::Router;
 pub use telers::{Bot, Extension, event::telegram::HandlerResult};
 
 mod callback;
+mod chat_join_request;
 mod chat_member;
 mod managed_bot;
 mod message;
@@ -32,5 +33,6 @@ pub fn routers_connect() -> Router {
         .include(message::routers())
         .include(callback::routers())
         .include(chat_member::routers())
+        .include(chat_join_request::routers())
         .include(managed_bot::routers())
 }

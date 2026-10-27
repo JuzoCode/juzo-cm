@@ -3,6 +3,7 @@ use telers::{Filter, Router, enums, event::telegram::Handler, filters::ChatType}
 
 mod anketa;
 mod bag;
+#[cfg(debug_assertions)]
 mod bonus;
 mod chat_attach;
 mod convey;
@@ -18,6 +19,10 @@ pub fn routers() -> Router {
     Router::new("router USER connect")
         .on_message(|observer| {
             observer.registers([
+                #[cfg(debug_assertions)]
+                Handler::new(bonus::buy_vip).filter(Command::one("купить вип").no_prefix()),
+                #[cfg(debug_assertions)]
+                Handler::new(bonus::buy_premium).filter(Command::one("купить премиум").no_prefix()),
                 Handler::new(gender::edit).filter(Command::many(&["мой пол", "+пол"]).no_prefix()),
                 Handler::new(bag::edit_show_false).filter(Command::one("-мешок").no_prefix()),
                 Handler::new(bag::edit_show_true).filter(Command::one("+мешок").no_prefix()),

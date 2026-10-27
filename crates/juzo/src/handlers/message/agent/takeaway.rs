@@ -70,6 +70,24 @@ async fn delete_core(
                 };
                 (1, found_user)
             } else if !a1.is_empty() {
+                let Ok(value) = text[a1].parse() else {
+                    return Ok(());
+                };
+                let found_user = if let Some(r) = message.reply_to_message() {
+                    // SAFETY: TBA will never return None in message.from().
+                    r.from()
+                        .unwrap_unchecked()
+                        .into()
+                } else if message
+                    .business_connection_id()
+                    .is_some()
+                {
+                    message.chat().into()
+                } else {
+                    return Ok(());
+                };
+                (value, found_user)
+            } else {
                 let found_user = if let Some(r) = message.reply_to_message() {
                     // SAFETY: TBA will never return None in message.from().
                     r.from()
@@ -84,8 +102,6 @@ async fn delete_core(
                     return Ok(());
                 };
                 (1, found_user)
-            } else {
-                return Ok(());
             }
         },
         // SAFETY: TBA will never return None in message.from().

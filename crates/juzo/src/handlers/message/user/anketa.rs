@@ -109,7 +109,7 @@ pub async fn show(
         return Ok(());
     };
 
-    let (show, gender, added, _) = unsafe {
+    let (show, gender, added, brith) = unsafe {
         (
             row.try_get::<bool>("", "show")
                 .unwrap_unchecked(),
@@ -121,6 +121,8 @@ pub async fn show(
                 .unwrap_unchecked(),
         )
     };
+
+    UserModel::edit_gender(user.ids, gender);
 
     if !show {
         bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
@@ -167,6 +169,12 @@ pub async fn show(
         let (g1, g2) = gender!(gender => [("👩", "женский"), ("👨", "мужской"), ("👨", "другой")]);
 
         let _ = write!(text, "\n{g1} <b>Пол:</b> {g2}");
+    }
+
+    if brith.is_empty() {
+        text.push_str("\n<b>📆 Дата рождения</b> не указана")
+    } else {
+        let _ = write!(text, "\n<b>📆 Дата рождения</b> {brith}");
     }
 
     bot.send(JuzoAnswer::<SendMessage>::to(&message).text(text))

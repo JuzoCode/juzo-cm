@@ -17,11 +17,8 @@ pub fn routers() -> Router {
         .on_my_chat_member(|observer| {
             observer
                 .filter(ChatType::one(enums::ChatType::Supergroup))
-                .registers([
-                    Handler::new(bot::leave::yes),
-                    Handler::new(bot::admin::added)
-                        .filter(MemberFilter::new(MemberStatus::Administrator)),
-                ])
+                .registers([Handler::new(bot::admin::added)
+                    .filter(MemberFilter::new(MemberStatus::Administrator))])
         })
         .on_chat_member(|observer| {
             observer

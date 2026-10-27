@@ -25,6 +25,7 @@ pub fn routers() -> Router {
     Router::new("router MODER connect")
         .on_message(|observer| {
             observer.registers([
+                Handler::new(kick::yes).filter(Command::many(&["кик", "исключить"]).no_prefix()),
                 Handler::new(chat::update)
                     .filter(Command::one("обновить чат").no_prefix())
                     .filter(ChatType::one(enums::ChatType::Supergroup))

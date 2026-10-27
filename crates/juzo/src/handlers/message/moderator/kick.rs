@@ -1,8 +1,10 @@
 use juzo_core::{
     application::{UserIndex, UserModel},
-    // common::emojis::{smail_pensil, smail_tick},
+    common::emojis::smail_cross,
+    domain::UserModelExt,
+    gender,
 };
-use telers::methods::{BanChatMember, BanChatSenderChat};
+use telers::methods::{BanChatMember, BanChatSenderChat, SendMessage};
 
 use super::super::*;
 
@@ -37,9 +39,12 @@ pub async fn yes(
         // SAFETY: TBA will never return None in message.from().
         ArgsResult::None => unsafe {
             if let Some(r) = message.reply_to_message() {
-                r.from()
-                    .unwrap_unchecked()
-                    .into()
+                UserModel::new(
+                    &db,
+                    r.from()
+                        .unwrap_unchecked(),
+                )
+                .await
             } else {
                 return Ok(());
             }
@@ -63,6 +68,16 @@ pub async fn yes(
         bot.send(BanChatMember::new(chat_ids, user.ids))
             .await?;
     };
+
+    let g1 = gender!(user.gender => ["ена", "ён"]);
+
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
+        "{0} <a href='{1}'>{2}</a> исключ{g1} из чата",
+        smail_cross(true),
+        user.link(),
+        user.full_name(),
+    )))
+    .await?;
 
     Ok(())
 }
