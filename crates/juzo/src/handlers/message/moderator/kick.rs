@@ -61,6 +61,8 @@ pub async fn yes(
 
     let chat_ids = message.chat().id();
 
+    // сделать скл чекер на ранг
+
     if user.ids.0 < 0 {
         bot.send(BanChatSenderChat::new(chat_ids, user.ids))
             .await?;

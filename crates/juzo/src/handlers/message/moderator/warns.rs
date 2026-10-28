@@ -3,7 +3,11 @@ use core::fmt::Write;
 use chrono::{Timelike, Utc};
 use juzo_core::{
     application::{ParseTgLink, UserIndex, UserModel},
-    common::{emojis::smail_pensil, tools::time::add_datetime},
+    common::{
+        emojis::{smail_pensil, smail_tick},
+        inflection::{plur_deleted_o, plur_warn},
+        tools::time::add_datetime,
+    },
     domain::TimeFormatted,
 };
 use sea_orm::{ConnectionTrait, raw_sql};
@@ -211,13 +215,12 @@ pub async fn add(
     );
 
     if !comment.is_empty() {
-        text.push_str("<b>Причина: </b>");
-        text.push_str(comment);
+        let _ = write!(text, "</b>Причина: </b>{comment}");
     }
 
     text.push_str("</blockquote>");
 
-    bot.send(JuzoAnswer::<SendMessage>::to(&message).text("meow"))
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(text))
         .await?;
 
     Ok(())
@@ -321,6 +324,7 @@ pub async fn delete(
     };
 
     let chat_ids = message.chat().id();
+
     let Ok(Some(row)) = db
         .query_one_raw(raw_sql!(
             Postgres,
@@ -356,9 +360,10 @@ pub async fn delete(
         return Ok(());
     };
 
+    // Формально, каким образом может быть удаленный -1 варн?
     let affected = row
         .try_get::<i32>("", "affected")
-        .unwrap_or(0);
+        .unwrap_or(0) as u32;
 
     if affected == 0 {
         bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
@@ -371,8 +376,15 @@ pub async fn delete(
         return Ok(());
     }
 
-    // bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!("<a href='{1}'>{2}</a> ")))
-    //     .await?;
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
+        "{0} <a href='{1}'>{2}</a> {3} {4}",
+        smail_tick(true),
+        user.link(),
+        user.full_name(),
+        plur_deleted_o(affected).text,
+        plur_warn(affected),
+    )))
+    .await?;
 
     Ok(())
 }
