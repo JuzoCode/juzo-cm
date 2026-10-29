@@ -29,15 +29,18 @@ pub async fn _add(
             .or_else(|| message.caption())
             .unwrap_unchecked()
     };
-    let ArgsResult::Some([a1, a2], _) = result.args::<2>(text) else {
-        return Ok(());
-    };
+    let args = result.args::<6>(text);
 
-    let Ok(rank) = text[a2].parse::<u8>() else {
-        return Ok(());
-    };
-    let Ok(ids) = text[a1].parse::<i16>() else {
-        return Ok(());
+    let (_system, value): (&str, u8) = match args {
+        ArgsResult::Some(args, len) => {
+            let last = args[len - 1];
+
+            let Ok(value) = text[last].parse() else {
+                return Ok(());
+            };
+            (&text[args[0].start..last.start], value)
+        }
+        _ => return Ok(()),
     };
 
     let module = ModuleChecker::new(&bot, &db);
@@ -53,8 +56,8 @@ pub async fn _add(
             .chat()
             .id()
             .into()),
-        module_ids: Set(ids),
-        rank: Set(rank as i16),
+        module_ids: Set(1),
+        rank: Set(value as i16),
         ..Default::default()
     };
 

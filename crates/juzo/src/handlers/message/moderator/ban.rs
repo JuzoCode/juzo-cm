@@ -4,7 +4,7 @@ use chrono::{Timelike, Utc};
 use juzo_core::{
     application::{ParseTgLink, UserIndex, UserModel},
     common::{
-        emojis::{smail_pensil, smail_tick},
+        emojis::{smail_cross, smail_pensil, smail_tick},
         tools::time::add_datetime,
     },
     domain::{AttachResult, TimeFormatted},
@@ -13,7 +13,7 @@ use juzo_core::{
 use sea_orm::{ConnectionTrait, raw_sql};
 use telers::{
     methods::{BanChatMember, BanChatSenderChat, GetChatMember, SendMessage, UnbanChatMember},
-    types::{ChatMemberLeft, User},
+    types::{ChatMemberLeft, ReplyParameters, User},
 };
 
 use super::super::*;
@@ -245,8 +245,28 @@ pub async fn yes(
 
     text.push_str("</blockquote>");
 
-    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(text))
+    if message
+        .chat()
+        .title()
+        .is_none()
+    {
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
+            "{0} <a href='{1}'>{2}</a> забaнен",
+            smail_cross(true),
+            user.link(),
+            user.full_name(),
+        )))
         .await?;
+    }
+
+    bot.send(
+        JuzoAnswer::<SendMessage>::to(&message)
+            .text(text)
+            .chat_id(chat_ids)
+            .business_connection_id_option::<&str>(None)
+            .reply_parameters_option::<ReplyParameters>(None),
+    )
+    .await?;
 
     Ok(())
 }
@@ -375,21 +395,61 @@ pub async fn no(
             bot.send(UnbanChatMember::new(chat_ids, user.ids.0).only_if_banned(true))
                 .await?;
 
-            bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
-                "{0} <a href='{1}'>{2}</a> разбанен. Теперь можно добавить его в чат или <b>снова \
-                 забанить</b> =)",
-                smail_tick(true),
-                user.link(),
-                user.full_name(),
-            )))
+            if message
+                .chat()
+                .title()
+                .is_none()
+            {
+                bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
+                    "{0} <a href='{1}'>{2}</a> разбанен",
+                    smail_tick(true),
+                    user.link(),
+                    user.full_name(),
+                )))
+                .await?;
+            }
+
+            bot.send(
+                JuzoAnswer::<SendMessage>::to(&message)
+                    .text(format!(
+                        "{0} <a href='{1}'>{2}</a> разбанен. Теперь можно добавить его в чат или \
+                         <b>снова забанить</b> =)",
+                        smail_tick(true),
+                        user.link(),
+                        user.full_name(),
+                    ))
+                    .chat_id(chat_ids)
+                    .business_connection_id_option::<&str>(None)
+                    .reply_parameters_option::<ReplyParameters>(None),
+            )
             .await?;
         }
         (1, true) => {
-            bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
-                "🗓 <a href='{0}'>{1}</a> исключён из бан-листа, но уже находится в чате",
-                user.link(),
-                user.full_name(),
-            )))
+            if message
+                .chat()
+                .title()
+                .is_none()
+            {
+                bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
+                    "{0} <a href='{1}'>{2}</a> исключён из бан-листа",
+                    smail_tick(true),
+                    user.link(),
+                    user.full_name(),
+                )))
+                .await?;
+            }
+
+            bot.send(
+                JuzoAnswer::<SendMessage>::to(&message)
+                    .text(format!(
+                        "🗓 <a href='{0}'>{1}</a> исключён из бан-листа, но он уже находится в чате",
+                        user.link(),
+                        user.full_name(),
+                    ))
+                    .chat_id(chat_ids)
+                    .business_connection_id_option::<&str>(None)
+                    .reply_parameters_option::<ReplyParameters>(None),
+            )
             .await?;
         }
         (_, true) => {

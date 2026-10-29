@@ -30,5 +30,4 @@ rust_decimal = "1.42.1"
 
 # Время.
 chrono = { version = "0.4.45", features = ["serde"] }
-chrono-tz = "0.10.4"
 
