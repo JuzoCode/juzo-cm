@@ -12,7 +12,10 @@ use juzo_core::{
 };
 use sea_orm::{ConnectionTrait, raw_sql};
 use telers::{
-    methods::{BanChatMember, BanChatSenderChat, GetChatMember, SendMessage, UnbanChatMember},
+    methods::{
+        BanChatMember, BanChatSenderChat, GetChatMember, SendMessage, UnbanChatMember,
+        UnbanChatSenderChat,
+    },
     types::{ChatMemberLeft, ReplyParameters, User},
 };
 
@@ -392,8 +395,13 @@ pub async fn no(
 
     match (affected, state) {
         (1, false) => {
-            bot.send(UnbanChatMember::new(chat_ids, user.ids.0).only_if_banned(true))
-                .await?;
+            if user.ids.0 < 0 {
+                bot.send(UnbanChatSenderChat::new(chat_ids, user.ids.0))
+                    .await?;
+            } else {
+                bot.send(UnbanChatMember::new(chat_ids, user.ids.0).only_if_banned(true))
+                    .await?;
+            }
 
             if message
                 .chat()
@@ -462,8 +470,13 @@ pub async fn no(
             .await?;
         }
         _ => {
-            bot.send(UnbanChatMember::new(chat_ids, user.ids.0).only_if_banned(true))
-                .await?;
+            if user.ids.0 < 0 {
+                bot.send(UnbanChatSenderChat::new(chat_ids, user.ids.0))
+                    .await?;
+            } else {
+                bot.send(UnbanChatMember::new(chat_ids, user.ids.0).only_if_banned(true))
+                    .await?;
+            };
 
             bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
                 "{0} <a href='{1}'>{2}</a> не забанен.\n<blockquote>Но было выполнено вынесение \
