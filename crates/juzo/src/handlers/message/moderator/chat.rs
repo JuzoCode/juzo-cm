@@ -41,7 +41,7 @@ pub async fn bag(
     // ради кубышки делать отдельную таблицу в БД? Мне что, делать нечего?
     let sweets = UserBalance::find_by_id(chat_ids)
         .select_only()
-        .column_as(Expr::cust("TRUNC(sweets)::int"), "sweets")
+        .column_as(Expr::cust("TRUNC(sweets)::oid"), "sweets")
         .into_tuple::<u32>()
         .one(&db)
         .await
@@ -120,19 +120,21 @@ pub async fn update(
             .unwrap_unchecked()
     };
 
-    let community_ids = match bot
+    let ChatFullInfo::Supergroup(ChatFullInfoSupergroup {
+        community,
+        linked_chat_id,
+        ..
+    }) = bot
         .send(GetChat::new(chat.id))
         .await?
-    {
-        ChatFullInfo::Supergroup(ChatFullInfoSupergroup {
-            community: Some(c),
-            ..
-        }) => c.id,
-        ChatFullInfo::Supergroup(_) => 0,
-        _ => unsafe { unreachable() },
+    else {
+        unsafe { unreachable() }
     };
 
-    let Ok(_) = db
+    let community_ids = community.map_or(0, |c| c.id);
+    let linked_ids = linked_chat_id.unwrap_or_default();
+
+    let res1 = db
         .execute_raw(raw_sql!(
             Postgres,
             r#"
@@ -143,20 +145,35 @@ pub async fn update(
             )
             VALUES ({chat.id}, {full_name}, {community_ids})
             ON CONFLICT (chat_ids) DO UPDATE SET
-                full_name = EXCLUDED.full_name
-            WHERE
-                c.full_name IS DISTINCT FROM EXCLUDED.full_name
+                full_name = EXCLUDED.full_name,
+                community = EXCLUDED.community
             "#
         ))
-        .await
-    else {
+        .await;
+
+    let res2 = db
+        .execute_raw(raw_sql!(
+            Postgres,
+            r#"
+            INSERT INTO c3 (
+                chat_ids,
+                linked_ids
+            )
+            VALUES ({chat.id}, {linked_ids})
+            ON CONFLICT (chat_ids) DO UPDATE SET
+                linked_ids = EXCLUDED.linked_ids
+            "#
+        ))
+        .await;
+
+    if res1.is_err() || res2.is_err() {
         bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Чат не был обновлён, но некоторые данные будут перекэшированы.",
             smail_pensil(true)
         )))
         .await?;
         return Ok(());
-    };
+    }
 
     bot.send(
         JuzoAnswer::<SendMessage>::to(&message).text(format!("{0} Чат обновлён", smail_tick(true))),

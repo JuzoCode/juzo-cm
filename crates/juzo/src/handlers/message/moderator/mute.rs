@@ -2,13 +2,10 @@ use core::fmt::Write;
 
 use chrono::{Timelike, Utc};
 use juzo_core::{
-    application::{ParseTgLink, UserIndex, UserModel},
-    common::{emojis::smail_pensil, tools::time::add_datetime},
-    db::chat::prelude::ChatBlock,
-    domain::{AttachResult, TimeFormatted},
+    application::{ParseTgLink, UserIndex, UserModel}, common::{emojis::{smail_cross, smail_pensil}, tools::time::add_datetime}, db::chat::prelude::ChatBlock, domain::{AttachResult, TimeFormatted},
 };
 use sea_orm::{ConnectionTrait, EntityTrait, raw_sql};
-use telers::methods::SendMessage;
+use telers::{methods::SendMessage, types::ReplyParameters};
 
 // use telers::methods::RestrictChatMember;
 use super::super::*;
@@ -212,9 +209,28 @@ pub async fn yes(
 
     text.push_str("</blockquote>");
 
-    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(text))
+    if message
+        .chat()
+        .title()
+        .is_none()
+    {
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
+            "{0} <a href='{1}'>{2}</a> замьютин",
+            smail_cross(true),
+            user.link(),
+            user.full_name(),
+        )))
         .await?;
+    }
 
+    bot.send(
+        JuzoAnswer::<SendMessage>::to(&message)
+            .text(text)
+            .chat_id(chat_ids)
+            .business_connection_id_option::<&str>(None)
+            .reply_parameters_option::<ReplyParameters>(None),
+    )
+    .await?;
     Ok(())
 }
 
