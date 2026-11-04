@@ -222,7 +222,7 @@ async fn up_core(
             user.link(),
             user.full_name()
         )))
-        .await?;  
+        .await?;
     }
 
     Ok(())

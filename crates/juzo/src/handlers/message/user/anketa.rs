@@ -13,55 +13,67 @@ use telers::methods::SendMessage;
 
 use super::super::*;
 
-/// добавить в бизнес мод
-pub async fn show(
+async fn show_core(
     bot: Bot,
     message: Message,
     Extension(db): Extension<DbConn>,
     Extension(result): Extension<CommandResult>,
+    my: bool,
 ) -> HandlerResult<()> {
     let user_ind = UserIndex::new(&bot, &db);
     let module = ModuleChecker::new(&bot, &db);
 
-    // SAFETY: The Command filter will not allow processing of a "None" value.
-    let text = unsafe {
-        message
-            .text()
-            .or_else(|| message.caption())
-            .unwrap_unchecked()
-    };
-    let args = result.args::<1>(text);
+    let user: UserModel;
 
-    let user: UserModel = match args {
-        ArgsResult::Some([a1], _) => {
-            let Ok(found_user) = user_ind
-                .search_user(&text[a1])
-                .await
-            else {
-                return Ok(());
-            };
-            found_user
-        }
+    if my {
         // SAFETY: TBA will never return None in message.from().
-        ArgsResult::None => unsafe {
-            if let Some(r) = message.reply_to_message() {
-                r.from()
-                    .unwrap_unchecked()
-                    .into()
-            } else if message
-                .business_connection_id()
-                .is_some()
-            {
-                message.chat().into()
-            } else {
-                message
-                    .from()
-                    .unwrap_unchecked()
-                    .into()
+        user = unsafe {
+            message
+                .from()
+                .unwrap_unchecked()
+                .into()
+        }
+    } else {
+        // SAFETY: The Command filter will not allow processing of a "None" value.
+        let text = unsafe {
+            message
+                .text()
+                .or_else(|| message.caption())
+                .unwrap_unchecked()
+        };
+        let args = result.args::<1>(text);
+
+        user = match args {
+            ArgsResult::Some([a1], _) => {
+                let Ok(found_user) = user_ind
+                    .search_user(&text[a1])
+                    .await
+                else {
+                    return Ok(());
+                };
+                found_user
             }
-        },
-        ArgsResult::Unk => return Ok(()),
-    };
+            // SAFETY: TBA will never return None in message.from().
+            ArgsResult::None => unsafe {
+                if let Some(r) = message.reply_to_message() {
+                    r.from()
+                        .unwrap_unchecked()
+                        .into()
+                } else if message
+                    .business_connection_id()
+                    .is_some()
+                {
+                    message.chat().into()
+                } else {
+                    message
+                        .from()
+                        .unwrap_unchecked()
+                        .into()
+                }
+            },
+            ArgsResult::Unk => return Ok(()),
+        };
+    }
 
     if message
         .chat()
@@ -181,6 +193,28 @@ pub async fn show(
         .await?;
 
     Ok(())
+}
+
+pub async fn show(
+    bot: Bot,
+    message: Message,
+    db: Extension<DbConn>,
+    result: Extension<CommandResult>,
+) -> HandlerResult<()> {
+    show_core(bot, message, db, result, false).await
+}
+
+pub async fn my_show(
+    bot: Bot,
+    message: Message,
+    db: Extension<DbConn>,
+    Extension(result): Extension<CommandResult>,
+) -> HandlerResult<()> {
+    if !result.args.is_empty() {
+        return Ok(());
+    }
+
+    show_core(bot, message, db, Extension(result), true).await
 }
 
 pub async fn first_appearance(

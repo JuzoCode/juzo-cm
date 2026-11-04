@@ -2,7 +2,13 @@ use core::fmt::Write;
 
 use chrono::{Timelike, Utc};
 use juzo_core::{
-    application::{ParseTgLink, UserIndex, UserModel}, common::{emojis::{smail_cross, smail_pensil}, tools::time::add_datetime}, db::chat::prelude::ChatBlock, domain::{AttachResult, TimeFormatted},
+    application::{ParseTgLink, UserIndex, UserModel},
+    common::{
+        emojis::{smail_cross, smail_pensil},
+        tools::time::add_datetime,
+    },
+    db::chat::prelude::ChatBlock,
+    domain::{AttachResult, TimeFormatted},
 };
 use sea_orm::{ConnectionTrait, EntityTrait, raw_sql};
 use telers::{methods::SendMessage, types::ReplyParameters};

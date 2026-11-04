@@ -67,6 +67,11 @@ async fn show_core(
                 r.from()
                     .unwrap_unchecked()
                     .into()
+            } else if message
+                .business_connection_id()
+                .is_some()
+            {
+                message.chat().into()
             } else {
                 return Ok(());
             }

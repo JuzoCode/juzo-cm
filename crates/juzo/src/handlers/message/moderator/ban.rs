@@ -340,9 +340,9 @@ pub async fn no(
     .id;
     let state = MemberEvent::state(&member) == 1;
     let is_private = message
-                .chat()
-                .title()
-                .is_none();
+        .chat()
+        .title()
+        .is_none();
 
     let Ok(Some(row)) = db
         .query_one_raw(raw_sql!(
@@ -407,8 +407,7 @@ pub async fn no(
                     .await?;
             }
 
-            if is_private
-            {
+            if is_private {
                 bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
                     "{0} <a href='{1}'>{2}</a> разбанен",
                     smail_tick(true),
@@ -434,8 +433,7 @@ pub async fn no(
             .await?;
         }
         (1, true) => {
-            if is_private
-            {
+            if is_private {
                 bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
                     "{0} <a href='{1}'>{2}</a> исключён из бан-листа",
                     smail_tick(true),

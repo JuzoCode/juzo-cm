@@ -28,6 +28,13 @@ pub fn routers() -> Router {
                 Handler::new(bag::edit_show_true).filter(Command::one("+мешок").no_prefix()),
                 Handler::new(anketa::edit_show_false).filter(Command::one("-анкета").no_prefix()),
                 Handler::new(anketa::edit_show_true).filter(Command::one("+анкета").no_prefix()),
+                Handler::new(anketa::my_show)
+                    .filter(Command::one("моя анкета").no_prefix())
+                    .filter(
+                        FloodWait::new(FloodKind::Anketa, FloodType::User)
+                            .limit(1)
+                            .second(30),
+                    ),
                 Handler::new(anketa::show)
                     .filter(Command::one("анкета").no_prefix())
                     .filter(
@@ -90,6 +97,22 @@ pub fn routers() -> Router {
                 Handler::new(test::ping).filter(Command::one("пинг")),
                 Handler::new(user_id::show).filter(Command::one("ид")),
                 Handler::new(test::time_sms).filter(Command::one("смс время")),
+                Handler::new(anketa::my_show)
+                    .filter(Command::one("моя анкета").no_prefix())
+                    .filter(
+                        FloodWait::new(FloodKind::Anketa, FloodType::User)
+                            .limit(1)
+                            .second(30),
+                    ),
+                Handler::new(anketa::show)
+                    .filter(Command::one("анкета").no_prefix())
+                    .filter(
+                        FloodWait::new(FloodKind::Anketa, FloodType::User)
+                            .limit(1)
+                            .second(30),
+                    ),
+                Handler::new(bag::my_show).filter(Command::one("мой мешок").no_prefix()),
+                Handler::new(bag::show).filter(Command::one("мешок").no_prefix()),
             ])
         })
 }

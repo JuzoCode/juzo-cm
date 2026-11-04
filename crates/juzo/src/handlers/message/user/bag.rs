@@ -22,7 +22,6 @@ use telers::methods::SendMessage;
 
 use super::super::*;
 
-/// добавить в бизнес мод
 async fn show_core(
     bot: Bot,
     message: Message,
@@ -270,13 +269,9 @@ pub async fn show(
     bot: Bot,
     message: Message,
     db: Extension<DbConn>,
-    Extension(result): Extension<CommandResult>,
+    result: Extension<CommandResult>,
 ) -> HandlerResult<()> {
-    if !result.args.is_empty() {
-        return Ok(());
-    }
-
-    show_core(bot, message, db, Extension(result), false, false).await
+    show_core(bot, message, db, result, false, false).await
 }
 
 pub async fn my_show(

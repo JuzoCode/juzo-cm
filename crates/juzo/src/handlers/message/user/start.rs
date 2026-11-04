@@ -107,7 +107,6 @@ pub async fn yes(
     Ok(())
 }
 
-/// добавить агентов
 pub async fn help(
     bot: Bot,
     message: Message,
