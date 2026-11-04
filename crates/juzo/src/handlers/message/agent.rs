@@ -61,6 +61,7 @@ pub fn routers() -> Router {
         })
         .on_business_message(|observer| {
             observer.registers([
+                Handler::new(bans_user::show).filter(Command::one("баны")),
                 Handler::new(managed_bot::info).filter(Command::one("клон инфо")),
                 Handler::new(managed_bot::delete).filter(Command::one("-клон")),
                 Handler::new(agent::add_main).filter(Command::one("+гл агент")),

@@ -98,21 +98,21 @@ pub fn routers() -> Router {
                 Handler::new(user_id::show).filter(Command::one("ид")),
                 Handler::new(test::time_sms).filter(Command::one("смс время")),
                 Handler::new(anketa::my_show)
-                    .filter(Command::one("моя анкета").no_prefix())
+                    .filter(Command::one("моя анкета"))
                     .filter(
                         FloodWait::new(FloodKind::Anketa, FloodType::User)
                             .limit(1)
                             .second(30),
                     ),
                 Handler::new(anketa::show)
-                    .filter(Command::one("анкета").no_prefix())
+                    .filter(Command::one("анкета"))
                     .filter(
                         FloodWait::new(FloodKind::Anketa, FloodType::User)
                             .limit(1)
                             .second(30),
                     ),
-                Handler::new(bag::my_show).filter(Command::one("мой мешок").no_prefix()),
-                Handler::new(bag::show).filter(Command::one("мешок").no_prefix()),
+                Handler::new(bag::my_show).filter(Command::one("мой мешок")),
+                Handler::new(bag::show).filter(Command::one("мешок")),
             ])
         })
 }
