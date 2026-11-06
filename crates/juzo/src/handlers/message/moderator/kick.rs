@@ -1,9 +1,10 @@
 use juzo_core::{
     application::{UserIndex, UserModel},
-    common::emojis::smail_cross,
+    common::emojis::{smail_cross, smail_pensil},
     domain::UserModelExt,
     gender,
 };
+use sea_orm::{ConnectionTrait, raw_sql};
 use telers::methods::{BanChatMember, BanChatSenderChat, SendMessage};
 
 use super::super::*;
@@ -52,6 +53,18 @@ pub async fn yes(
         ArgsResult::Unk => return Ok(()),
     };
 
+    // SAFETY: TBA will never return None in message.from().
+    let my_ids = unsafe {
+        message
+            .from()
+            .unwrap_unchecked()
+    }
+    .id;
+
+    if user.ids.0 == my_ids {
+        return Ok(());
+    }
+
     let true = module
         .check::<46>(ModuleAccess::M(&message))
         .await
@@ -61,7 +74,31 @@ pub async fn yes(
 
     let chat_ids = message.chat().id();
 
-    // сделать скл чекер на ранг
+    let Ok(Some(_)) = db
+        .query_one_raw(raw_sql!(
+            Postgres,
+            r#"
+            SELECT 1
+            FROM c4
+            WHERE chat_ids = {chat_ids}
+                AND user_ids = {my_ids}
+                AND COALESCE(rank, 0) > COALESCE((
+                    SELECT rank
+                    FROM c4
+                    WHERE chat_ids = {chat_ids}
+                        AND user_ids = {user.ids}
+                ), 0)
+            "#
+        ))
+        .await
+    else {
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
+            "{0} Ваш ранг либо недостаточен, либо его вовсе не хватает.",
+            smail_pensil(true)
+        )))
+        .await?;
+        return Ok(());
+    };
 
     if user.ids.0 < 0 {
         bot.send(BanChatSenderChat::new(chat_ids, user.ids))
