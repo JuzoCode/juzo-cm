@@ -33,12 +33,12 @@ pub fn routers() -> Router {
                             .limit(1)
                             .second(900),
                     ),
-                Handler::new(spam::no)
+                Handler::new(spam::yes)
                     .filter(
                         Command::many(&["+джузо спам", "+джузо ас", "+джузо антиспам"]).no_prefix(),
                     )
                     .filter(ChatType::one(enums::ChatType::Private).invert()),
-                Handler::new(spam::yes)
+                Handler::new(spam::no)
                     .filter(
                         Command::many(&["-джузо спам", "-джузо ас", "-джузо антиспам"]).no_prefix(),
                     )
@@ -151,7 +151,11 @@ pub fn routers() -> Router {
             observer.registers([
                 Handler::new(pin::yes).filter(Command::many(&["пин", "закреп"])),
                 Handler::new(pin::no).filter(Command::many(&["анпин", "открепить"])),
-                Handler::new(reason::scam).filter(Command::one("скам причина")),
+                Handler::new(reason::scam).filter(Command::many(&[
+                    "скам причина",
+                    "причина скама",
+                    "причина скам",
+                ])),
             ])
         })
 }

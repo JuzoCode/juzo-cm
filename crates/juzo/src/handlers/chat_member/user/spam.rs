@@ -40,7 +40,7 @@ pub async fn yes(
             FROM a3
             INNER JOIN c
                 ON c.chat_ids = {chat.id}
-                AND NOT c.spam
+                AND c.spam
             LEFT JOIN c4
                 ON c4.user_ids = {iam.ids}
                 AND c4.chat_ids = {chat.id}

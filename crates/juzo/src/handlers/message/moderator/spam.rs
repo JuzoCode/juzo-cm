@@ -52,7 +52,7 @@ async fn edit_core(
         .exec(&db)
         .await;
 
-    if !enabled {
+    if enabled {
         bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Фильтр «Джузо-антиспам» включён",
             smail_tick(true)

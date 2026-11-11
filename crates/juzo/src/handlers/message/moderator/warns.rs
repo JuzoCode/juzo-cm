@@ -215,7 +215,7 @@ pub async fn add(
     );
 
     if !comment.is_empty() {
-        let _ = write!(text, "</b>Причина: </b>{comment}");
+        let _ = write!(text, "<b>Причина: </b>{comment}");
     }
 
     text.push_str("</blockquote>");

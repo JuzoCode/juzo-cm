@@ -1,4 +1,4 @@
-use juzo_core::filters::{Command, FloodKind, FloodType, FloodWait};
+use juzo_core::filters::{Attach, Command, FloodKind, FloodType, FloodWait};
 use telers::{Filter, Router, enums, event::telegram::Handler, filters::ChatType};
 
 mod anketa;
@@ -90,6 +90,10 @@ pub fn routers() -> Router {
                 Handler::new(test::my_spam)
                     .filter(Command::many(&["мой спам", "мои баны"]).no_prefix())
                     .filter(ChatType::one(enums::ChatType::Private)),
+                #[cfg(debug_assertions)]
+                Handler::new(bonus::info_premium)
+                    .filter(Command::one("премиум"))
+                    .filter(Attach),
             ])
         })
         .on_business_message(|observer| {
