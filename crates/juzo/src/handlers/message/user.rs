@@ -1,4 +1,6 @@
-use juzo_core::filters::{Attach, Command, FloodKind, FloodType, FloodWait};
+#[cfg(debug_assertions)]
+use juzo_core::filters::Attach;
+use juzo_core::filters::{Command, FloodKind, FloodType, FloodWait};
 use telers::{Filter, Router, enums, event::telegram::Handler, filters::ChatType};
 
 mod anketa;

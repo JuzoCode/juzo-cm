@@ -41,7 +41,7 @@ pub async fn yes(
     let ArgsResult::Some([a1], _) = result.args::<1>(text) else {
         return Ok(());
     };
-    
+
     let Ok(value) = u8::from_str_radix(&text[a1], 2) else {
         return Ok(());
     };
