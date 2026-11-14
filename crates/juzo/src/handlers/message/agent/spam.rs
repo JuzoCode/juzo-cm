@@ -253,41 +253,38 @@ async fn delete_core(
         ArgsResult::Unk => return Ok(()),
     };
 
-    let res = db
+    let Ok(Some(row)) = db
         .query_one_raw(raw_sql!(
             Postgres,
             r#"
-            DELETE FROM a3
-            WHERE user_ids = {user.ids}
-                AND function = 2
-            RETURNING reason
+            WITH d AS (
+                DELETE FROM a3
+                WHERE user_ids = {user.ids}
+                    AND function = 2
+                RETURNING function, reason
+            ),
+            ins AS (
+                INSERT INTO a2 (user_ids, agents_ids, reason, function)
+                SELECT {user.ids}, {my_ids}, reason, function
+                FROM d
+                WHERE {takeaway}::boolean
+            )
+            SELECT EXISTS (SELECT 1 FROM d) AS deleted
             "#
         ))
         .await
-        .and_then(|row| match row {
-            Some(row) => row
-                .try_get::<String>("", "reason")
-                .map(Some),
-            None => Ok(None),
-        });
+    else {
+        return Ok(());
+    };
 
-    match res {
-        Ok(Some(r)) if !takeaway => {
-            let _ = db
-                .execute_raw(raw_sql!(
-                    Postgres,
-                    r#"
-                    INSERT INTO a2 (
-                        user_ids,
-                        agents_ids,
-                        reason,
-                        function
-                    )
-                    VALUES ({user.ids}, {my_ids}, {r}, 2)
-                    "#
-                ))
-                .await;
+    // SAFETY: EXISTS always returns a non-NULL bool, so try_get cannot fail
+    let deleted = unsafe {
+        row.try_get::<bool>("", "deleted")
+            .unwrap_unchecked()
+    };
 
+    match deleted {
+        true if takeaway => {
             bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
                 "{0} <a href='{1}'>{2}</a> вынесен из «Juzo | Anti-Spam»",
                 smail_tick(true),
@@ -306,7 +303,7 @@ async fn delete_core(
                 )
                 .await;
         }
-        Ok(Some(_)) => {
+        true => {
             bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
                 "{0} <a href='{1}'>{2}</a> вынесен из «Juzo | Anti-Spam» без пометки о выносе",
                 smail_tick(true),
@@ -345,7 +342,7 @@ pub async fn delete(
     db: Extension<DbConn>,
     result: Extension<CommandResult>,
 ) -> HandlerResult<()> {
-    delete_core(bot, message, db, result, false).await
+    delete_core(bot, message, db, result, true).await
 }
 
 pub async fn delete_takeaway(
@@ -354,7 +351,7 @@ pub async fn delete_takeaway(
     db: Extension<DbConn>,
     result: Extension<CommandResult>,
 ) -> HandlerResult<()> {
-    delete_core(bot, message, db, result, true).await
+    delete_core(bot, message, db, result, false).await
 }
 
 const KICK: &[u8] = "кик".as_bytes();

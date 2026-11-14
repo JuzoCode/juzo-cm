@@ -164,13 +164,12 @@ async fn show_core(
     if added <= 0 {
         text.push_str("🗓 <b>Во вселенной Джузо</b> не существует");
     } else {
-        let now = Utc::now();
-        let time = TimeFormatted::from(added, now);
+        let time = TimeFormatted::<Utc>::new(added).from();
 
         let _ = write!(
             text,
             "🗓 <b>Во вселенной Джузо:</b> с {0} ({time})",
-            time.datetime
+            time.date()
                 .format("%d.%m.%Y")
         );
     };
@@ -296,14 +295,13 @@ pub async fn first_appearance(
             user.full_name()
         )
     } else {
-        let now = Utc::now();
-        let time = TimeFormatted::from(added, now);
+        let time = TimeFormatted::<Utc>::new(added).from();
 
         format!(
             "🗓 Дата первого появления <a href='{0}'>{1}</a> во вселенной Джузо: {2} ({time})",
             user.link(),
             user.full_name(),
-            time.datetime
+            time.date()
                 .format("%d.%m.%Y")
         )
     };

@@ -204,7 +204,11 @@ pub async fn add(
     if until == 0 {
         text.push_str("Снимется никогда");
     } else {
-        let _ = write!(text, "До снятия {0}", TimeFormatted::until(until, now));
+        let _ = write!(
+            text,
+            "До снятия {0}",
+            TimeFormatted::<Utc>::new(until).until_at(now.timestamp())
+        );
     }
 
     let _ = writeln!(

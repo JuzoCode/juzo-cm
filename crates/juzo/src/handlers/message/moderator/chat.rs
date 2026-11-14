@@ -141,12 +141,14 @@ pub async fn update(
             INSERT INTO c (
                 chat_ids,
                 full_name,
-                community
+                community,
+                bot_admin
             )
-            VALUES ({chat.id}, {full_name}, {community_ids})
+            VALUES ({chat.id}, {full_name}, {community_ids}, true)
             ON CONFLICT (chat_ids) DO UPDATE SET
                 full_name = EXCLUDED.full_name,
-                community = EXCLUDED.community
+                community = EXCLUDED.community,
+                bot_admin = EXCLUDED.bot_admin
             "#
         ))
         .await;

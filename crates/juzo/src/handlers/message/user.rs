@@ -6,7 +6,9 @@ use telers::{Filter, Router, enums, event::telegram::Handler, filters::ChatType}
 mod anketa;
 mod bag;
 #[cfg(debug_assertions)]
-mod bonus;
+mod bonus_buy;
+#[cfg(debug_assertions)]
+mod bonus_info;
 mod chat_attach;
 mod convey;
 mod description;
@@ -22,9 +24,10 @@ pub fn routers() -> Router {
         .on_message(|observer| {
             observer.registers([
                 #[cfg(debug_assertions)]
-                Handler::new(bonus::buy_vip).filter(Command::one("купить вип").no_prefix()),
+                Handler::new(bonus_buy::buy_vip).filter(Command::one("купить вип").no_prefix()),
                 #[cfg(debug_assertions)]
-                Handler::new(bonus::buy_premium).filter(Command::one("купить премиум").no_prefix()),
+                Handler::new(bonus_buy::buy_premium)
+                    .filter(Command::one("купить премиум").no_prefix()),
                 Handler::new(gender::edit).filter(Command::many(&["мой пол", "+пол"]).no_prefix()),
                 Handler::new(bag::edit_show_false).filter(Command::one("-мешок").no_prefix()),
                 Handler::new(bag::edit_show_true).filter(Command::one("+мешок").no_prefix()),
@@ -93,7 +96,7 @@ pub fn routers() -> Router {
                     .filter(Command::many(&["мой спам", "мои баны"]).no_prefix())
                     .filter(ChatType::one(enums::ChatType::Private)),
                 #[cfg(debug_assertions)]
-                Handler::new(bonus::info_premium)
+                Handler::new(bonus_info::premium)
                     .filter(Command::one("премиум"))
                     .filter(Attach),
             ])

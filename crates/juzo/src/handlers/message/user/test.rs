@@ -52,14 +52,14 @@ pub async fn ping(
         )
     };
 
-    let keyboard = InlineKeyboardMarkup::new([[InlineKeyboardButton::new("Мяу")
-        .callback_data(data.encode().as_str())
-        .style("primary")]]);
-
     bot.send(
         JuzoAnswer::<SendMessage>::to(&message)
             .text("ПОНГ")
-            .reply_markup(keyboard),
+            .reply_markup(InlineKeyboardMarkup::new([[InlineKeyboardButton::new(
+                "Мяу",
+            )
+            .callback_data(data.encode().as_str())
+            .style("primary")]])),
     )
     .await?;
 

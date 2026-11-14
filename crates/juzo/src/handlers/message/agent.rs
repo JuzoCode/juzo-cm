@@ -16,11 +16,15 @@ mod module;
 mod scam;
 mod spam;
 mod takeaway;
+mod verified_chat;
 
 pub fn routers() -> Router {
     Router::new("router AGENT connect")
         .on_message(|observer| {
             observer.registers([
+                Handler::new(verified_chat::yes)
+                    .filter(Command::one("+доверенный чат").no_prefix()),
+                Handler::new(verified_chat::no).filter(Command::one("-доверенный чат").no_prefix()),
                 Handler::new(bans_user::show).filter(Command::one("баны").no_prefix()),
                 Handler::new(agent::edit_show_false)
                     .filter(Command::one("-моя видимость").no_prefix()),

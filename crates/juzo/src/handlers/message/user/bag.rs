@@ -1,6 +1,6 @@
 use core::{fmt::Write, intrinsics::unreachable};
 
-use chrono::{Timelike, Utc};
+use chrono::Utc;
 use juzo_core::{
     application::{BonusResult, JuzoBonus, UserIndex, UserModel},
     common::{
@@ -219,13 +219,6 @@ async fn show_core(
     }
 
     if is_chat {
-        // SAFETY: ¯\_(ツ)_/¯
-        let now = unsafe {
-            Utc::now()
-                .with_nanosecond(0)
-                .unwrap_unchecked()
-        };
-
         let bonuses = bonus
             .chat_ids(message.chat().id())
             .user_ids(user.ids)
@@ -250,7 +243,7 @@ async fn show_core(
             let _ = write!(
                 text,
                 "\n{smail} <b>{name}</b> на {0}",
-                TimeFormatted::until(removed, now)
+                TimeFormatted::<Utc>::new(removed).from()
             );
         }
     }

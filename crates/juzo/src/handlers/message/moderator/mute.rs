@@ -198,7 +198,11 @@ pub async fn yes(
     if until == 0 {
         text.push_str("навсегда");
     } else {
-        let _ = write!(text, "на {0}", TimeFormatted::until(until, now));
+        let _ = write!(
+            text,
+            "на {0}",
+            TimeFormatted::<Utc>::new(until).until_at(now_ts)
+        );
     }
 
     let _ = writeln!(

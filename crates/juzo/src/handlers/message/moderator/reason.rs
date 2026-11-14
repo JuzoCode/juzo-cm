@@ -119,21 +119,16 @@ pub async fn info(
     };
 
     let mut text = format!(
-        "🗓 <b>Список наказаний <a href='{0}'>{1}</a>.</b><br>",
+        "🗓 <b>Список наказаний <a href='{0}'>{1}</a>.</b>",
         user.link(),
         user.full_name()
     );
 
     if let Some(reason) = info.spam_reason {
-        text.push_str("* Находится в базе <b>«Джузо-антиспам»</b>");
+        text.push_str("<br>* Находится в базе <b>«Джузо-антиспам»</b>");
 
         if !reason.is_empty() {
-            let _ = write!(
-                text,
-                ".<blockquote expandable><b>Причина: </b>{reason}</blockquote>"
-            );
-        } else {
-            text.push_str("<br>")
+            let _ = write!(text, ", c причиной: <i>{reason}</i>");
         }
     }
 
@@ -159,15 +154,15 @@ pub async fn info(
         if removed == 0 {
             let _ = write!(
                 text,
-                "<br><b>❗️ Забанен <tg-button type='url' style='danger' url='https://t.me/c/{0}/{sms_ids}'>навсегда",
+                "<br><br><b>❗️ Забанен <tg-button type='url' style='danger' url='https://t.me/c/{0}/{sms_ids}'>навсегда",
                 chat_ids.some(),
             );
         } else {
             let _ = write!(
                 text,
-                "<br><b>❗️ Забанен на <tg-button type='url' style='danger' url='https://t.me/c/{0}/{sms_ids}'>{1}",
+                "<br><br><b>❗️ Забанен на <tg-button type='url' style='danger' url='https://t.me/c/{0}/{sms_ids}'>{1}",
                 chat_ids.some(),
-                TimeFormatted::until(removed, added),
+                TimeFormatted::<Utc>::new(removed).until_at(added.timestamp()),
             );
         }
 
