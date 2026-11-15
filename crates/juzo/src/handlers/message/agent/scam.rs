@@ -186,39 +186,50 @@ pub async fn delete(
         ArgsResult::Unk => return Ok(()),
     };
 
-    let res = BlockSystem::delete_by_id((user.ids, BlockFunc::Scam))
+    let Ok(res) = BlockSystem::delete_by_id((user.ids, BlockFunc::Scam))
         .exec(&db)
-        .await;
+        .await
+    else {
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
+            "{0} <a href='{1}'>{2}</a> не был вынесен из базы скама.",
+            smail_pensil(true),
+            user.link(),
+            user.full_name(),
+        )))
+        .await?;
+        return Ok(());
+    };
 
-    match res {
-        Ok(r) if r.rows_affected > 0 => {
-            bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
-                "{0} <a href='{1}'>{2}</a> вынесен из «Juzo | Scam System»",
-                smail_tick(true),
-                user.link(),
-                user.full_name(),
-            )))
-            .await?;
+    if res.rows_affected > 0 {
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
+            "{0} <a href='{1}'>{2}</a> вынесен из «Juzo | Scam System»",
+            smail_tick(true),
+            user.link(),
+            user.full_name(),
+        )))
+        .await?;
 
-            let _ = bot
+        let _ = bot
                 .send(
                     JuzoAnswer::<SendMessage>::to(&message)
-                        .text("🗓 Вас вынесли из «Juzo | Scam System».\n<b>Впредь больше не нарушайте</b>, лучше почитайте моё <a href='https://teletype.in/@juzo_cm/EULA'>пользовательское соглашение</a> =)")
+                        .text(
+                            "🗓 Вас вынесли из «Juzo | Scam System».\n<b>Впредь больше не нарушайте</b>, \
+                             лучше почитайте моё <a href='https://teletype.in/@juzo_cm/EULA'>пользовательское \
+                             соглашение</a> =)"
+                        )
                         .chat_id(user.ids.0)
                         .business_connection_id_option::<&str>(None)
                         .reply_parameters_option::<ReplyParameters>(None),
                 )
                 .await;
-        }
-        _ => {
-            bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
-                "{0} <a href='{1}'>{2}</a> не находится в базе скама.",
-                smail_pensil(true),
-                user.link(),
-                user.full_name(),
-            )))
-            .await?;
-        }
+    } else {
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
+            "{0} <a href='{1}'>{2}</a> не находится в базе скама.",
+            smail_pensil(true),
+            user.link(),
+            user.full_name(),
+        )))
+        .await?;
     }
 
     Ok(())

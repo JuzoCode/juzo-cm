@@ -110,36 +110,39 @@ pub async fn add(
         return Ok(());
     }
 
-    let bytes = system.as_bytes();
+    let deny = if is_agent { 0 } else { 5 };
+    let mut f = 0u8;
+    let mut key = 1u32;
 
-    let mut functions: i16 = 4;
-    let mut start = 0;
-    let mut kick = false;
-
-    for i in 0..=bytes.len() {
-        if i != bytes.len() && bytes[i] != b' ' {
+    for b in system
+        .bytes()
+        .chain(Some(b' '))
+    {
+        if b & 0xC0 == 0x80 {
+            key = key << 5 | (b & 0x1F) as u32;
             continue;
         }
-
-        if start != i {
-            match &bytes[start..i] {
-                KICK => kick = true,
-                IGNORE => functions |= 2,
-                SCAM => functions |= 1,
+        if b == b' ' {
+            f |= match key {
+                1 => 0,
+                SCAM => 1,
+                IGNOR => 2,
+                KICK => 4,
                 _ => return Ok(()),
+            };
+            if f & deny != 0 || f == 7 {
+                break;
             }
+            key = 1;
+        } else if b | 1 != 0xD1 {
+            return Ok(());
         }
-
-        if i == bytes.len() || functions == 7 {
-            break;
-        }
-
-        start = i + 1;
     }
 
-    if (kick || functions & 1 != 0) && !is_agent {
+    if f & deny != 0 {
         return Ok(());
     }
+    let functions = (f & 3 | 4) as i16;
 
     let _ = db
         .execute_raw(raw_sql!(
@@ -274,6 +277,13 @@ async fn delete_core(
         ))
         .await
     else {
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
+            "{0} <a href='{1}'>{2}</a> не был вынесен из базы спама",
+            smail_pensil(true),
+            user.link(),
+            user.full_name(),
+        )))
+        .await?;
         return Ok(());
     };
 
@@ -283,55 +293,48 @@ async fn delete_core(
             .unwrap_unchecked()
     };
 
-    match deleted {
-        true if takeaway => {
-            bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
-                "{0} <a href='{1}'>{2}</a> вынесен из «Juzo | Anti-Spam»",
-                smail_tick(true),
-                user.link(),
-                user.full_name()
-            )))
-            .await?;
-
-            let _ = bot
-                .send(
-                    JuzoAnswer::<SendMessage>::to(&message)
-                        .text("🗓 Вас вынесли из «Juzo | Anti-Spam».\n<b>Впредь больше не нарушайте</b>, лучше почитайте моё <a href='https://teletype.in/@juzo_cm/EULA'>пользовательское соглашение</a> =)")
-                        .chat_id(user.ids.0)
-                        .business_connection_id_option::<&str>(None)
-                        .reply_parameters_option::<ReplyParameters>(None),
-                )
-                .await;
-        }
-        true => {
-            bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
-                "{0} <a href='{1}'>{2}</a> вынесен из «Juzo | Anti-Spam» без пометки о выносе",
-                smail_tick(true),
-                user.link(),
-                user.full_name(),
-            )))
-            .await?;
-
-            let _ = bot
-                .send(
-                    JuzoAnswer::<SendMessage>::to(&message)
-                        .text("🗓 Вас вынесли из «Juzo | Anti-Spam» без пометки о выносе")
-                        .chat_id(user.ids.0)
-                        .business_connection_id_option::<&str>(None)
-                        .reply_parameters_option::<ReplyParameters>(None),
-                )
-                .await;
-        }
-        _ => {
-            bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
-                "{0} <a href='{1}'>{2}</a> не находится в базе спама.",
-                smail_pensil(true),
-                user.link(),
-                user.full_name(),
-            )))
-            .await?;
-        }
+    if !deleted {
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
+            "{0} <a href='{1}'>{2}</a> не находится в базе спама.",
+            smail_pensil(true),
+            user.link(),
+            user.full_name(),
+        )))
+        .await?;
+        return Ok(());
     }
+
+    let (suffix, dm) = if takeaway {
+        (
+            "",
+            "🗓 Вас вынесли из «Juzo | Anti-Spam».\n<b>Впредь больше не нарушайте</b>, \
+             лучше почитайте моё <a href='https://teletype.in/@juzo_cm/EULA'>пользовательское \
+             соглашение</a> =)",
+        )
+    } else {
+        (
+            " без пометки о выносе",
+            "🗓 Вас вынесли из «Juzo | Anti-Spam» без пометки о выносе",
+        )
+    };
+
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
+        "{0} <a href='{1}'>{2}</a> вынесен из «Juzo | Anti-Spam»{suffix}",
+        smail_tick(true),
+        user.link(),
+        user.full_name(),
+    )))
+    .await?;
+
+    let _ = bot
+        .send(
+            JuzoAnswer::<SendMessage>::to(&message)
+                .text(dm)
+                .chat_id(user.ids.0)
+                .business_connection_id_option::<&str>(None)
+                .reply_parameters_option::<ReplyParameters>(None),
+        )
+        .await;
 
     Ok(())
 }
@@ -354,6 +357,6 @@ pub async fn delete_takeaway(
     delete_core(bot, message, db, result, false).await
 }
 
-const KICK: &[u8] = "кик".as_bytes();
-const IGNORE: &[u8] = "игнор".as_bytes();
-const SCAM: &[u8] = "скам".as_bytes();
+const SCAM: u32 = 1 << 20 | 0x01 << 15 | 0x1A << 10 | 0x10 << 5 | 0x1C;
+const IGNOR: u32 = 1 << 25 | 0x18 << 20 | 0x13 << 15 | 0x1D << 10 | 0x1E << 5;
+const KICK: u32 = 1 << 15 | 0x1A << 10 | 0x18 << 5 | 0x1A;

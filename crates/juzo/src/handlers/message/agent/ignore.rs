@@ -236,55 +236,48 @@ async fn delete_core(
             .unwrap_unchecked()
     };
 
-    match deleted {
-        true if takeaway => {
-            bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
-                "{0} <a href='{1}'>{2}</a> вынесен из «Juzo | Ignore System»",
-                smail_tick(true),
-                user.link(),
-                user.full_name()
-            )))
-            .await?;
-
-            let _ = bot
-                .send(
-                    JuzoAnswer::<SendMessage>::to(&message)
-                        .text("🗓 Вас вынесли из «Juzo | Ignore System».\n<b>Впредь больше не нарушайте</b>, лучше почитайте моё <a href='https://teletype.in/@juzo_cm/EULA'>пользовательское соглашение</a> =)")
-                        .chat_id(user.ids.0)
-                        .business_connection_id_option::<&str>(None)
-                        .reply_parameters_option::<ReplyParameters>(None),
-                )
-                .await;
-        }
-        true => {
-            bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
-                "{0} <a href='{1}'>{2}</a> вынесен из «Juzo | Ignore System» без пометки о выносе",
-                smail_tick(true),
-                user.link(),
-                user.full_name()
-            )))
-            .await?;
-
-            let _ = bot
-                .send(
-                    JuzoAnswer::<SendMessage>::to(&message)
-                        .text("🗓 Вас вынесли из «Juzo | Ignore System» без пометки о выносе")
-                        .chat_id(user.ids.0)
-                        .business_connection_id_option::<&str>(None)
-                        .reply_parameters_option::<ReplyParameters>(None),
-                )
-                .await;
-        }
-        _ => {
-            bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
-                "{0} <a href='{1}'>{2}</a> не находится в базе игнора.",
-                smail_pensil(true),
-                user.link(),
-                user.full_name(),
-            )))
-            .await?;
-        }
+    if !deleted {
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
+            "{0} <a href='{1}'>{2}</a> не находится в базе игнора.",
+            smail_pensil(true),
+            user.link(),
+            user.full_name(),
+        )))
+        .await?;
+        return Ok(());
     }
+
+    let (suffix, dm) = if takeaway {
+        (
+            "",
+            "🗓 Вас вынесли из «Juzo | Ignore System».\n<b>Впредь больше не нарушайте</b>, \
+             лучше почитайте моё <a href='https://teletype.in/@juzo_cm/EULA'>пользовательское \
+             соглашение</a> =)",
+        )
+    } else {
+        (
+            " без пометки о выносе",
+            "🗓 Вас вынесли из «Juzo | Ignore System» без пометки о выносе",
+        )
+    };
+
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
+        "{0} <a href='{1}'>{2}</a> вынесен из «Juzo | Ignore System»{suffix}",
+        smail_tick(true),
+        user.link(),
+        user.full_name(),
+    )))
+    .await?;
+
+    let _ = bot
+        .send(
+            JuzoAnswer::<SendMessage>::to(&message)
+                .text(dm)
+                .chat_id(user.ids.0)
+                .business_connection_id_option::<&str>(None)
+                .reply_parameters_option::<ReplyParameters>(None),
+        )
+        .await;
 
     Ok(())
 }
