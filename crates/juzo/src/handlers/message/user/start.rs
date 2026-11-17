@@ -93,14 +93,12 @@ pub async fn yes(
          с полезными статьями.",
     );
 
-    let keyboard = InlineKeyboardMarkup::new([[InlineKeyboardButton::new("Добавить меня в чат").url(
-        format!("https://t.me/{username}?startgroup=juzo&admin=change_info+restrict_members+delete_messages+pin_messages+invite_users"),
-    )]]);
-
     bot.send(
         JuzoAnswer::<SendMessage>::to(&message)
             .text(text)
-            .reply_markup(keyboard),
+            .reply_markup(InlineKeyboardMarkup::new([[InlineKeyboardButton::new("Добавить меня в чат").url(
+        format!("https://t.me/{username}?startgroup=juzo&admin=change_info+restrict_members+delete_messages+pin_messages+invite_users"),
+    )]])),
     )
     .await?;
 

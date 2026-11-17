@@ -4,34 +4,104 @@ use chrono::Utc;
 use juzo_core::{
     application::{BonusResult, JuzoBonus},
     common::{
-        emojis::{smail_pensil, smail_premium, smail_sweets},
-        inflection::plur_sweets,
+        emojis::{smail_pensil, smail_premium, smail_sweets, smail_tick},
+        inflection::{plur_sweets, plur_sweets_y},
     },
     config::PRICE_PREMIUM,
+    db::chat::{prelude::ChatSetting, setting},
     domain::{AttachResult, TimeFormatted, enums::BonusLog},
     payloads::{
-        base::PackedPayload,
+        base::PayloadType,
         callback::{Callback, CallbackKind},
     },
 };
+use sea_orm::{ActiveValue::Set, EntityTrait, sea_query::OnConflict};
 use telers::{
-    methods::SendRichMessage,
+    methods::{SendMessage, SendRichMessage},
     types::{InlineKeyboardButton, InlineKeyboardMarkup, InputRichMessage},
 };
 
-// use sea_orm::{ActiveValue::Set, EntityTrait, sea_query::OnConflict};
 use super::super::*;
 
-// async fn info_core(
-//     bot: Bot,
-//     message: Message,
-//     Extension(db): Extension<DbConn>,
-//     Extension(result): Extension<CommandResult>,
-//     bonus: BonusLog,
-// ) -> HandlerResult<()> {
+async fn vip_core(
+    bot: Bot,
+    message: Message,
+    db: DbConn,
+    result: CommandResult,
+) -> HandlerResult<()> {
+    let module = ModuleChecker::new(&bot, &db);
 
-//     Ok(())
-// }
+    // SAFETY: The Command filter will not allow processing of a "None" value.
+    let text = unsafe {
+        message
+            .text()
+            .or_else(|| message.caption())
+            .unwrap_unchecked()
+    };
+    let args = result.args::<1>(text);
+
+    let value: u8 = match args {
+        ArgsResult::Some([a1], _) => {
+            let Ok(value) = text[a1].parse() else {
+                return Ok(());
+            };
+            value
+        }
+        ArgsResult::None => unsafe { core::intrinsics::unreachable() },
+        ArgsResult::Unk => return Ok(()),
+    };
+
+    let true = module
+        .check::<49>(ModuleAccess::M(&message))
+        .await
+    else {
+        return Ok(());
+    };
+
+    if value < 10 {
+        bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
+            "{0} Цена VIP-статуса не должна быть ниже {1}",
+            smail_pensil(true),
+            plur_sweets(10u8),
+        )))
+        .await?;
+        return Ok(());
+    }
+
+    let model = setting::ActiveModel {
+        chat_ids: Set(message
+            .chat()
+            .id()
+            .into()),
+        vip_price: Set(value as i16),
+        ..Default::default()
+    };
+
+    let _ = ChatSetting::insert(model)
+        .on_conflict(
+            OnConflict::column(setting::Column::ChatIds)
+                .update_column(setting::Column::VipPrice)
+                .to_owned(),
+        )
+        .exec(&db)
+        .await;
+
+    let vibe = match value {
+        0..=90 => "Раз VIP-статус для нормальных цен, он теперь составляет",
+        91..=170 => "Ладно, золотая середина для VIP-статуса, теперь цена составляет",
+        171..=255 => "<b>Тут типа богатые сидят?</b> Ну хорошо, цена VIP-статуса составляет",
+    };
+
+    bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
+        "{0} {vibe} {1} {2}",
+        smail_tick(true),
+        smail_sweets(true),
+        plur_sweets_y(value),
+    )))
+    .await?;
+
+    Ok(())
+}
 
 pub async fn premium(
     bot: Bot,
@@ -81,16 +151,15 @@ pub async fn premium(
 
     // SAFETY: TBA will never return None in message.from().
     let data = unsafe {
-        PackedPayload::new(
+        Callback::new(CallbackKind::PremiumBuy1).encode(
             message
                 .from()
                 .unwrap_unchecked()
                 .id as u64,
-            Callback::new(CallbackKind::PremiumBuy1),
         )
     };
 
-    let mut button = InlineKeyboardButton::new("").callback_data(data.encode().as_str());
+    let mut button = InlineKeyboardButton::new("").callback_data(data);
 
     if let Some((label, time)) = removed {
         let _ = write!(
@@ -125,6 +194,48 @@ pub async fn premium(
             .reply_markup(InlineKeyboardMarkup::new([[button]])),
     )
     .await?;
+
+    Ok(())
+}
+
+pub async fn vip(
+    bot: Bot,
+    message: Message,
+    Extension(db): Extension<DbConn>,
+    Extension(result): Extension<CommandResult>,
+) -> HandlerResult<()> {
+    if !result.args.is_empty() {
+        return vip_core(bot, message, db, result).await;
+    }
+
+    let module = ModuleChecker::new(&bot, &db);
+    let bonus = JuzoBonus::new(&db);
+
+    let true = module
+        .check::<50>(ModuleAccess::M(&message))
+        .await
+    else {
+        return Ok(());
+    };
+
+    // let (smail, name, removed) = match bonus
+    let _ = match bonus
+        .chat_ids(message.chat().id())
+        .one(BonusLog::Vip)
+        .await
+    {
+        BonusResult::Expired(removed) => (
+            smail_pensil(true),
+            "'>Истёкший Premium",
+            Some(("Истёк в", TimeFormatted::<Utc>::new(removed).from())),
+        ),
+        BonusResult::Active(removed) => (
+            smail_premium(true),
+            "success'>Premium",
+            Some(("Действует до", TimeFormatted::<Utc>::new(removed).until())),
+        ),
+        BonusResult::Unk => ("🗓", "danger'>Обычный", None),
+    };
 
     Ok(())
 }

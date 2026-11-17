@@ -5,7 +5,7 @@ use juzo_core::{
     common::{emojis::smail_pensil, inflection::plur_mark},
     domain::{ChatIds, UserModel},
     payloads::{
-        base::PackedPayload,
+        base::PayloadType,
         callback::{Callback, CallbackKind},
     },
 };
@@ -43,12 +43,11 @@ pub async fn ping(
 
     // SAFETY: TBA will never return None in message.from().
     let data = unsafe {
-        PackedPayload::new(
+        Callback::new(CallbackKind::Ping).encode(
             message
                 .from()
                 .unwrap_unchecked()
                 .id as u64,
-            Callback::new(CallbackKind::Ping),
         )
     };
 
@@ -58,7 +57,7 @@ pub async fn ping(
             .reply_markup(InlineKeyboardMarkup::new([[InlineKeyboardButton::new(
                 "Мяу",
             )
-            .callback_data(data.encode().as_str())
+            .callback_data(data)
             .style("primary")]])),
     )
     .await?;

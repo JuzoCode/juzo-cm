@@ -96,6 +96,8 @@ pub fn routers() -> Router {
                     .filter(Command::many(&["мой спам", "мои баны"]).no_prefix())
                     .filter(ChatType::one(enums::ChatType::Private)),
                 #[cfg(debug_assertions)]
+                Handler::new(bonus_info::vip).filter(Command::one("вип")),
+                #[cfg(debug_assertions)]
                 Handler::new(bonus_info::premium)
                     .filter(Command::one("премиум"))
                     .filter(Attach),
