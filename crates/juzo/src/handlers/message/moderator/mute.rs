@@ -5,6 +5,7 @@ use juzo_core::{
     application::{ParseTgLink, UserIndex, UserModel},
     common::{
         emojis::{smail_cross, smail_pensil},
+        inflection::Case,
         tools::time::add_datetime,
     },
     db::chat::prelude::ChatBlock,
@@ -201,7 +202,9 @@ pub async fn yes(
         let _ = write!(
             text,
             "на {0}",
-            TimeFormatted::<Utc>::new(until).until_at(now_ts)
+            TimeFormatted::<Utc>::new(until)
+                .until_at(now_ts)
+                .case(Case::Vin)
         );
     }
 
