@@ -11,7 +11,7 @@ use juzo_core::{
         inflection::{plur_asterisks, plur_gold, plur_score, plur_sweets},
     },
     db::user::{balance, prelude::UserBalance},
-    domain::{TimeFormatted, UserModelExt, enums::BonusLog},
+    domain::{TimeFormatted, UserModelExt, enums::BonusLog, pluralize::Case},
     gender,
 };
 use sea_orm::{
@@ -243,7 +243,9 @@ async fn show_core(
             let _ = write!(
                 text,
                 "\n{smail} <b>{name}</b> на {0}",
-                TimeFormatted::<Utc>::new(removed).from()
+                TimeFormatted::<Utc>::new(removed)
+                    .from()
+                    .case(Case::Vin)
             );
         }
     }

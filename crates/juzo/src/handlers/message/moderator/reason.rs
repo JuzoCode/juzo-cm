@@ -8,7 +8,7 @@ use juzo_core::{
         agent::{BlockFunc, block_system, prelude::BlockSystem},
         chat::block::BlockInfo,
     },
-    domain::{AttachResult, TimeFormatted},
+    domain::{AttachResult, TimeFormatted, pluralize::Case},
 };
 use sea_orm::{EntityTrait, FromQueryResult, QuerySelect, raw_sql};
 use telers::{
@@ -162,7 +162,9 @@ pub async fn info(
                 text,
                 "<br><br><b>❗️ Забанен на <tg-button type='url' style='danger' url='https://t.me/c/{0}/{sms_ids}'>{1}",
                 chat_ids.some(),
-                TimeFormatted::<Utc>::new(removed).until_at(added.timestamp()),
+                TimeFormatted::<Utc>::new(removed)
+                    .until_at(added.timestamp())
+                    .case(Case::Vin),
             );
         }
 
