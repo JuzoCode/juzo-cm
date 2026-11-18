@@ -16,6 +16,7 @@ mod chat_member;
 mod managed_bot;
 mod message;
 
+#[inline(always)]
 pub fn routers_connect() -> Router {
     Router::new("router connect")
         .on_update(|observer| {

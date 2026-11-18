@@ -2,7 +2,7 @@ use juzo_core::{
     application::{JuzoAnswer, ParseTgLink, UserIndex, UserModel},
     common::{
         emojis::{smail_pensil, smail_tick},
-        inflection::{plur_deleted_a, plur_mark, plur_mark_y},
+        inflection::{plur_deleted_a, plur_mark},
     },
     db::agent::{BlockFunc, agent, prelude::Agent},
 };
@@ -166,7 +166,7 @@ async fn delete_core(
         smail_tick(true),
         user.link(),
         user.full_name(),
-        plur_deleted_a(affected).text,
+        plur_deleted_a(affected),
         plur_mark(affected)
     )))
     .await?;
@@ -174,7 +174,10 @@ async fn delete_core(
     let _ = bot
         .send(
             JuzoAnswer::<SendMessage>::to(&message)
-                .text(format!("🗓 Вам удалили {0} «{f}»", plur_mark_y(affected)))
+                .text(format!(
+                    "🗓 Вам удалили {0} «{f}»",
+                    plur_mark(affected).vin()
+                ))
                 .chat_id(user.ids.0)
                 .business_connection_id_option::<&str>(None)
                 .reply_parameters_option::<ReplyParameters>(None),

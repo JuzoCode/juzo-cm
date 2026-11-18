@@ -5,7 +5,7 @@ use juzo_core::{
     application::{BonusResult, JuzoBonus},
     common::{
         emojis::{smail_pensil, smail_premium, smail_sweets, smail_tick},
-        inflection::{plur_sweets, plur_sweets_y},
+        inflection::plur_sweets,
     },
     config::PRICE_PREMIUM,
     db::chat::{prelude::ChatSetting, setting},
@@ -96,7 +96,7 @@ async fn vip_core(
         "{0} {vibe} {1} {2}",
         smail_tick(true),
         smail_sweets(true),
-        plur_sweets_y(value),
+        plur_sweets(value).vin(),
     )))
     .await?;
 

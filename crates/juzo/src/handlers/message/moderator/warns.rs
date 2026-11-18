@@ -385,7 +385,7 @@ pub async fn delete(
         smail_tick(true),
         user.link(),
         user.full_name(),
-        plur_deleted_o(affected).text,
+        plur_deleted_o(affected),
         plur_warn(affected),
     )))
     .await?;
