@@ -5,12 +5,18 @@ members = [
 ]
 resolver = "3"
 
+[patch.crates-io]
+juzo-core = { path = "crates/juzo-core" }
+
 [workspace.package]
 edition = "2024"
 publish = false
 
-[patch.crates-io]
-juzo-core = { path = "crates/juzo-core" }
+[profile.dev]
+debug = 0
+
+[profile.dev.package."*"]
+debug = false
 
 [workspace.dependencies]
 tokio = { version = "1.52.1", features = ["full"] }

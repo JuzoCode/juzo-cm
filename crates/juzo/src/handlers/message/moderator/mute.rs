@@ -216,8 +216,10 @@ pub async fn yes(
     );
 
     if !comment.is_empty() {
-        text.push_str("<b>Причина: </b>");
-        text.push_str(comment);
+        let _ = writeln!(
+            text,
+            "<b>Причина: </b>{comment}"
+        );
     }
 
     text.push_str("</blockquote>");
@@ -244,6 +246,7 @@ pub async fn yes(
             .reply_parameters_option::<ReplyParameters>(None),
     )
     .await?;
+
     Ok(())
 }
 
