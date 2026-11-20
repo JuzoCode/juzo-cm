@@ -249,10 +249,7 @@ pub async fn yes(
     );
 
     if !comment.is_empty() {
-        let _ = writeln!(
-            text,
-            "<b>Причина: </b>{comment}"
-        );
+        let _ = writeln!(text, "<b>Причина: </b>{comment}");
     }
 
     text.push_str("</blockquote>");

@@ -256,6 +256,9 @@ async fn delete_core(
         ArgsResult::Unk => return Ok(()),
     };
 
+    // убрать takeaway: bool, сделать на уровне парсинга. Смотреть в конце system
+    // сделать массовое удаление из баз, как у вноса
+
     let Ok(Some(row)) = db
         .query_one_raw(raw_sql!(
             Postgres,
@@ -263,22 +266,25 @@ async fn delete_core(
             WITH d AS (
                 DELETE FROM a3
                 WHERE user_ids = {user.ids}
-                    AND function = 2
+                    AND function BETWEEN 0 AND 2
+                    AND (4::smallint & (1 << function)) != 0
                 RETURNING function, reason
             ),
             ins AS (
                 INSERT INTO a2 (user_ids, agents_ids, reason, function)
                 SELECT {user.ids}, {my_ids}, reason, function
                 FROM d
-                WHERE {takeaway}::boolean
+                WHERE {takeaway}::bool
+                    AND function IN (1, 2)
             )
-            SELECT EXISTS (SELECT 1 FROM d) AS deleted
+            SELECT COALESCE(BIT_OR(1 << function), 0)::smallint  AS mask
+            FROM d
             "#
         ))
         .await
     else {
         bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
-            "{0} <a href='{1}'>{2}</a> не был вынесен из базы спама",
+            "{0} <a href='{1}'>{2}</a> не был вынесен из баз.",
             smail_pensil(true),
             user.link(),
             user.full_name(),
@@ -287,15 +293,15 @@ async fn delete_core(
         return Ok(());
     };
 
-    // SAFETY: EXISTS always returns a non-NULL bool, so try_get cannot fail
+    // SAFETY: mask is always a non-NULL smallint (COALESCE), so try_get cannot fail
     let deleted = unsafe {
-        row.try_get::<bool>("", "deleted")
+        row.try_get::<i16>("", "mask")
             .unwrap_unchecked()
     };
 
-    if !deleted {
+    if deleted == 0 {
         bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
-            "{0} <a href='{1}'>{2}</a> не находится в базе спама.",
+            "{0} <a href='{1}'>{2}</a> не находится в базах.",
             smail_pensil(true),
             user.link(),
             user.full_name(),
@@ -304,22 +310,24 @@ async fn delete_core(
         return Ok(());
     }
 
+    let name = unsafe { *PLACES.get_unchecked(deleted as usize) };
+
     let (suffix, dm) = if takeaway {
         (
             "",
-            "🗓 Вас вынесли из «Juzo | Anti-Spam».\n<b>Впредь больше не нарушайте</b>, \
+            format!("🗓 Вас вынесли из {name}.\n<b>Впредь больше не нарушайте</b>, \
              лучше почитайте моё <a href='https://teletype.in/@juzo_cm/EULA'>пользовательское \
-             соглашение</a> =)",
+             соглашение</a> =)"),
         )
     } else {
         (
             " без пометки о выносе",
-            "🗓 Вас вынесли из «Juzo | Anti-Spam» без пометки о выносе",
+            format!("🗓 Вас вынесли из {name} без пометки о выносе"),
         )
     };
 
     bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
-        "{0} <a href='{1}'>{2}</a> вынесен из «Juzo | Anti-Spam»{suffix}",
+        "{0} <a href='{1}'>{2}</a> вынесен из {name}{suffix}",
         smail_tick(true),
         user.link(),
         user.full_name(),
@@ -360,3 +368,14 @@ pub async fn delete_takeaway(
 const SCAM: u32 = 1 << 20 | 0x01 << 15 | 0x1A << 10 | 0x10 << 5 | 0x1C;
 const IGNOR: u32 = 1 << 25 | 0x18 << 20 | 0x13 << 15 | 0x1D << 10 | 0x1E << 5;
 const KICK: u32 = 1 << 15 | 0x1A << 10 | 0x18 << 5 | 0x1A;
+
+static PLACES: [&str; 8] = [
+    "<no_PLACES>", // чтобы сломать HTML
+    "«Juzo | Scam System»",
+    "«Juzo | Ignore System»",
+    "«Juzo | Ignore System»<b> и скам-базы</b>",
+    "«Juzo | Anti-Spam»",
+    "«Juzo | Anti-Spam»<b> и скам-базы</b>",
+    "«Juzo | Anti-Spam»<b> и игнора команд</b>",
+    "«Juzo | Anti-Spam»<b> и игнора команд, а также из скам-базы</b>",
+];
