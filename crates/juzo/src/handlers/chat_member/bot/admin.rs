@@ -101,12 +101,12 @@ pub async fn added(
 
     bot.send(
         SendMessage::new(
-            chat.id,
             "🗓 <b>Я так рад</b>, что меня добавили в статус администрации!\n\nТеперь у меня \
              <b>много возможностей</b>. Какие именно? Можно посмотреть в <a \
              href='https://teletype.in/@juzo_cm/commands'>нашей статье</a>.\nЕсли вам непонятны какие-то \
              моменты, можно обратиться в <a href='https://t.me/juzo_cm_chat'>чат поддержки</a>",
         )
+        .chat_id(chat.id)
         .parse_mode(ParseMode::HTML),
     )
     .await?;

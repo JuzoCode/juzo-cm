@@ -99,7 +99,8 @@ pub async fn yes(
 
     if is_moder {
         bot.send(
-            SendMessage::new(chat.id, text)
+            SendMessage::new(text)
+                .chat_id(chat.id)
                 .parse_mode(ParseMode::HTML)
                 .link_preview_options(LinkPreviewOptions {
                     is_disabled: Some(true),
@@ -113,7 +114,8 @@ pub async fn yes(
             .await?;
 
         bot.send(
-            SendMessage::new(chat.id, text)
+            SendMessage::new(text)
+                .chat_id(chat.id)
                 .parse_mode(ParseMode::HTML)
                 .link_preview_options(LinkPreviewOptions {
                     is_disabled: Some(true),

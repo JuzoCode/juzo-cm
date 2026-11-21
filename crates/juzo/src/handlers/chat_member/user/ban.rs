@@ -6,7 +6,7 @@ use telers::{
     enums::ParseMode,
     event::EventReturn,
     methods::{BanChatMember, SendMessage},
-    types::{Chat, ChatMember, ChatMemberMember, LinkPreviewOptions},
+    types::{Chat, LinkPreviewOptions},
 };
 
 use super::super::*;
@@ -157,7 +157,8 @@ pub async fn yes(
             .await;
 
         bot.send(
-            SendMessage::new(chat.id, text)
+            SendMessage::new(text)
+                .chat_id(chat.id)
                 .parse_mode(ParseMode::HTML)
                 .link_preview_options(LinkPreviewOptions {
                     is_disabled: Some(true),
@@ -172,7 +173,8 @@ pub async fn yes(
             .await?;
 
         bot.send(
-            SendMessage::new(chat.id, text)
+            SendMessage::new(text)
+                .chat_id(chat.id)
                 .parse_mode(ParseMode::HTML)
                 .link_preview_options(LinkPreviewOptions {
                     is_disabled: Some(true),
@@ -195,15 +197,10 @@ pub async fn no_tg(
         unsafe { unreachable() }
     };
 
-    let user: UserModel = if let ChatMember::Member(ChatMemberMember {
-        user, ..
-    }) = member.new_chat_member
-    {
-        user.as_ref().into()
-    } else {
-        // SAFETY: The ChatMemberUpdated filter allows processing only of "Member".
-        unsafe { unreachable() }
-    };
+    let user: UserModel = member
+        .new_chat_member
+        .user()
+        .into();
 
     let Ok(Some(row)) = db
         .query_one_raw(raw_sql!(
@@ -247,7 +244,8 @@ pub async fn no_tg(
         .await?;
 
     bot.send(
-        SendMessage::new(chat.id, text)
+        SendMessage::new(text)
+            .chat_id(chat.id)
             .parse_mode(ParseMode::HTML)
             .link_preview_options(LinkPreviewOptions {
                 is_disabled: Some(true),
