@@ -26,10 +26,10 @@ pub async fn add(
     .id
     .into();
 
-    let Ok(Some(true)) = Agent::find_by_id(my_ids)
+    let Ok(Some((true, true))) = Agent::find_by_id(my_ids)
         .select_only()
-        .column(agent::Column::Agent)
-        .into_tuple::<bool>()
+        .columns([agent::Column::Agent, agent::Column::Spam])
+        .into_tuple::<(bool, bool)>()
         .one(&db)
         .await
     else {

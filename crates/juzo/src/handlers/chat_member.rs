@@ -24,11 +24,9 @@ pub fn routers() -> Router {
             observer
                 .filter(ChatType::one(enums::ChatType::Supergroup))
                 .registers([
-                    Handler::new(user::ban::yes).filter(MemberEvent::new().join()),
-                    Handler::new(user::spam::yes).filter(MemberEvent::new().join()),
-                    Handler::new(user::ban::no_tg).filter(
-                        MemberFilter::new(MemberStatus::Member).old(MemberStatus::Administrator),
-                    ),
+                    Handler::new(user::ban::yes).filter(MemberEvent::<1>::new().join()),
+                    Handler::new(user::spam::yes).filter(MemberEvent::<1>::new().join()),
+                    Handler::new(user::ban::no_tg).filter(MemberEvent::<2>::new().demoted()),
                 ])
         })
 }

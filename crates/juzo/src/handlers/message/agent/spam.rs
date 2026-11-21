@@ -277,7 +277,7 @@ async fn delete_core(
                 WHERE {takeaway}::bool
                     AND function IN (1, 2)
             )
-            SELECT COALESCE(BIT_OR(1 << function), 0)::smallint  AS mask
+            SELECT COALESCE(BIT_OR(1 << function), 0)::smallint AS mask
             FROM d
             "#
         ))

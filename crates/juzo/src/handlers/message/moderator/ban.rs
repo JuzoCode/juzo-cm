@@ -9,7 +9,7 @@ use juzo_core::{
         tools::time::add_datetime,
     },
     domain::{AttachResult, TimeFormatted},
-    filters::MemberEvent,
+    filters::member_event::member_state,
 };
 use sea_orm::{ConnectionTrait, raw_sql};
 use telers::{
@@ -152,7 +152,7 @@ pub async fn yes(
             ChatMemberLeft::new(User::new(392851555, false, "Hello, Juzo Code")).into()
         });
 
-    let to_return = MemberEvent::state(&member) == 1;
+    let to_return = member_state(&member) == 1;
 
     let Ok(Some(_)) = db
         .query_one_raw(raw_sql!(
@@ -344,7 +344,7 @@ pub async fn no(
             .unwrap_unchecked()
     }
     .id;
-    let state = MemberEvent::state(&member) == 1;
+    let state = member_state(&member) == 1;
     let is_private = message
         .chat()
         .title()
