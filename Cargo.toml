@@ -20,7 +20,7 @@ debug = false
 
 [workspace.dependencies]
 tokio = { version = "1.52.1", features = ["full"] }
-telers = { git = "https://github.com/Desiders/telers", rev = "3b33b1aee346ed44f5242c47a9e8f1d942f8e32e", default-features = false, features = ["default-tls", "serde"]}
+telers = { git = "https://github.com/Desiders/telers", rev = "ce87e5497ba207841024030d6db72a0ea1b57a42", default-features = false, features = ["default-tls", "serde"]}
 
 # БД.
 sea-orm = { version = "2.0.0", features = [
