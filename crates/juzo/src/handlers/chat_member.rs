@@ -1,11 +1,6 @@
-use juzo_core::filters::MemberEvent;
+use juzo_core::filters::{MemberEvent, MyMemberEvent};
 pub use telers::types::ChatMemberUpdated;
-use telers::{
-    Router, enums,
-    enums::ChatMemberType as MemberStatus,
-    event::telegram::Handler,
-    filters::{ChatMemberUpdated as MemberFilter, ChatType},
-};
+use telers::{Router, enums, event::telegram::Handler, filters::ChatType};
 
 pub use super::{Bot, DbConn, Extension, HandlerResult};
 
@@ -17,8 +12,9 @@ pub fn routers() -> Router {
         .on_my_chat_member(|observer| {
             observer
                 .filter(ChatType::one(enums::ChatType::Supergroup))
-                .registers([Handler::new(bot::admin::added)
-                    .filter(MemberFilter::new(MemberStatus::Administrator))])
+                .registers([
+                    Handler::new(bot::admin::added).filter(MyMemberEvent::<2>::new().promoted())
+                ])
         })
         .on_chat_member(|observer| {
             observer

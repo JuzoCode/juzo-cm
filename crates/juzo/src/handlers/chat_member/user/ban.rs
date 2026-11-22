@@ -113,7 +113,7 @@ pub async fn yes(
     }
 
     if !reason.is_empty() {
-        let _ = write!(text, " по причине:</b> <i>{0}</i>", reason);
+        let _ = write!(text, " по причине:</b> <i>{reason}</i>",);
     } else {
         text.push_str("</b>");
     }
@@ -235,7 +235,7 @@ pub async fn no_tg(
     );
 
     if !reason.is_empty() {
-        let _ = write!(text, " по причине:</b> <i>{0}</i>", reason);
+        let _ = write!(text, " по причине:</b> <i>{reason}</i>",);
     } else {
         text.push_str("</b>");
     }
