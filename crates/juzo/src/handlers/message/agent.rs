@@ -10,6 +10,7 @@ mod bag;
 mod bans_user;
 mod chat_domen;
 mod edit_holiday;
+mod edit_my_profile;
 mod ignore;
 mod managed_bot;
 mod module;
@@ -63,6 +64,7 @@ pub fn routers() -> Router {
                 Handler::new(module::show_add).filter(Command::one("+!модуль").no_prefix()),
                 Handler::new(module::add).filter(Command::one("+модуль")),
                 Handler::new(edit_holiday::yes).filter(Command::one("!отмечаем")),
+                Handler::new(edit_my_profile::yes).filter(Command::one("!меняем аву")),
             ])
         })
         .on_business_message(|observer| {

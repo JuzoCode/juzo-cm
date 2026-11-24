@@ -93,7 +93,10 @@ pub async fn yes(
         );
 
         if !reason.is_empty() {
-            let _ = write!(text, "\n<blockquote expandable>{reason}</blockquote>");
+            let _ = write!(
+                text,
+                "\n<blockquote expandable>Причина: {reason}</blockquote>"
+            );
         }
     }
 
