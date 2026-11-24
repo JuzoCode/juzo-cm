@@ -33,7 +33,7 @@ pub async fn yes(
 
     let Some(photo) = message
         .photo()
-        .and_then(|p| p.first())
+        .and_then(|p| p.last())
     else {
         bot.send(JuzoAnswer::<SendMessage>::to(&message).text(format!(
             "{0} Ради приличия прикрепите к сообщению какую-нибудь фотографию.",
@@ -43,8 +43,14 @@ pub async fn yes(
         return Ok(());
     };
 
+    let bytes = bot
+        .download(photo)
+        .await?
+        .bytes()
+        .await?;
+
     bot.send(SetMyProfilePhoto::new(InputProfilePhotoStatic::new(
-        InputFile::id(photo.file_id.clone()),
+        InputFile::buffered(bytes),
     )))
     .await?;
 
